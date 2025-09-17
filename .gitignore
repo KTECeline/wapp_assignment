@@ -1,0 +1,15 @@
+# Node
+node_modules/
+build/
+
+# React
+.env
+dist/
+
+# ASP.NET
+bin/
+obj/
+*.db
+
+# Mac
+.DS_Store
