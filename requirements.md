@@ -32,7 +32,7 @@ dotnet run
 Example endpoint: http://localhost:5170/api/users
 
 3. Frontend setup
-cd ClientApp
+cd frontend
 npm install
 npm start
 
@@ -45,3 +45,59 @@ curl -X POST http://localhost:5170/api/users \
 curl -X POST http://localhost:5170/api/users \
 -H "Content-Type: application/json" \
 -d '{"username": "Bob"}'
+
+4. Tailwind setup
+
+4.1 cd C:\Users\<you>\Desktop\WAPP\wapp_assignment\frontend
+4.2 npm uninstall tailwindcss @tailwindcss/postcss postcss autoprefixer
+4.3 npm install -D tailwindcss@3 postcss autoprefixer
+4.4 npx tailwindcss init
+4.5 go to tailwind.config.js file
+paste this:
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  theme: { extend: {} },
+  plugins: [],
+};
+
+4.6 go to src/index.css gilr
+paste this:
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+4.7 at top of arc/index.js file
+add this
+import './index.css';
+
+5. Add custom fonts
+5.1 go to public/index.html, inside the <head>
+add this:
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Ibarra+Real+Nova:ital,wght@0,400..700;1,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
+
+5.2 go to tailwind.config.js file
+paste this for theme:
+theme: {
+  extend: {
+    fontFamily: {
+      inter: ["Inter", "sans-serif"],                 // 👈 for body / UI
+      ibarra: ["Ibarra Real Nova", "serif"],          // 👈 for titles
+    },
+  },
+},
+
+
+
+
+
