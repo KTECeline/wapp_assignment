@@ -22,7 +22,7 @@ const RgUserLayout: React.FC<RgUserLayoutProps> = ({ children }) => {
             { to: "/RgUserLearn", label: "Learn" },
             { to: "/posts", label: "Posts" },
             { to: "/RgUserBadge", label: "Badges" },
-            { to: "/collection", label: "My Collection" },
+            { to: "/RgUserCol", label: "My Collection" },
           ].map((item) => (
             <NavLink
               key={item.to}
@@ -35,7 +35,7 @@ const RgUserLayout: React.FC<RgUserLayoutProps> = ({ children }) => {
             >
               {({ isActive }) => (<>
                 {item.label}
-                <div className={`absolute w-full h-[5px] bg-[#DA1A32] top-[47px] transition-all duration-[600ms] scale-x-0 group-hover:scale-x-[1.6]`} />
+                <div className={`absolute w-full h-[5px] bg-[#DA1A32] top-[47px] transition-all duration-[600ms] scale-x-0 group-hover:scale-x-[1.6] ${isActive ? "scale-x-[1.6]" : ""}`} />
               </>
               )}
             </NavLink>

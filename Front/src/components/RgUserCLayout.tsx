@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 interface RgUserQQLayoutProps {
   children: React.ReactNode;
@@ -16,41 +16,30 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children}) => {
         </div>
 
         {/* RgUser Menu */}
-        <div className="flex flex-row px-[68px] text-black text-[16px] font-light gap-[88px] font-inter">
-          <Link
-            to="/"
-            className="justify-center items-center flex cursor-pointer hover:text-[#DA1A32] transition-all duration-300"
-          >
-            Home
-          </Link>
-
-          <Link
-            to="/learn"
-            className="justify-center items-center flex cursor-pointer hover:text-[#DA1A32] transition-all duration-300"
-          >
-            Learn
-          </Link>
-
-          <Link
-            to="/posts"
-            className="justify-center items-center flex cursor-pointer hover:text-[#DA1A32] transition-all duration-300"
-          >
-            Posts
-          </Link>
-
-          <Link
-            to="/badges"
-            className="justify-center items-center flex cursor-pointer hover:text-[#DA1A32] transition-all duration-300"
-          >
-            Badges
-          </Link>
-
-          <Link
-            to="/collection"
-            className="justify-center items-center flex cursor-pointer hover:text-[#DA1A32] transition-all duration-300"
-          >
-            My Collection
-          </Link>
+        <div className="flex flex-row px-[68px] text-[16px] font-light gap-[88px] font-inter">
+          {[
+            { to: "/RgUserHome", label: "Home" },
+            { to: "/RgUserLearn", label: "Learn" },
+            { to: "/posts", label: "Posts" },
+            { to: "/RgUserBadge", label: "Badges" },
+            { to: "/RgUserCol", label: "My Collection" },
+          ].map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end
+              className={({ isActive }) =>
+                `justify-center items-center flex cursor-pointer transition-all duration-300 relative group ${isActive ? "text-[#DA1A32]" : "text-black hover:text-[#DA1A32]"
+                }`
+              }
+            >
+              {({ isActive }) => (<>
+                {item.label}
+                <div className={`absolute w-full h-[5px] bg-[#DA1A32] top-[47px] transition-all duration-[600ms] scale-x-0 group-hover:scale-x-[1.6] ${isActive ? "scale-x-[1.6]" : ""}`} />
+              </>
+              )}
+            </NavLink>
+          ))}
 
           {/* Right Icons */}
           <div className="flex gap-[16px]">

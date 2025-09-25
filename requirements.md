@@ -98,6 +98,9 @@ theme: {
 },
 
 
-
+6. Install formik and yup for forms and validation
+cd Front
+npm install formik yup
+npm install react-select
 
 

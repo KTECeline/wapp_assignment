@@ -12,6 +12,9 @@ import RgUserDD from "./pages/RgUserDD.tsx";
 import RgUserQuizCp from "./pages/RgUserQuizCp.tsx"; 
 import RgUserExamCp from "./pages/RgUserExamCp.tsx"; 
 import RgUserBadge from "./pages/RgUserBadge.tsx"; 
+import RgUserCol from "./pages/RgUserCol.tsx"; 
+import Register from "./pages/Register.tsx"; 
+import Login from "./pages/Login.tsx"; 
 
 function App() {
   return (
@@ -28,6 +31,9 @@ function App() {
         <Route path="/RgUserQuizCp" element={<RgUserQuizCp />} />
         <Route path="/RgUserExamCp" element={<RgUserExamCp />} />
         <Route path="/RgUserBadge" element={<RgUserBadge />} />
+        <Route path="/RgUserCol" element={<RgUserCol />} />
+        <Route path="/Register" element={<Register />} />
+        <Route path="/Login" element={<Login />} />
         
       </Routes>
     </Router>
