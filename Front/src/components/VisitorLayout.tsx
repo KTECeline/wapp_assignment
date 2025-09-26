@@ -20,7 +20,7 @@ const VisitorLayout: React.FC<VisitorLayoutProps> = ({ children }) => {
           {[
             { to: "/RgUserHome", label: "Home" },
             { to: "/RgUserLearn", label: "Learn" },
-            { to: "/posts", label: "Posts" },
+            { to: "/RgUserPost", label: "Posts" },
             { to: "/RgUserBadge", label: "Badges" },
           ].map((item) => (
             <NavLink

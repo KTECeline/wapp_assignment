@@ -7,12 +7,15 @@ import RgUserLearn from "./pages/RgUserLearn.tsx";
 import RgUserCat from "./pages/RgUserCat.tsx"; 
 import RgUserCourse from "./pages/RgUserCourse.tsx"; 
 import RgUserCourseStep from "./pages/RgUserCourseStep.tsx"; 
+import RgUserCoursePost from "./pages/RgUserCoursePost.tsx"; 
+import RgUserCourseReview from "./pages/RgUserCourseReview.tsx"; 
 import RgUserMCQ from "./pages/RgUserMCQ.tsx"; 
 import RgUserDD from "./pages/RgUserDD.tsx"; 
 import RgUserQuizCp from "./pages/RgUserQuizCp.tsx"; 
 import RgUserExamCp from "./pages/RgUserExamCp.tsx"; 
 import RgUserBadge from "./pages/RgUserBadge.tsx"; 
 import RgUserCol from "./pages/RgUserCol.tsx"; 
+import RgUserPost from "./pages/RgUserPost.tsx"; 
 import Register from "./pages/Register.tsx"; 
 import Login from "./pages/Login.tsx"; 
 
@@ -25,6 +28,8 @@ function App() {
         <Route path="/RgUserLearn" element={<RgUserLearn />} />
         <Route path="/RgUserCat" element={<RgUserCat />} />
         <Route path="/RgUserCourse" element={<RgUserCourse />} />
+        <Route path="/RgUserCoursePost" element={<RgUserCoursePost />} />
+        <Route path="/RgUserCourseReview" element={<RgUserCourseReview />} />
         <Route path="/RgUserCourseStep" element={<RgUserCourseStep />} />
         <Route path="/RgUserMCQ" element={<RgUserMCQ />} />
         <Route path="/RgUserDD" element={<RgUserDD />} />
@@ -32,6 +37,7 @@ function App() {
         <Route path="/RgUserExamCp" element={<RgUserExamCp />} />
         <Route path="/RgUserBadge" element={<RgUserBadge />} />
         <Route path="/RgUserCol" element={<RgUserCol />} />
+        <Route path="/RgUserPost" element={<RgUserPost />} />
         <Route path="/Register" element={<Register />} />
         <Route path="/Login" element={<Login />} />
         

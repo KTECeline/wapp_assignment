@@ -20,7 +20,7 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children}) => {
           {[
             { to: "/RgUserHome", label: "Home" },
             { to: "/RgUserLearn", label: "Learn" },
-            { to: "/posts", label: "Posts" },
+            { to: "/RgUserPost", label: "Posts" },
             { to: "/RgUserBadge", label: "Badges" },
             { to: "/RgUserCol", label: "My Collection" },
           ].map((item) => (
