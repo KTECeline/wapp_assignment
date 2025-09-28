@@ -1,27 +1,22 @@
 import { IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
-import { CiFilter } from "react-icons/ci";
-import { TbArrowsSort } from "react-icons/tb";
 import { FaStar } from "react-icons/fa";
-import React, { useState } from "react";
+import { useState } from "react";
 
-const RgUserCol = () => {
+const RgUserSearch = () => {
+    const [active, setActive] = useState("Courses");
 
-    const [active, setActive] = useState("Progressing");
-
-    const tabs = ["Progressing", "Completed", "Bookmarked"];
-
+    const tabs = ["Courses", "Posts", "Badges", "Reviews"];
     return (
         <RgUserLayout>
             <div className="max-w-screen overflow-x-hidden">
                 <div className="w-full flex flex-col items-center">
                     <p className="font-ibarra font-bold text-black text-[36px] pt-[50px]">
-                        My <span className="text-[#DA1A32]">Collections</span>
+                        What are you looking for <span className="text-[#DA1A32]">today</span>?
                     </p>
-                </div>
 
-                <style>
-                    {`
+                    <style>
+                        {`
                     .no-scrollbar::-webkit-scrollbar {
                         display: none;
                         }
@@ -31,12 +26,20 @@ const RgUserCol = () => {
                         scrollbar-width: none;  
                         }
                     `}
-                </style>
+                    </style>
 
-                {/* Courses */}
-                <div className="mt-[24px] items-center text-black flex flex-col w-[1090px] mx-auto">
+                    <div className="flex items-center justify-between w-[666px] h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] mt-[28px]">
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="font-inter flex-1 bg-transparent outline-none text-black text-[16px] font-light"
+                        />
+                        <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
+                            <IoIosSearch className="text-white w-[24px] h-[24px] " />
+                        </div>
+                    </div>
 
-                    <div className="relative flex flex-row font-ibarra text-[22px] font-medium mb-[36px] gap-[16px] rounded-full bg-[#F8F5F0] p-2">
+                    <div className="mt-[24px] relative flex flex-row font-ibarra text-[22px] font-medium mb-[28px] gap-[16px] rounded-full bg-[#F8F5F0] p-2">
                         {tabs.map((tab) => (
                             <button
                                 key={tab}
@@ -56,39 +59,6 @@ const RgUserCol = () => {
 
                             </button>
                         ))}
-                    </div>
-
-                    <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px] justify-between w-full">
-                        <div className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px]">
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="font-inter w-[160px] bg-transparent outline-none text-black text-[16px] font-light"
-                            />
-                            <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
-                                <IoIosSearch className="text-white w-[24px] h-[24px] " />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-row gap-[10px]">
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                                <div className="font-inter text-[16px] font-light">
-                                    Filter
-                                </div>
-                                <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                                    <CiFilter className="text-white w-[20px] h-[20px]" />
-                                </div>
-                            </button>
-
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                                <div className="font-inter text-[16px] font-light">
-                                    Sort
-                                </div>
-                                <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                                    <TbArrowsSort className="text-white w-[18px] h-[18px] " />
-                                </div>
-                            </button>
-                        </div>
                     </div>
 
                     {/* Courses Container */}
@@ -599,4 +569,4 @@ const RgUserCol = () => {
     );
 };
 
-export default RgUserCol;
+export default RgUserSearch;

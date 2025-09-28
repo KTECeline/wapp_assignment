@@ -1,6 +1,7 @@
 import { FaStar } from "react-icons/fa";
 import { IoMdArrowBack, IoMdArrowForward, IoMdHeart } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
+import { IoAdd } from "react-icons/io5";
 
 const RgUserHome = () => {
     return (
@@ -735,12 +736,21 @@ const RgUserHome = () => {
             </div>
 
             {/* Posts */}
-            <div className="mt-[36px] items-center text-black flex flex-col w-full pb-[62px]">
+            <div className="mt-[36px] items-center text-black flex flex-col w-full pb-[62px] relative">
                 <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px]">
                     <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                     Posts
                     <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                 </div>
+
+                <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-[223px]">
+                    <div className="font-inter text-[16px] font-light text-black">
+                        Post
+                    </div>
+                    <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                        <IoAdd className="text-white w-[32px] h-[32px]" />
+                    </div>
+                </button>
 
 
                 {/* Post Container */}
@@ -943,6 +953,222 @@ const RgUserHome = () => {
                 </div>
 
                 <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                    View More
+                </button>
+            </div>
+
+            {/* Reviews */}
+            <div className="mt-[62px] items-center text-black flex flex-col w-full bg-[#F8F5F0] pt-[36px] pb-[62px] relative">
+                <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px]">
+                    <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
+                    Reviews
+                    <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
+                </div>
+
+
+                <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-[34px] right-[223px]">
+                    <div className="font-inter text-[16px] font-light text-black">
+                        Review
+                    </div>
+                    <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                        <IoAdd className="text-white w-[32px] h-[32px]" />
+                    </div>
+                </button>
+
+                {/* Review Container */}
+                <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
+
+                    {/* Review Card */}
+                    <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
+                        <div className="flex flex-row justify-between items-center">
+                            {/* Profile and time */}
+                            <div className="flex flex-row gap-[6px]">
+                                <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                    A
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                        Amy Wong
+                                    </div>
+
+                                    <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
+                                        17 hours ago
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Review title */}
+                        <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
+                            One of the best brownies ever!!!
+                        </div>
+
+                        {/* Review Description */}
+                        <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
+                            WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
+                        </div>
+
+                        <div className="flex gap-[4px]">
+                            {[...Array(5)].map((_, index) => {
+                                // Fill in the ratings replace the 5
+                                const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+
+                                return (
+                                    <div
+                                        key={index}
+                                        className="relative"
+                                        style={{ width: `14px`, height: `14px` }}
+                                    >
+                                        {/* Gray star background */}
+                                        <FaStar
+                                            className="absolute top-0 left-0 text-gray-300"
+                                            size="14px"
+                                        />
+                                        {/* Red filled star */}
+                                        <div
+                                            className="absolute top-0 left-0 overflow-hidden"
+                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                        >
+                                            <FaStar
+                                                className="text-[#DA1A32]"
+                                                size="14px"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Review Card */}
+                    <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
+                        <div className="flex flex-row justify-between items-center">
+                            {/* Profile and time */}
+                            <div className="flex flex-row gap-[6px]">
+                                <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                    A
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                        Amy Wong
+                                    </div>
+
+                                    <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
+                                        17 hours ago
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Review title */}
+                        <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
+                            One of the best brownies ever!!!
+                        </div>
+
+                        {/* Review Description */}
+                        <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
+                            WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
+                        </div>
+
+                        <div className="flex gap-[4px]">
+                            {[...Array(5)].map((_, index) => {
+                                // Fill in the ratings replace the 5
+                                const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+
+                                return (
+                                    <div
+                                        key={index}
+                                        className="relative"
+                                        style={{ width: `14px`, height: `14px` }}
+                                    >
+                                        {/* Gray star background */}
+                                        <FaStar
+                                            className="absolute top-0 left-0 text-gray-300"
+                                            size="14px"
+                                        />
+                                        {/* Red filled star */}
+                                        <div
+                                            className="absolute top-0 left-0 overflow-hidden"
+                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                        >
+                                            <FaStar
+                                                className="text-[#DA1A32]"
+                                                size="14px"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Review Card */}
+                    <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
+                        <div className="flex flex-row justify-between items-center">
+                            {/* Profile and time */}
+                            <div className="flex flex-row gap-[6px]">
+                                <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                    A
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                        Amy Wong
+                                    </div>
+
+                                    <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
+                                        17 hours ago
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Review title */}
+                        <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
+                            One of the best brownies ever!!!
+                        </div>
+
+                        {/* Review Description */}
+                        <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
+                            WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
+                        </div>
+
+                        <div className="flex gap-[4px]">
+                            {[...Array(5)].map((_, index) => {
+                                // Fill in the ratings replace the 5
+                                const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+
+                                return (
+                                    <div
+                                        key={index}
+                                        className="relative"
+                                        style={{ width: `14px`, height: `14px` }}
+                                    >
+                                        {/* Gray star background */}
+                                        <FaStar
+                                            className="absolute top-0 left-0 text-gray-300"
+                                            size="14px"
+                                        />
+                                        {/* Red filled star */}
+                                        <div
+                                            className="absolute top-0 left-0 overflow-hidden"
+                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                        >
+                                            <FaStar
+                                                className="text-[#DA1A32]"
+                                                size="14px"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
                     View More
                 </button>
             </div>

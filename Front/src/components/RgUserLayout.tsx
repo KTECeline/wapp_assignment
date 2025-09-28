@@ -1,13 +1,14 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
-
+import { Link, NavLink } from "react-router-dom";
+import ScrollToTop from "./ScrollToTop.tsx"; // <-- import
 interface RgUserLayoutProps {
   children: React.ReactNode;
 }
 
 const RgUserLayout: React.FC<RgUserLayoutProps> = ({ children }) => {
   return (
-    <div className="font-inter bg-white min-h-screen w-full overflow-hidden">
+    <div className="font-inter bg-white min-h-screen w-full">
+      <ScrollToTop />
       {/* Header */}
       <header className="w-full h-[80px] bg-[#F8F5F0] left-0 top-0 fixed flex flex-row justify-between items-center z-50">
         {/* Logo */}
@@ -43,16 +44,20 @@ const RgUserLayout: React.FC<RgUserLayoutProps> = ({ children }) => {
 
           {/* Right Icons */}
           <div className="flex gap-[16px]">
-            <img
-              src="/images/Search.png"
-              alt="Search"
-              className="w-[22px] h-[22px] cursor-pointer"
-            />
-            <img
-              src="/images/Profile.png"
-              alt="Profile"
-              className="w-[22px] h-[22px] cursor-pointer"
-            />
+            <Link to="/RgUserSearch">
+              <img
+                src="/images/Search.png"
+                alt="Search"
+                className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+              />
+            </Link>
+            <Link to="/RgUserSet">
+              <img
+                src="/images/Profile.png"
+                alt="Profile"
+                className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+              />
+            </Link>
           </div>
         </div>
       </header>
