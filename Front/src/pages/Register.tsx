@@ -852,7 +852,7 @@ const Registration: FC = () => {
                                                     name="confirmPassword"
                                                     type={showConfirmPassword ? "text" : "password"}
                                                     placeholder="Confirm your password"
-                                                    className={`bg-white border border-black rounded-full px-[15px] pr-[45px] text-black placeholder-gray-500 block w-full sm:text-sm h-[37px] align-text-bottom focus:outline-none focus:ring-0 ${errors.confirmPassword && touched.confirmPassword ? "border border-gred-300" : ""
+                                                    className={`bg-white border border-black rounded-full px-[15px] pr-[45px] text-black placeholder-gray-500 block w-full sm:text-sm h-[37px] align-text-bottom focus:outline-none focus:ring-0 ${errors.confirmPassword && touched.confirmPassword ? "border border-red-300" : ""
                                                         }`}
                                                 />
                                                 {/* Eye Icon */}

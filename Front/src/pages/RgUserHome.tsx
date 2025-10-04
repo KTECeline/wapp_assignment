@@ -736,7 +736,7 @@ const RgUserHome = () => {
             </div>
 
             {/* Posts */}
-            <div className="mt-[36px] items-center text-black flex flex-col w-full pb-[62px] relative">
+            <div className="mt-[36px] items-center text-black flex flex-col w-full relative">
                 <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px]">
                     <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                     Posts

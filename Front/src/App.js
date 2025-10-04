@@ -21,12 +21,13 @@ import RgUserPost from "./pages/RgUserPost.tsx";
 import RgUserReview from "./pages/RgUserReview.tsx"; 
 import Register from "./pages/Register.tsx"; 
 import Login from "./pages/Login.tsx"; 
+import LandingPage from "./pages/LandingPage.tsx"; 
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<TestBackend />} />
+        <Route path="/TestBackend" element={<TestBackend />} />
         <Route path="/RgUserHome" element={<RgUserHome />} />
         <Route path="/RgUserLearn" element={<RgUserLearn />} />
         <Route path="/RgUserCat" element={<RgUserCat />} />
@@ -46,6 +47,7 @@ function App() {
         <Route path="/RgUserReview" element={<RgUserReview />} />
         <Route path="/Register" element={<Register />} />
         <Route path="/Login" element={<Login />} />
+        <Route path="/" element={<LandingPage />} />
         
       </Routes>
     </Router>
