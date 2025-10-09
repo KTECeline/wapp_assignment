@@ -642,7 +642,7 @@ const RgUserHome = () => {
                     {/* Main CTA */}
                     <a
                         href="/Register"
-                        className="py-2 px-10 bg-[#DA1A32] text-white rounded-full font-medium hover:scale-105 transition-all duration-[600ms] shadow-md"
+                        className="py-2 px-10 bg-[#DA1A32] text-white rounded-full font-medium hover:scale-105 transition-all duration-[600ms]"
                     >
                         Start Now
                     </a>

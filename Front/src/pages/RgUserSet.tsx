@@ -7,8 +7,24 @@ import { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import IconLoading from "../components/IconLoading.tsx";
 import * as Yup from "yup";
+import ProfileForm from "../components/EditProfileForm.tsx";
+
+type Profile = {
+    id: string;
+    fname: string;
+    lname: string;
+    gender: string;
+    DOB: string;
+    profileimage: globalThis.File | null;
+    plevel: string;
+    pcat: string;
+    username: string;
+    email: string;
+    userId: number;
+};
 
 const RgUserCat = () => {
+    const [userId] = useState(1); // 🔹 Placeholder user ID
     const [active, setActive] = useState("My Profile");
 
     const tabs = ["My Profile", "Change Password", "About Us", "Contact Us", "Terms and Conditions", "FAQ", "Get Help"];
@@ -17,8 +33,35 @@ const RgUserCat = () => {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    const [showProfileForm, setShowProfileForm] = useState(false);
+
+    const handleOpenProfileModal = () => {
+        setShowProfileForm(true);
+    };
+
+    const handleCloseProfileModal = () => {
+        setShowProfileForm(false);
+    };
+
+    const handleProfileSave = (updatedProfile: Profile, isEdit: boolean) => {
+        console.log("✅ Profile updated:", updatedProfile);
+        setShowProfileForm(false);
+        // 🧠 Later: call Supabase or API to update profile
+    };
+
     return (
         <RgUserLayout>
+
+            {showProfileForm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <ProfileForm
+                        onClose={handleCloseProfileModal}
+                        onSave={handleProfileSave}
+                        isEdit={true}
+                        userId={userId}
+                    />
+                </div>
+            )}
 
             {/* Banner */}
             <div
@@ -62,7 +105,8 @@ const RgUserCat = () => {
                                     </div>
                                 </div>
 
-                                <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                <button onClick={handleOpenProfileModal}
+                                className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                     <div className="font-inter text-[16px] font-light text-black">
                                         Edit
                                     </div>
@@ -199,7 +243,7 @@ const RgUserCat = () => {
                             >
                                 {({ isSubmitting, values, setFieldValue, touched, errors, resetForm, isValid, validateForm, setTouched }) => {
                                     return (
-                                        <Form className="w-full h-full pt-[6px] pr-[20px] overflow-hidden">
+                                        <Form className="w-full h-full pt-[12px] pr-[20px] overflow-hidden">
 
                                             <div className="w-full h-[1px] bg-black mb-[18px]"></div>
 

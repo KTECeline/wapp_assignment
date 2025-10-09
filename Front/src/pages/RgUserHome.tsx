@@ -2,10 +2,88 @@ import { FaStar } from "react-icons/fa";
 import { IoMdArrowBack, IoMdArrowForward, IoMdHeart } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { IoAdd } from "react-icons/io5";
+import PostForm from "../components/PostForm.tsx";
+import ReviewForm from "../components/ReviewForm.tsx";
+import { useState } from "react";
+import DisplayPost from "../components/DisplayPost.tsx";
+import DisplayReview from "../components/DisplayReview.tsx";
 
 const RgUserHome = () => {
+    // Local state just for UI control (mocked for now)
+    const [showPostForm, setShowPostForm] = useState(false);
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [isPostEdit, setIsPostEdit] = useState(false);
+    const [isReviewEdit, setIsReviewEdit] = useState(false);
+    const [postId, setPostId] = useState<number | null>(null);
+    const [reviewId, setReviewId] = useState<number | null>(null);
+    const [userId] = useState(1); // 🔹 Placeholder user ID
+    const [courseId] = useState<number | null>(null);
+    const [posttype] = useState<string>("normal");
+    const [reviewtype] = useState<string>("website");
+
+    // Dummy placeholder handler for now
+    const handlePostSave = (post: any, isEdit: boolean) => {
+        console.log("✅ Mock Save:", post, "isEdit:", isEdit);
+        // 🔹 Later: integrate with backend or global state here
+    };
+
+    const handleClosePostModal = () => {
+        setShowPostForm(false);
+        setIsPostEdit(false);
+        setPostId(null);
+    };
+
+    // Dummy placeholder handler for now
+    const handleReviewSave = (post: any, isEdit: boolean) => {
+        console.log("✅ Mock Save:", post, "isEdit:", isEdit);
+        // 🔹 Later: integrate with backend or global state here
+    };
+
+    const handleCloseReviewModal = () => {
+        setShowReviewForm(false);
+        setIsReviewEdit(false);
+        setReviewId(null);
+    };
+
+    const [showPostView, setShowPostView] = useState(false);
+
+    const [showReviewView, setShowReviewView] = useState(false);
+
     return (
         <RgUserLayout>
+            {showPostForm && (
+                <div className="fixed z-[100]">
+                    <PostForm
+                        onClose={handleClosePostModal}
+                        onSave={handlePostSave}
+                        isEdit={isPostEdit}
+                        postId={postId}
+                        userId={userId}
+                        courseId={courseId}
+                        posttype={posttype}
+                        from="home"
+                    />
+                </div>
+            )}
+
+            {showReviewForm && (
+                <div className="fixed z-[100]">
+                    <ReviewForm
+                        onClose={handleCloseReviewModal}
+                        onSave={handleReviewSave}
+                        isEdit={isReviewEdit}
+                        reviewId={reviewId}
+                        userId={userId}
+                        courseId={courseId}
+                        reviewtype={reviewtype}
+                        from="home"
+                    />
+                </div>
+            )}
+
+            {showPostView && <DisplayPost onClose={() => setShowPostView(false)} />}
+
+            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} />}
 
             {/* Announcement */}
             <div className="w-full h-[400px] relative">
@@ -743,7 +821,8 @@ const RgUserHome = () => {
                     <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                 </div>
 
-                <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-[223px]">
+                <button onClick={() => setShowPostForm(true)}
+                    className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-[223px]">
                     <div className="font-inter text-[16px] font-light text-black">
                         Post
                     </div>
@@ -757,7 +836,8 @@ const RgUserHome = () => {
                 <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
 
                     {/* Post Card */}
-                    <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
+                    <button onClick={() => setShowPostView(true)}
+                        className="text-left cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
                         <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
                             <img src="/images/Post.webp" alt="post" className="w-full h-full object-cover z-0" />
                             <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
@@ -804,8 +884,8 @@ const RgUserHome = () => {
 
                                 {/* Hashtage, Course Name and Category */}
                                 <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                    <a>#Small-Batch Brownies</a>
-                                    <a>#Cakes</a>
+                                    <a className="hover:text-[#DA1A32] transition-all duration-300">#Small-Batch Brownies</a>
+                                    <a className="hover:text-[#DA1A32] transition-all duration-300">#Cakes</a>
                                 </div>
                             </div>
 
@@ -819,7 +899,7 @@ const RgUserHome = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </button>
 
                     {/* Post Card */}
                     <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
@@ -966,7 +1046,8 @@ const RgUserHome = () => {
                 </div>
 
 
-                <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-[34px] right-[223px]">
+                <button onClick={() => setShowReviewForm(true)}
+                    className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-[34px] right-[223px]">
                     <div className="font-inter text-[16px] font-light text-black">
                         Review
                     </div>
@@ -979,7 +1060,7 @@ const RgUserHome = () => {
                 <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
 
                     {/* Review Card */}
-                    <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
+                    <button onClick={() => setShowReviewView(true)} className="text-left w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
                         <div className="flex flex-row justify-between items-center">
                             {/* Profile and time */}
                             <div className="flex flex-row gap-[6px]">
@@ -1039,7 +1120,7 @@ const RgUserHome = () => {
                                 );
                             })}
                         </div>
-                    </div>
+                    </button>
 
                     {/* Review Card */}
                     <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
