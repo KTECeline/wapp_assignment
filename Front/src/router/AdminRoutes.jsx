@@ -4,6 +4,7 @@ import AdminLayout from '../components/AdminLayout';
 import Dashboard from '../pages/admin/Dashboard';
 import Users from '../pages/admin/Users';
 import Courses from '../pages/admin/Courses';
+import CoursesEdit from '../pages/admin/CoursesEdit';
 import Posts from '../pages/admin/Posts';
 import Feedback from '../pages/admin/Feedback';
 import Badges from '../pages/admin/Badges';
@@ -19,6 +20,7 @@ export default function AdminRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="users" element={<Users />} />
         <Route path="courses" element={<Courses />} />
+  <Route path="courses/edit" element={<CoursesEdit />} />
         <Route path="posts" element={<Posts />} />
         <Route path="feedback" element={<Feedback />} />
         <Route path="badges" element={<Badges />} />

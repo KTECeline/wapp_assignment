@@ -4,7 +4,8 @@ import Modal from '../../components/Modal';
 import { badges as seed } from '../../data/badges';
 import { useConfirm } from '../../components/Confirm';
 import { useToast } from '../../components/Toast';
-import { Search, Filter, Plus, Edit, Trash2, Medal, Award, Crown } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, Medal, Award, Crown, Users as UsersIcon } from 'lucide-react';
+import { getBadgeStats } from '../../api/client';
 
 export default function Badges() {
   const [items, setItems] = useState(seed);
@@ -15,6 +16,7 @@ export default function Badges() {
   const [tierFilter, setTierFilter] = useState('All');
   const { add } = useToast();
   const { confirm } = useConfirm();
+  const [statsMap, setStatsMap] = useState({});
 
   // Filter and search functionality
   React.useEffect(() => {
@@ -35,6 +37,24 @@ export default function Badges() {
 
     setFilteredItems(filtered);
   }, [items, searchTerm, tierFilter]);
+
+  // Load badge stats from backend if available (graceful fallback)
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const stats = await getBadgeStats();
+        if (!mounted) return;
+        const map = {};
+        // Expecting [{ title: string, count: number }]
+        stats.forEach((s) => { if (s && s.title != null) map[s.title] = Number(s.count || 0); });
+        setStatsMap(map);
+      } catch (e) {
+        // silently ignore if endpoint not present
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const onSave = (e) => {
     e.preventDefault();
@@ -153,13 +173,22 @@ export default function Badges() {
 
       {/* Badges Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((b, idx) => (
+        {filteredItems.map((b, idx) => {
+          const count = statsMap[b.title] ?? Number(b.count || 0);
+          return (
           <Card key={idx}>
             <div className="flex items-start gap-4">
               <div className="text-4xl">{b.icon}</div>
               <div className="flex-1">
                 <div className="font-semibold text-gray-900 mb-1">{b.title}</div>
                 <div className="text-sm text-gray-600 mb-3">{b.criteria}</div>
+                <div className="mb-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs" style={{ borderColor: 'var(--beige)', background: '#fff', color: 'var(--accent-dark)' }}>
+                    <UsersIcon className="w-3.5 h-3.5" />
+                    <span className="font-medium">{count}</span>
+                    <span className="opacity-70">earned</span>
+                  </span>
+                </div>
                 <div className="flex gap-2">
                   <button 
                     className="p-2 border border-[#D9433B] text-[#D9433B] hover:bg-[#FFF0EE] rounded-xl transition-all duration-200" 
@@ -184,7 +213,7 @@ export default function Badges() {
               </div>
             </div>
           </Card>
-        ))}
+        );})}
       </div>
 
       {/* Add/Edit Badge Modal */}

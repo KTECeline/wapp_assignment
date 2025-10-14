@@ -13,3 +13,11 @@ export async function createUser(user) {
   if (!res.ok) throw new Error(`Failed to create user: ${res.status}`);
   return res.json();
 }
+
+// Optional: fetch badge statistics if your backend exposes it
+// Expected response example: [{ title: 'Croissant Novice', count: 12 }, ...]
+export async function getBadgeStats() {
+  const res = await fetch('/api/Badges/stats');
+  if (!res.ok) throw new Error(`Failed to fetch badge stats: ${res.status}`);
+  return res.json();
+}

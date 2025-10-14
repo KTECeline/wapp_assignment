@@ -42,11 +42,8 @@ export default function AdminLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <img src="/images/WAPP_Logo.png" alt="WAPP Logo" className="h-10 w-10" />
-            <div className="hidden md:block">
-              <h1 className="font-ibarra text-xl font-bold text-[#D9433B]">De Pastry Lab</h1>
-              <p className="text-xs text-gray-600">Admin Panel</p>
-            </div>
+            <img src="/images/WAPP_Logo.png" alt="WAPP Logo" className="h-10 w-50" />
+            
           </div>
 
           {/* Center - Search Bar */}
