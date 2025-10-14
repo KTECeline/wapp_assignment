@@ -1,3 +1,67 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+	--bg: #FFF8F2;           /* pastel cream */
+	--text: #3D3D3D;         /* primary text */
+	--accent: #D9433B;       /* bakery red */
+	--accent-dark: #B13A33;  /* darker bakery red */
+	--beige: #F5E9E1;        /* secondary beige */
+}
+
+html, body, #root {
+	height: 100%;
+}
+
+body {
+	background: var(--bg);
+	font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+	color: var(--text);
+}
+
+/* Pastel button utilities (vanilla CSS equivalent of Tailwind utilities) */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.75rem; /* rounded-xl */
+	padding: 0.5rem 0.75rem; /* px-3 py-2 */
+	font-size: 0.875rem; /* text-sm */
+	font-weight: 500; /* font-medium */
+	transition: transform 150ms ease, background-color 150ms ease, color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+	will-change: transform;
+}
+.btn-primary {
+	background-color: var(--accent);
+	color: #ffffff;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.btn-primary:hover { background-color: var(--accent-dark); }
+
+.btn-outline {
+	border: 1px solid var(--beige);
+	color: var(--accent-dark);
+	background-color: #ffffff;
+}
+.btn-outline:hover { background-color: #fff5ef; }
+
+.btn-ghost {
+	color: var(--accent);
+	background: transparent;
+}
+.btn-ghost:hover { background-color: #fff5ef; }
+
+.btn-warning {
+	background-color: #fef3c7; /* amber-100 */
+	color: #92400e; /* amber-800 */
+}
+.btn-warning:hover { background-color: #fde68a; } /* amber-200 */
+
+.btn-danger {
+	background-color: #FDE6E4;
+	color: var(--accent-dark);
+}
+.btn-danger:hover { background-color: #FAD1CD; }
+
+.btn:hover { transform: translateY(-1px); }

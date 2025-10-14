@@ -1,5 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AdminRoutes from './router/AdminRoutes';
+import { ToastProvider } from './components/Toast';
+import { ConfirmProvider } from './components/Confirm';
 // Import pages like Home, Explore
 import TestBackend from './TestBackend'; 
 import RgUserHome from "./pages/RgUserHome.tsx"; 
@@ -26,6 +29,9 @@ import LandingPage from "./pages/LandingPage.tsx";
 function App() {
   return (
     <Router>
+  <ToastProvider>
+  <ConfirmProvider>
+      <AdminRoutes />
       <Routes>
         <Route path="/TestBackend" element={<TestBackend />} />
         <Route path="/RgUserHome" element={<RgUserHome />} />
@@ -50,6 +56,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         
       </Routes>
+      </ConfirmProvider>
+      </ToastProvider>
     </Router>
   );
 }
