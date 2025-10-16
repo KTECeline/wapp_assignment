@@ -8,11 +8,6 @@ dist/
 
 # ASP.NET
 bin/
-
-# SQLite
-*.db
-*.db-shm
-*.db-wal
 obj/
 *.db
 
