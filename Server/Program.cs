@@ -33,16 +33,9 @@ app.UseCors("AllowAll");
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    if (!db.Users.Any())
-    {
-        db.Users.AddRange(
-            new User { Username = "Alice" },
-            new User { Username = "Bob" },
-            new User { Username = "Charlie" }
-        );
-        db.SaveChanges();
-    }
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    DatabaseSeeder.Initialize(context);
 }
 
 
