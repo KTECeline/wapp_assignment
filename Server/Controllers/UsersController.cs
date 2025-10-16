@@ -24,6 +24,6 @@ public class UsersController : ControllerBase
     {
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetUsers), new { id = user.UserID }, user);
+        return CreatedAtAction(nameof(GetUsers), new { id = user.UserId }, user);
     }
 }
