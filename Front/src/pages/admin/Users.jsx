@@ -3,7 +3,7 @@ import Card from '../../components/Card';
 import Table from '../../components/Table';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { getUsers, createUser } from '../../api/client';
+import { getUsers, createUser, updateUser, deleteUser } from '../../api/client';
 import { useConfirm } from '../../components/Confirm';
 import { Search, Filter, Plus, Edit, Trash2 } from 'lucide-react';
 
@@ -19,8 +19,12 @@ export default function Users() {
   const { confirm } = useConfirm();
 
   const columns = [
-    { key: 'UserID', title: 'ID' },
-    { key: 'Username', title: 'Username' },
+    { key: 'userId', title: 'ID' },
+    { key: 'username', title: 'Username' },
+    { key: 'email', title: 'Email' },
+    { key: 'firstName', title: 'First Name' },
+    { key: 'lastName', title: 'Last Name' },
+    { key: 'userType', title: 'User Type' },
   ];
 
   useEffect(() => {
@@ -48,8 +52,9 @@ export default function Users() {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(user => 
-        user.Username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.UserID?.toString().includes(searchTerm)
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.userId?.toString().includes(searchTerm) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -68,12 +73,26 @@ export default function Users() {
     const record = Object.fromEntries(form.entries());
     try {
       if (editing != null) {
+        const current = rows[editing];
+        const updated = await updateUser(current.userId, {
+          username: record.name || current.username,
+          email: record.email || current.email,
+          firstName: record.firstName || current.firstName,
+          lastName: record.lastName || current.lastName,
+          userType: record.userType || current.userType,
+        });
         const next = [...rows];
-        next[editing] = { ...next[editing], ...record };
+        next[editing] = updated;
         setRows(next);
-        add('User updated (local only)');
+        add('User updated');
       } else {
-        const created = await createUser({ Username: record.name || record.Username });
+        const created = await createUser({
+          username: record.name,
+          email: record.email,
+          firstName: record.firstName || '',
+          lastName: record.lastName || '',
+          userType: record.userType || '',
+        });
         setRows(prev => [...prev, created]);
         add('User added');
       }
@@ -163,8 +182,13 @@ export default function Users() {
                   className="p-2 bg-[#D9433B] text-white hover:bg-[#B13A33] rounded-xl transition-all duration-200" 
                   onClick={async () => { 
                     if (await confirm({ title: 'Delete user?', body: 'This action cannot be undone.' })) { 
-                      setRows(prev => prev.filter(r => r !== row)); 
-                      add('User deleted (local only)'); 
+                      try {
+                        await deleteUser(row.userId);
+                        setRows(prev => prev.filter(r => r.userId !== row.userId));
+                        add('User deleted');
+                      } catch(e) {
+                        add(`Delete failed: ${e.message}`, 'error');
+                      }
                     } 
                   }}
                   title="Delete user"
@@ -201,10 +225,47 @@ export default function Users() {
             <label className="block text-sm text-gray-700 font-medium mb-2">Username</label>
             <input 
               name="name" 
-              defaultValue={editing != null ? rows[editing]?.Username : ''} 
+              defaultValue={editing != null ? rows[editing]?.username : ''} 
               className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
               placeholder="Enter username"
               required
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 font-medium mb-2">Email</label>
+            <input 
+              name="email" 
+              type="email"
+              defaultValue={editing != null ? rows[editing]?.email : ''} 
+              className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
+              placeholder="Enter email"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 font-medium mb-2">First Name</label>
+            <input 
+              name="firstName" 
+              defaultValue={editing != null ? rows[editing]?.firstName : ''} 
+              className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
+              placeholder="Enter first name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 font-medium mb-2">Last Name</label>
+            <input 
+              name="lastName" 
+              defaultValue={editing != null ? rows[editing]?.lastName : ''} 
+              className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
+              placeholder="Enter last name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 font-medium mb-2">User Type</label>
+            <input 
+              name="userType" 
+              defaultValue={editing != null ? rows[editing]?.userType : ''} 
+              className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
+              placeholder="Enter user type (e.g. admin, user)"
             />
           </div>
           {/* Additional fields can be added here when backend supports them */}

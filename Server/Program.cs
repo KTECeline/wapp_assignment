@@ -1,3 +1,4 @@
+using Server.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -23,13 +24,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// 👉 Enable CORS before mapping controllers/endpoints
+app.UseCors("AllowAll");
+
 app.UseHttpsRedirection();
 
 app.MapControllers();
-app.Run();
-
-// 👉 Enable CORS before mapping controllers/endpoints
-app.UseCors("AllowAll");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -37,6 +37,8 @@ using (var scope = app.Services.CreateScope())
     var context = services.GetRequiredService<ApplicationDbContext>();
     DatabaseSeeder.Initialize(context);
 }
+
+app.Run();
 
 
 

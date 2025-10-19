@@ -49,21 +49,23 @@ public static class DatabaseSeeder
         context.Users.AddRange(users);
         
         // Add test categories
+
         var categories = new[]
         {
-            new Category { Name = "Beginner", Description = "For beginners" },
-            new Category { Name = "Intermediate", Description = "For intermediate users" },
-            new Category { Name = "Advanced", Description = "For advanced users" }
+            new Category { Title = "Beginner", Description = "For beginners" },
+            new Category { Title = "Intermediate", Description = "For intermediate users" },
+            new Category { Title = "Advanced", Description = "For advanced users" }
         };
 
         context.Categories.AddRange(categories);
 
         // Add test levels
+
         var levels = new[]
         {
-            new Level { Name = "Level 1", Description = "First level" },
-            new Level { Name = "Level 2", Description = "Second level" },
-            new Level { Name = "Level 3", Description = "Third level" }
+            new Level { Title = "Level 1", Description = "First level" },
+            new Level { Title = "Level 2", Description = "Second level" },
+            new Level { Title = "Level 3", Description = "Third level" }
         };
 
         context.Levels.AddRange(levels);
