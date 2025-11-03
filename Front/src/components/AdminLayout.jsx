@@ -136,13 +136,7 @@ export default function AdminLayout() {
         <main className="flex-1 min-h-screen">
           <div className="p-6 md:p-8">
             <div className="max-w-7xl mx-auto">
-              {/* Page Header */}
-              <div className="mb-8">
-                <h1 className="font-ibarra text-3xl font-bold text-gray-800 mb-2">
-                  {getGreeting()}, Chef! 👨‍🍳
-                </h1>
-                <p className="text-gray-600">Welcome back to your pastry kitchen dashboard</p>
-              </div>
+             
 
               {/* Page Content */}
               <AnimatePresence mode="wait">

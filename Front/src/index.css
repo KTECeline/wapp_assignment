@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-	--bg: #FFF8F2;           /* pastel cream */
-	--text: #3D3D3D;         /* primary text */
-	--accent: #D9433B;       /* bakery red */
-	--accent-dark: #B13A33;  /* darker bakery red */
-	--beige: #F5E9E1;        /* secondary beige */
+	--bg: #FFFFFF;           /* main white */
+	--text: #3D3D3D;         /* neutral primary text */
+	--accent: #D9433B;       /* red accent */
+	--accent-dark: #B13A33;  /* darker red accent */
+	--beige: #FFFFFF;        /* neutralized to white */
 }
 
 html, body, #root {
@@ -40,11 +40,11 @@ body {
 .btn-primary:hover { background-color: var(--accent-dark); }
 
 .btn-outline {
-	border: 1px solid var(--beige);
+	border: 1px solid #FECACA; /* red-200 */
 	color: var(--accent-dark);
 	background-color: #ffffff;
 }
-.btn-outline:hover { background-color: #fff5ef; }
+.btn-outline:hover { background-color: #FEE2E2; } /* red-100 */
 
 .btn-ghost {
 	color: var(--accent);
@@ -53,10 +53,10 @@ body {
 .btn-ghost:hover { background-color: #fff5ef; }
 
 .btn-warning {
-	background-color: #fef3c7; /* amber-100 */
-	color: #92400e; /* amber-800 */
+	background-color: #FEE2E2; /* red-100 */
+	color: #991B1B; /* red-800 */
 }
-.btn-warning:hover { background-color: #fde68a; } /* amber-200 */
+.btn-warning:hover { background-color: #FECACA; } /* red-200 */
 
 .btn-danger {
 	background-color: #FDE6E4;
