@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Card from '../../components/Card';
 import { announcements as seed } from '../../data/announcements';
 import { useConfirm } from '../../components/Confirm';
@@ -7,6 +7,7 @@ import DropUpload from '../../components/DropUpload.jsx';
 
 export default function Announcements() {
   const [items, setItems] = useState(seed);
+  const [query, setQuery] = useState('');
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [banner, setBanner] = useState();
@@ -74,21 +75,54 @@ export default function Announcements() {
     setZoom(1); setOffsetX(0); setOffsetY(0); setImgMeta({ width: 0, height: 0 });
     add('Announcement posted');
   };
+  const filtered = useMemo(() => {
+    if (!query.trim()) return items;
+    const q = query.toLowerCase();
+    return items.filter(a => (a.title || '').toLowerCase().includes(q) || (a.body || '').toLowerCase().includes(q));
+  }, [items, query]);
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-slate-800">Announcements</h2>
+    <div className="space-y-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">Announcements</h2>
+          <p className="text-sm text-gray-500">Create and manage platform-wide updates</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              value={query}
+              onChange={(e)=>setQuery(e.target.value)}
+              className="w-64 md:w-72 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              style={{ borderColor: '#F2E6E0', boxShadow: 'inset 0 0 0 0px transparent' }}
+              placeholder="Search announcements..."
+            />
+          </div>
+        </div>
+      </div>
       <Card title="Create announcement">
         <div className="space-y-4">
-          <input value={title} onChange={(e)=>setTitle(e.target.value)} className="w-full rounded-xl border border-rose-200 px-3 py-2" placeholder="Title (optional)" />
-          <textarea value={text} onChange={(e)=>setText(e.target.value)} className="w-full min-h-32 rounded-xl border border-rose-200 p-3" placeholder="Write something..." />
+          <input
+            value={title}
+            onChange={(e)=>setTitle(e.target.value)}
+            className="w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2"
+            style={{ borderColor: '#F2E6E0' }}
+            placeholder="Title (optional)"
+          />
+          <textarea
+            value={text}
+            onChange={(e)=>setText(e.target.value)}
+            className="w-full min-h-32 rounded-xl border p-3 focus:outline-none focus:ring-2"
+            style={{ borderColor: '#F2E6E0' }}
+            placeholder="Write something..."
+          />
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Banner size to adjust (3:1)</label>
-            <div className="rounded-xl border p-3 space-y-3 bg-white/60" style={{ borderColor: 'var(--beige)' }}>
+            <label className="block text-sm font-medium">Banner (3:1)</label>
+            <div className="rounded-xl border p-3 space-y-3 bg-white" style={{ borderColor: '#F2E6E0' }}>
               <DropUpload className="!border-0" value={banner} onChange={setBanner} description="Recommended: 1200x400 (3:1)" />
               {bannerPreview ? (
                 <>
                   <div className="text-xs text-gray-600">Image size: {imgMeta.width} × {imgMeta.height} • Target: {TARGET_W} × {TARGET_H} (3:1)</div>
-                  <div className="rounded-lg overflow-hidden bg-rose-50/40">
+                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#FFF8F2' }}>
                     <div className="relative w-full" style={{ aspectRatio: '3 / 1' }}>
                       <img
                         src={bannerPreview}
@@ -130,24 +164,45 @@ export default function Announcements() {
         </div>
       </Card>
       <div className="space-y-3">
-        {items.map((a, i) => (
+        {filtered.map((a, i) => (
           <Card key={i}>
             {a.banner ? (
-              <div className="w-full mb-3 rounded-xl overflow-hidden border" style={{ borderColor: 'var(--beige)' }}>
-                <div className="w-full" style={{ aspectRatio: '3 / 1', backgroundColor: '#FFF4F2' }}>
+              <div className="w-full mb-3 rounded-xl overflow-hidden border" style={{ borderColor: '#F2E6E0' }}>
+                <div className="w-full" style={{ aspectRatio: '3 / 1', backgroundColor: '#FFF8F2' }}>
                   <img src={a.banner} alt="Announcement banner" className="w-full h-full object-cover" />
                 </div>
               </div>
             ) : null}
             <div className="flex items-start justify-between">
               <div>
-                <div className="font-semibold text-slate-800">{a.title}</div>
-                <div className="text-sm text-slate-600 whitespace-pre-wrap">{a.body}</div>
-                <div className="text-xs text-rose-500 mt-1">{a.date}</div>
+                <div className="font-semibold text-gray-900">{a.title}</div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">{a.body}</div>
+                <div className="inline-flex items-center gap-2 mt-2 text-xs rounded-full px-2 py-0.5 border" style={{ color: '#B13A33', borderColor: '#F2E6E0', backgroundColor: '#FFF8F2' }}>{a.date}</div>
               </div>
               <div className="flex gap-2">
-                <button className="btn btn-warning text-xs" onClick={() => { const title = prompt('Edit title', a.title); if (title!=null){ setItems(prev => prev.map((x,idx)=> idx===i? {...x,title}:x)); add('Announcement updated'); } }}>Edit</button>
-                <button className="btn btn-danger text-xs" onClick={async () => { if (await confirm({ title: 'Delete announcement?', body: 'This action cannot be undone.' })) { setItems(prev => prev.filter((_, idx) => idx !== i)); add('Announcement deleted'); } }}>Delete</button>
+                <button
+                  className="btn btn-outline text-xs"
+                  onClick={() => {
+                    const newTitle = prompt('Edit title', a.title);
+                    if (newTitle != null) {
+                      setItems(prev => prev.map((x,idx)=> idx===i? {...x,title:newTitle}:x));
+                      add('Announcement updated');
+                    }
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn btn-danger text-xs"
+                  onClick={async () => {
+                    if (await confirm({ title: 'Delete announcement?', body: 'This action cannot be undone.' })) {
+                      setItems(prev => prev.filter((_, idx) => idx !== i));
+                      add('Announcement deleted');
+                    }
+                  }}
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </Card>

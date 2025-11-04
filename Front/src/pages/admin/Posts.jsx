@@ -78,18 +78,20 @@ const initialPosts = [
 
 // Card Component
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-sm border border-slate-200 ${className}`}>
+  <div
+    className={`bg-white rounded-xl shadow-sm border ${className}`}
+    style={{ borderColor: '#F2E6E0' }}
+  >
     {children}
   </div>
 );
 
 // Toast Component
 const Toast = ({ message, type, onClose }) => (
-  <div className={`fixed top-6 right-6 px-5 py-3 rounded-xl shadow-xl text-white z-50 animate-slide-in ${
-    type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' : 
-    type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 
-    'bg-gradient-to-r from-blue-500 to-blue-600'
-  }`}>
+  <div
+    className={`fixed top-6 right-6 px-5 py-3 rounded-xl shadow-xl text-white z-50 animate-slide-in`}
+    style={{ backgroundColor: type === 'error' ? '#B13A33' : '#D9433B' }}
+  >
     <div className="flex items-center gap-3">
       <span className="font-medium">{message}</span>
       <button onClick={onClose} className="ml-2 hover:opacity-80 transition-opacity">
@@ -111,13 +113,13 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
     >
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors z-30 bg-white rounded-full p-1 shadow-md"
+        className="absolute top-3 right-3 text-slate-400 hover:text-[#D9433B] transition-colors z-30 bg-white rounded-full p-1 shadow-md"
       >
         <X size={24} />
       </button>
 
-      <button className="absolute top-3 right-14 cursor-pointer z-30 bg-white rounded-full p-1 shadow-md hover:bg-red-50 transition-colors">
-        <Heart className="w-6 h-6 text-slate-300 hover:text-red-500 transition-colors" />
+      <button className="absolute top-3 right-14 cursor-pointer z-30 bg-white rounded-full p-1 shadow-md hover:bg-[#FFF8F2] transition-colors">
+        <Heart className="w-6 h-6 text-slate-300 hover:text-[#D9433B] transition-colors" />
       </button>
 
       <div className="relative w-full md:w-[340px] h-64 md:h-full rounded-xl overflow-hidden flex-shrink-0">
@@ -132,10 +134,11 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
               <img
                 src={post.avatar}
                 alt={post.user}
-                className="w-11 h-11 rounded-full object-cover mr-3 border-2 border-rose-200"
+                className="w-11 h-11 rounded-full object-cover mr-3 border-2"
+                style={{ borderColor: '#F2E6E0' }}
               />
             ) : (
-              <div className="w-11 h-11 bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center rounded-full text-white text-lg font-semibold mr-3 shadow-md">
+              <div className="w-11 h-11 bg-[#D9433B] flex items-center justify-center rounded-full text-white text-lg font-semibold mr-3 shadow-md">
                 {post.user?.charAt(0)?.toUpperCase() || '?'}
               </div>
             )}
@@ -158,7 +161,8 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
               <a
                 key={index}
                 href={course.link}
-                className="inline-block px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-xs font-medium hover:bg-rose-100 transition-colors"
+                className="inline-block px-3 py-1 rounded-full text-xs font-medium border hover:bg-[#FFF1EC] transition-colors"
+                style={{ backgroundColor: '#FFF8F2', color: '#B13A33', borderColor: '#F2E6E0' }}
               >
                 #{course.name}
               </a>
@@ -167,12 +171,12 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+          <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: '#F2E6E0' }}>
             <div className="flex items-center gap-2">
-              <Heart className="text-rose-500 fill-rose-500" size={20} />
+              <Heart className="" size={20} style={{ color: '#D9433B', fill: '#D9433B' }} />
               <span className="text-base font-semibold text-slate-700">{post.likes} likes</span>
             </div>
-            <button className="text-slate-400 hover:text-blue-500 transition-colors">
+            <button className="text-slate-400 hover:text-[#B13A33] transition-colors">
               <Share2 size={20} />
             </button>
           </div>
@@ -181,13 +185,14 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
             <div className="flex gap-3">
               <button
                 onClick={() => onApprove(post.id)}
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg font-medium"
+                className="flex-1 border text-[#D9433B] hover:bg-[#FFF8F2] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md font-medium"
+                style={{ borderColor: '#D9433B' }}
               >
                 <Check size={18} /> Approve
               </button>
               <button
                 onClick={() => onReject(post.id)}
-                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg font-medium"
+                className="flex-1 bg-[#D9433B] hover:bg-[#B13A33] text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md font-medium"
               >
                 <XCircle size={18} /> Reject
               </button>
@@ -260,11 +265,11 @@ export default function Posts() {
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Manage Posts</h2>
-          <p className="text-sm text-slate-500 mt-1">Review and moderate user-generated content</p>
+          <h2 className="text-2xl font-semibold text-gray-900">Manage Posts</h2>
+          <p className="text-sm text-gray-500 mt-1">Review and moderate user-generated content</p>
         </div>
         
-        <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border border-slate-200">
+        <div className="flex items-center gap-2 bg-white rounded-xl p-1 shadow-sm border" style={{ borderColor: '#F2E6E0' }}>
           <Filter size={16} className="text-slate-400 ml-2" />
           {['all', 'pending', 'approved', 'rejected'].map((status) => (
             <button
@@ -272,12 +277,10 @@ export default function Posts() {
               onClick={() => setFilter(status)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 filter === status
-                  ? status === 'pending' ? 'bg-amber-500 text-white shadow-md' :
-                    status === 'approved' ? 'bg-green-500 text-white shadow-md' :
-                    status === 'rejected' ? 'bg-red-500 text-white shadow-md' :
-                    'bg-slate-800 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-[#D9433B] text-white shadow-sm'
+                  : 'text-[#B13A33] hover:bg-[#FFF8F2] border'
               }`}
+              style={{ borderColor: filter === status ? 'transparent' : '#F2E6E0' }}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)} ({statusCounts[status]})
             </button>
@@ -289,19 +292,18 @@ export default function Posts() {
         {filteredPosts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredPosts.map(post => (
-              <div key={post.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <div key={post.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 hover:-translate-y-1 group" style={{ borderColor: '#F2E6E0' }}>
                 <div className="relative h-48 overflow-hidden">
                   <img
                     src={post.image}
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm shadow-lg ${
-                    post.status === 'pending' ? 'bg-amber-500/90 text-white' :
-                    post.status === 'approved' ? 'bg-green-500/90 text-white' :
-                    'bg-red-500/90 text-white'
-                  }`}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div
+                    className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm shadow-sm border`}
+                    style={{ backgroundColor: '#FFF8F2', color: '#B13A33', borderColor: '#F2E6E0' }}
+                  >
                     {post.status.toUpperCase()}
                   </div>
                 </div>
@@ -309,30 +311,31 @@ export default function Posts() {
                 <div className="p-4">
                   <div className="flex items-center mb-3">
                     {post.avatar ? (
-                      <img src={post.avatar} alt={post.user} className="w-9 h-9 rounded-full mr-2.5 border-2 border-rose-200" />
+                      <img src={post.avatar} alt={post.user} className="w-9 h-9 rounded-full mr-2.5 border-2" style={{ borderColor: '#F2E6E0' }} />
                     ) : (
-                      <div className="w-9 h-9 bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center rounded-full text-white text-sm font-semibold mr-2.5 shadow-sm">
+                      <div className="w-9 h-9 bg-[#D9433B] flex items-center justify-center rounded-full text-white text-sm font-semibold mr-2.5 shadow-sm">
                         {post.user?.charAt(0)?.toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{post.user}</p>
-                      <p className="text-xs text-slate-500">{post.date}</p>
+                      <p className="text-sm font-semibold text-gray-800 truncate">{post.user}</p>
+                      <p className="text-xs text-gray-500">{post.date}</p>
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-base mb-2 text-slate-900 line-clamp-1">{post.title}</h3>
-                  <p className="text-sm text-slate-600 mb-3 line-clamp-2 leading-relaxed">{post.description}</p>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900 line-clamp-1">{post.title}</h3>
+                  <p className="text-sm text-gray-700 mb-3 line-clamp-2 leading-relaxed">{post.description}</p>
 
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-                    <Heart className="text-rose-500 fill-rose-500" size={16} />
-                    <span className="text-sm font-semibold text-slate-700">{post.likes}</span>
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b" style={{ borderColor: '#F2E6E0' }}>
+                    <Heart size={16} style={{ color: '#D9433B', fill: '#D9433B' }} />
+                    <span className="text-sm font-semibold text-gray-700">{post.likes}</span>
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedPost(post)}
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all shadow-sm hover:shadow-md"
+                      className="flex-1 border text-[#D9433B] hover:bg-[#FFF8F2] py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all shadow-sm hover:shadow-md"
+                      style={{ borderColor: '#D9433B' }}
                     >
                       <Eye size={16} /> View
                     </button>
@@ -340,14 +343,15 @@ export default function Posts() {
                       <>
                         <button
                           onClick={() => handleApprove(post.id)}
-                          className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition-all shadow-sm hover:shadow-md"
+                          className="border text-[#D9433B] hover:bg-[#FFF8F2] p-2 rounded-lg transition-all shadow-sm hover:shadow-md"
+                          style={{ borderColor: '#D9433B' }}
                           title="Approve"
                         >
                           <Check size={16} />
                         </button>
                         <button
                           onClick={() => handleReject(post.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-all shadow-sm hover:shadow-md"
+                          className="bg-[#D9433B] hover:bg-[#B13A33] text-white p-2 rounded-lg transition-all shadow-sm hover:shadow-md"
                           title="Reject"
                         >
                           <XCircle size={16} />
@@ -356,7 +360,8 @@ export default function Posts() {
                     )}
                     <button
                       onClick={() => handleDelete(post.id)}
-                      className="bg-slate-500 hover:bg-slate-600 text-white p-2 rounded-lg transition-all shadow-sm hover:shadow-md"
+                      className="border text-[#B13A33] hover:bg-[#FFF8F2] p-2 rounded-lg transition-all shadow-sm hover:shadow-md"
+                      style={{ borderColor: '#F2E6E0' }}
                       title="Delete"
                     >
                       <Trash2 size={16} />
@@ -368,11 +373,11 @@ export default function Posts() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
-              <Filter size={32} className="text-slate-400" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#FFF8F2] mb-4 border" style={{ borderColor: '#F2E6E0' }}>
+              <Filter size={28} className="" style={{ color: '#B13A33' }} />
             </div>
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">No posts found</h3>
-            <p className="text-sm text-slate-500">Try adjusting your filter to see more results</p>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">No posts found</h3>
+            <p className="text-sm text-gray-500">Try adjusting your filter to see more results</p>
           </div>
         )}
       </Card>
