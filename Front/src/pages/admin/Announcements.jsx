@@ -1,12 +1,52 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import Card from '../../components/Card';
-import { announcements as seed } from '../../data/announcements';
-import { useConfirm } from '../../components/Confirm';
-import { useToast } from '../../components/Toast';
-import DropUpload from '../../components/DropUpload.jsx';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Search, Plus, Image as ImageIcon, Edit2, Trash2, Calendar, X } from 'lucide-react';
+
+const announcements = [
+  { title: 'Platform Update', body: 'We have released new features including dark mode and improved notifications.', date: '2025-11-01', banner: null },
+  { title: 'Maintenance Notice', body: 'Scheduled maintenance on Sunday, 3 AM - 5 AM EST.', date: '2025-10-28', banner: null },
+];
+
+const Card = ({ children, className = '' }) => (
+  <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
+    {children}
+  </div>
+);
+
+const Toast = ({ message, onClose }) => (
+  <div className="fixed bottom-6 right-6 bg-white rounded-xl shadow-lg border border-red-100 p-4 flex items-center gap-3 animate-in slide-in-from-bottom-5">
+    <div className="w-1 h-12 bg-red-500 rounded-full"></div>
+    <span className="text-gray-800 font-medium">{message}</span>
+    <button onClick={onClose} className="ml-2 text-gray-400 hover:text-gray-600">
+      <X size={18} />
+    </button>
+  </div>
+);
+
+const ConfirmDialog = ({ title, body, onConfirm, onCancel }) => (
+  <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-gray-100">
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600 mb-6">{body}</p>
+      <div className="flex gap-3 justify-end">
+        <button
+          onClick={onCancel}
+          className="px-4 py-2 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onConfirm}
+          className="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 font-medium transition-colors"
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 export default function Announcements() {
-  const [items, setItems] = useState(seed);
+  const [items, setItems] = useState(announcements);
   const [query, setQuery] = useState('');
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
@@ -14,18 +54,22 @@ export default function Announcements() {
   const [bannerPreview, setBannerPreview] = useState();
   const [imgMeta, setImgMeta] = useState({ width: 0, height: 0 });
   const [zoom, setZoom] = useState(1);
-  const [offsetX, setOffsetX] = useState(0); // -1 .. 1
-  const [offsetY, setOffsetY] = useState(0); // -1 .. 1
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+  const [toast, setToast] = useState(null);
+  const [confirm, setConfirm] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const TARGET_W = 1200;
   const TARGET_H = 400;
-  const { add } = useToast();
-  const { confirm } = useConfirm();
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     if (!banner || !(banner instanceof File)) return setBannerPreview(undefined);
     const reader = new FileReader();
     reader.readAsDataURL(banner);
     reader.onloadend = () => setBannerPreview(reader.result);
   }, [banner]);
+
   useEffect(() => {
     if (!bannerPreview) { setImgMeta({ width: 0, height: 0 }); return; }
     const img = new Image();
@@ -35,7 +79,6 @@ export default function Announcements() {
 
   const cropBanner = async () => {
     if (!bannerPreview) return undefined;
-    // Ensure image is loaded
     const img = await new Promise((resolve) => {
       const im = new Image();
       im.onload = () => resolve(im);
@@ -45,7 +88,6 @@ export default function Announcements() {
     canvas.width = TARGET_W;
     canvas.height = TARGET_H;
     const ctx = canvas.getContext('2d');
-    // Base scale for cover, then apply zoom
     const baseScale = Math.max(TARGET_W / img.width, TARGET_H / img.height);
     const scale = baseScale * Math.max(1, zoom);
     const drawW = img.width * scale;
@@ -59,155 +101,324 @@ export default function Announcements() {
     ctx.drawImage(img, x, y, drawW, drawH);
     return canvas.toDataURL('image/jpeg', 0.9);
   };
+
   const onCreate = async () => {
     if (!title.trim() && !text.trim()) return;
     const finalBanner = await cropBanner();
     const record = {
       title: (title || text).slice(0, 80),
       body: text,
-      date: new Date().toISOString().slice(0,10),
+      date: new Date().toISOString().slice(0, 10),
       banner: finalBanner || bannerPreview,
     };
     setItems(prev => [record, ...prev]);
     setTitle('');
     setText('');
     setBanner(undefined);
-    setZoom(1); setOffsetX(0); setOffsetY(0); setImgMeta({ width: 0, height: 0 });
-    add('Announcement posted');
+    setZoom(1);
+    setOffsetX(0);
+    setOffsetY(0);
+    setImgMeta({ width: 0, height: 0 });
+    setIsCreating(false);
+    setToast('Announcement posted successfully!');
+    setTimeout(() => setToast(null), 3000);
   };
+
   const filtered = useMemo(() => {
     if (!query.trim()) return items;
     const q = query.toLowerCase();
     return items.filter(a => (a.title || '').toLowerCase().includes(q) || (a.body || '').toLowerCase().includes(q));
   }, [items, query]);
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Announcements</h2>
-          <p className="text-sm text-gray-500">Create and manage platform-wide updates</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <input
-              value={query}
-              onChange={(e)=>setQuery(e.target.value)}
-              className="w-64 md:w-72 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
-              style={{ borderColor: '#F2E6E0', boxShadow: 'inset 0 0 0 0px transparent' }}
-              placeholder="Search announcements..."
-            />
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">Announcements</h1>
+            <p className="text-gray-600">Create and manage platform-wide updates</p>
           </div>
-        </div>
-      </div>
-      <Card title="Create announcement">
-        <div className="space-y-4">
-          <input
-            value={title}
-            onChange={(e)=>setTitle(e.target.value)}
-            className="w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2"
-            style={{ borderColor: '#F2E6E0' }}
-            placeholder="Title (optional)"
-          />
-          <textarea
-            value={text}
-            onChange={(e)=>setText(e.target.value)}
-            className="w-full min-h-32 rounded-xl border p-3 focus:outline-none focus:ring-2"
-            style={{ borderColor: '#F2E6E0' }}
-            placeholder="Write something..."
-          />
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Banner (3:1)</label>
-            <div className="rounded-xl border p-3 space-y-3 bg-white" style={{ borderColor: '#F2E6E0' }}>
-              <DropUpload className="!border-0" value={banner} onChange={setBanner} description="Recommended: 1200x400 (3:1)" />
-              {bannerPreview ? (
-                <>
-                  <div className="text-xs text-gray-600">Image size: {imgMeta.width} × {imgMeta.height} • Target: {TARGET_W} × {TARGET_H} (3:1)</div>
-                  <div className="rounded-lg overflow-hidden" style={{ backgroundColor: '#FFF8F2' }}>
-                    <div className="relative w-full" style={{ aspectRatio: '3 / 1' }}>
-                      <img
-                        src={bannerPreview}
-                        alt="Adjust preview"
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none"
-                        style={{
-                          width: 'auto',
-                          height: 'auto',
-                          transform: `translate(-50%, -50%) scale(${Math.max(1, zoom) * Math.max(TARGET_W / Math.max(1, imgMeta.width), TARGET_H / Math.max(1, imgMeta.height))}) translate(${offsetX * 50}%, ${offsetY * 50}%)`,
-                          willChange: 'transform',
-                        }}
-                        draggable={false}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="block text-xs text-gray-600">Zoom: {zoom.toFixed(2)}x</label>
-                      <input type="range" min="1" max="3" step="0.01" value={zoom} onChange={(e)=>setZoom(parseFloat(e.target.value))} className="w-full" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-gray-600">Horizontal</label>
-                        <input type="range" min="-1" max="1" step="0.01" value={offsetX} onChange={(e)=>setOffsetX(parseFloat(e.target.value))} className="w-full" />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-600">Vertical</label>
-                        <input type="range" min="-1" max="1" step="0.01" value={offsetY} onChange={(e)=>setOffsetY(parseFloat(e.target.value))} className="w-full" />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : null}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 md:flex-initial">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full md:w-72 pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300 transition-all bg-white"
+                placeholder="Search announcements..."
+              />
             </div>
+            {!isCreating && (
+              <button
+                onClick={() => setIsCreating(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors font-medium shadow-sm hover:shadow-md"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">New</span>
+              </button>
+            )}
           </div>
         </div>
-        <div className="mt-3 flex justify-end">
-          <button className="btn btn-primary" onClick={onCreate}>Post</button>
-        </div>
-      </Card>
-      <div className="space-y-3">
-        {filtered.map((a, i) => (
-          <Card key={i}>
-            {a.banner ? (
-              <div className="w-full mb-3 rounded-xl overflow-hidden border" style={{ borderColor: '#F2E6E0' }}>
-                <div className="w-full" style={{ aspectRatio: '3 / 1', backgroundColor: '#FFF8F2' }}>
-                  <img src={a.banner} alt="Announcement banner" className="w-full h-full object-cover" />
+
+        {/* Create Form */}
+        {isCreating && (
+          <Card className="border-red-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Create Announcement</h2>
+              <button
+                onClick={() => {
+                  setIsCreating(false);
+                  setTitle('');
+                  setText('');
+                  setBanner(undefined);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Title (optional)</label>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300 transition-all"
+                  placeholder="Enter a catchy title..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className="w-full min-h-32 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300 transition-all resize-none"
+                  placeholder="What would you like to announce?"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <ImageIcon size={16} />
+                  Banner Image (3:1 ratio)
+                </label>
+                <div
+                  className="rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const f = e.dataTransfer?.files?.[0];
+                    if (f) setBanner(f);
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setBanner(e.target.files?.[0])}
+                    className="hidden"
+                    id="banner-upload"
+                    ref={fileInputRef}
+                  />
+                  <label htmlFor="banner-upload" className="cursor-pointer block text-center">
+                    {!bannerPreview ? (
+                      <div className="space-y-2">
+                        <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface)' }}>
+                          <ImageIcon style={{ color: 'var(--accent)' }} size={20} />
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium" style={{ color: 'var(--accent)' }}>Click to upload</span> or drag and drop
+                        </div>
+                        <div className="text-xs text-gray-500">Recommended: 1200x400 pixels</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="text-xs text-gray-600 text-left">
+                          Image: {imgMeta.width} × {imgMeta.height}px • Target: {TARGET_W} × {TARGET_H}px
+                        </div>
+                        <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--surface)' }}>
+                          <div className="relative w-full" style={{ aspectRatio: '3 / 1' }}>
+                            <img
+                              src={bannerPreview}
+                              alt="Preview"
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none"
+                              style={{
+                                width: 'auto',
+                                height: 'auto',
+                                transform: `translate(-50%, -50%) scale(${Math.max(1, zoom) * Math.max(TARGET_W / Math.max(1, imgMeta.width), TARGET_H / Math.max(1, imgMeta.height))}) translate(${offsetX * 50}%, ${offsetY * 50}%)`,
+                              }}
+                              draggable={false}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-3 text-left">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-xs font-medium text-gray-700">Zoom</label>
+                              <span className="text-xs text-gray-600">{zoom.toFixed(2)}x</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="3"
+                              step="0.01"
+                              value={zoom}
+                              onChange={(e) => setZoom(parseFloat(e.target.value))}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Horizontal</label>
+                              <input
+                                type="range"
+                                min="-1"
+                                max="1"
+                                step="0.01"
+                                value={offsetX}
+                                onChange={(e) => setOffsetX(parseFloat(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Vertical</label>
+                              <input
+                                type="range"
+                                min="-1"
+                                max="1"
+                                step="0.01"
+                                value={offsetY}
+                                onChange={(e) => setOffsetY(parseFloat(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setBanner(undefined);
+                            setBannerPreview(undefined);
+                          }}
+                          className="text-xs font-medium"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          Remove image
+                        </button>
+                      </div>
+                    )}
+                  </label>
                 </div>
               </div>
-            ) : null}
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="font-semibold text-gray-900">{a.title}</div>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">{a.body}</div>
-                <div className="inline-flex items-center gap-2 mt-2 text-xs rounded-full px-2 py-0.5 border" style={{ color: '#B13A33', borderColor: '#F2E6E0', backgroundColor: '#FFF8F2' }}>{a.date}</div>
-              </div>
-              <div className="flex gap-2">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
-                  className="btn btn-outline text-xs"
                   onClick={() => {
-                    const newTitle = prompt('Edit title', a.title);
-                    if (newTitle != null) {
-                      setItems(prev => prev.map((x,idx)=> idx===i? {...x,title:newTitle}:x));
-                      add('Announcement updated');
-                    }
+                    setIsCreating(false);
+                    setTitle('');
+                    setText('');
+                    setBanner(undefined);
                   }}
+                  className="px-5 py-2.5 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
                 >
-                  Edit
+                  Cancel
                 </button>
                 <button
-                  className="btn btn-danger text-xs"
-                  onClick={async () => {
-                    if (await confirm({ title: 'Delete announcement?', body: 'This action cannot be undone.' })) {
-                      setItems(prev => prev.filter((_, idx) => idx !== i));
-                      add('Announcement deleted');
-                    }
-                  }}
+                  onClick={onCreate}
+                  disabled={!title.trim() && !text.trim()}
+                  className="px-5 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed font-medium transition-colors shadow-sm hover:shadow-md"
                 >
-                  Delete
+                  Post Announcement
                 </button>
               </div>
             </div>
           </Card>
-        ))}
+        )}
+
+        {/* Announcements List */}
+        <div className="space-y-4">
+          {filtered.length === 0 && (
+            <Card className="text-center py-12">
+              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <Search className="text-gray-400" size={24} />
+              </div>
+              <p className="text-gray-600">No announcements found</p>
+            </Card>
+          )}
+          {filtered.map((a, i) => (
+            <Card key={i} className="hover:shadow-md transition-shadow">
+              {a.banner && (
+                <div className="w-full mb-4 rounded-xl overflow-hidden border border-gray-100">
+                  <div className="w-full" style={{ aspectRatio: '3 / 1' }}>
+                    <img src={a.banner} alt="Banner" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              )}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  {a.title && (
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{a.title}</h3>
+                  )}
+                  <p className="text-gray-700 whitespace-pre-wrap mb-3">{a.body}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Calendar size={14} />
+                    <span>{new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      const newTitle = prompt('Edit title:', a.title);
+                      if (newTitle != null) {
+                        setItems(prev => prev.map((x, idx) => idx === i ? { ...x, title: newTitle } : x));
+                        setToast('Announcement updated');
+                        setTimeout(() => setToast(null), 3000);
+                      }
+                    }}
+                    className="p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-red-500 transition-colors"
+                    title="Edit"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirm({
+                        title: 'Delete announcement?',
+                        body: 'This action cannot be undone.',
+                        onConfirm: () => {
+                          setItems(prev => prev.filter((_, idx) => idx !== i));
+                          setToast('Announcement deleted');
+                          setTimeout(() => setToast(null), 3000);
+                          setConfirm(null);
+                        },
+                      });
+                    }}
+                    className="p-2 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
+
+      {/* Toast */}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+
+      {/* Confirm Dialog */}
+      {confirm && (
+        <ConfirmDialog
+          title={confirm.title}
+          body={confirm.body}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
     </div>
   );
 }

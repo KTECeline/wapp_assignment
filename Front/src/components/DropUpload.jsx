@@ -15,6 +15,7 @@ export default function DropUpload({
   preview: customPreview,
 }) {
   const ref = useRef(null);
+  const inputRef = useRef(null);
   const [focus, setFocus] = useState(false);
 
   const dragenter = useCallback((event) => {
@@ -91,8 +92,20 @@ export default function DropUpload({
 
   return (
     <div
-      className={`${className} ${focus ? 'ring-primary-500 border-primary-500' : 'border-gray-300 border-dashed'} flex justify-center border-2 rounded-md`}
+      className={`${className} flex justify-center rounded-xl border-2 border-dashed`}
+      style={{ borderColor: focus ? '#D9433B' : '#F2E6E0', boxShadow: focus ? '0 0 0 2px rgba(217, 67, 59, 0.15)' : 'none' }}
       ref={ref}
+      onClick={() => {
+        if (!disabled) inputRef.current?.click();
+      }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
     >
       <div className="space-y-1 text-center px-6 pt-5 pb-6 flex flex-col items-center justify-center">
         {previewURL ? (
@@ -100,7 +113,7 @@ export default function DropUpload({
             <img src={previewURL} alt="Preview" className="mx-auto w-40 h-40 object-contain max-w-full mb-4" draggable={false} />
             {value ? (
               <AiFillCloseCircle
-                className="w-5 h-5 text-red-500 absolute right-0 top-0 cursor-pointer rounded-full"
+                className="w-5 h-5 text-[#B13A33] absolute right-0 top-0 cursor-pointer rounded-full"
                 onClick={() => onChange?.(undefined)}
               />
             ) : null}
@@ -113,9 +126,11 @@ export default function DropUpload({
           )
         )}
         <div className="flex text-sm text-gray-600 flex-row items-center">
-          <label className="font-inter relative cursor-pointer bg-white rounded-md text-black px-2 py-1 border border-black transition-all duration-[600ms] hover:scale-105">
+          <label className="font-inter relative cursor-pointer bg-white rounded-md text-[#B13A33] px-2 py-1 border transition-all duration-200 hover:bg-[#FFF8F2]"
+            style={{ borderColor: '#D9433B' }}
+          >
             <span>{title}</span>
-            <input type="file" accept={accept} className="sr-only" onChange={onInputChange} disabled={disabled} />
+            <input ref={inputRef} type="file" accept={accept || 'image/*'} className="sr-only" onChange={onInputChange} disabled={disabled} />
           </label>
           <p className="pl-[6px] text-gray-500">or drag and drop</p>
         </div>

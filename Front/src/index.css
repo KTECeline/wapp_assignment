@@ -7,7 +7,9 @@
 	--text: #3D3D3D;         /* neutral primary text */
 	--accent: #D9433B;       /* red accent */
 	--accent-dark: #B13A33;  /* darker red accent */
-	--beige: #FFFFFF;        /* neutralized to white */
+	--beige: #FFFFFF;        /* legacy var kept for compatibility */
+	--border: #F2E6E0;       /* subtle beige border */
+	--surface: #FFF8F2;      /* subtle tinted surface */
 }
 
 html, body, #root {
