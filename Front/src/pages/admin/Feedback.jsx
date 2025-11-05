@@ -1,234 +1,445 @@
 import React, { useState } from 'react';
-import Card from '../../components/Card';
-import Table from '../../components/Table';
-import Modal from '../../components/Modal';
-import { feedback as seed } from '../../data/feedback';
-import { useToast } from '../../components/Toast';
-import { Search, Filter, MessageSquare, CheckCircle, Clock, Star } from 'lucide-react';
+import { Search, Filter, MessageSquare, CheckCircle, Clock, Star, TrendingUp, AlertCircle, Eye, Archive, MoreVertical, Send, Sparkles, ChevronDown } from 'lucide-react';
 
-export default function Feedback() {
-  const [rows, setRows] = useState(seed);
-  const [filteredRows, setFilteredRows] = useState(seed);
-  const [open, setOpen] = useState(false);
-  const [replyTo, setReplyTo] = useState(null);
+// Mock data
+const seedFeedback = [
+  { id: 1, user: 'Sarah Chen', email: 'sarah@example.com', message: 'Love the new dashboard! The analytics are super helpful.', status: 'Resolved', rating: 5, date: '2024-11-04', category: 'Feature', priority: 'low', avatar: 'SC' },
+  { id: 2, user: 'Mike Rodriguez', email: 'mike@example.com', message: 'The app crashes when I try to export reports.', status: 'Pending', rating: 2, date: '2024-11-03', category: 'Bug', priority: 'high', avatar: 'MR' },
+  { id: 3, user: 'Emma Wilson', email: 'emma@example.com', message: 'Great service but could use more payment options.', status: 'In Progress', rating: 4, date: '2024-11-02', category: 'Feature', priority: 'medium', avatar: 'EW' },
+  { id: 4, user: 'James Liu', email: 'james@example.com', message: 'Support team is amazing! Resolved my issue in minutes.', status: 'Resolved', rating: 5, date: '2024-11-01', category: 'Support', priority: 'low', avatar: 'JL' },
+  { id: 5, user: 'Olivia Brown', email: 'olivia@example.com', message: 'UI is confusing on mobile devices.', status: 'Pending', rating: 3, date: '2024-10-31', category: 'UX', priority: 'medium', avatar: 'OB' },
+];
+
+function Card({ children, className = '' }) {
+  return (
+    <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
+      {children}
+    </div>
+  );
+}
+
+export default function FeedbackV2() {
+  const [rows, setRows] = useState(seedFeedback);
+  const [filteredRows, setFilteredRows] = useState(seedFeedback);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [ratingFilter, setRatingFilter] = useState('All');
-  const { add } = useToast();
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'detail'
+  const [showFilters, setShowFilters] = useState(false);
 
-  const columns = [
-    { key: 'user', title: 'User' },
-    { key: 'message', title: 'Message' },
-    { key: 'status', title: 'Status' },
-  ];
-
-  // Filter and search functionality
+  // Filter functionality
   React.useEffect(() => {
     let filtered = rows;
 
-    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(feedback => 
-        feedback.user?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        feedback.message?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(f => 
+        f.user?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Status filter
     if (statusFilter !== 'All') {
-      filtered = filtered.filter(feedback => feedback.status === statusFilter);
+      filtered = filtered.filter(f => f.status === statusFilter);
     }
 
-    // Rating filter (placeholder for future rating functionality)
-    if (ratingFilter !== 'All') {
-      filtered = filtered.filter(feedback => feedback.rating === ratingFilter);
+    if (priorityFilter !== 'All') {
+      filtered = filtered.filter(f => f.priority === priorityFilter);
+    }
+
+    if (categoryFilter !== 'All') {
+      filtered = filtered.filter(f => f.category === categoryFilter);
     }
 
     setFilteredRows(filtered);
-  }, [rows, searchTerm, statusFilter, ratingFilter]);
+  }, [rows, searchTerm, statusFilter, priorityFilter, categoryFilter]);
 
-  // Get unique statuses for filter options
-  const statuses = ['All', ...new Set(rows.map(feedback => feedback.status))];
+  const stats = {
+    total: rows.length,
+    pending: rows.filter(r => r.status === 'Pending').length,
+    resolved: rows.filter(r => r.status === 'Resolved').length,
+    avgRating: (rows.reduce((acc, r) => acc + r.rating, 0) / rows.length).toFixed(1),
+    trend: '+12%'
+  };
+
+  const getStatusColor = () => {
+    // Single-accent theme: use subtle surface + accent text for all statuses
+    return 'bg-[var(--surface)] text-[var(--accent-dark)] border-[var(--border)]';
+  };
+
+  const getPriorityColor = () => {
+    return 'bg-[var(--surface)] text-[var(--accent-dark)]';
+  };
+
+  const renderStars = (rating) => {
+    return (
+      <div className="flex gap-0.5">
+        {[...Array(5)].map((_, i) => (
+          <Star key={i} className={`w-3.5 h-3.5 ${i < rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+        ))}
+      </div>
+    );
+  };
+
+  const handleStatusChange = (feedback, newStatus) => {
+    setRows(prev => prev.map(r => r.id === feedback.id ? { ...r, status: newStatus } : r));
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Total Feedback</h3>
-              <p className="text-2xl font-bold text-gray-900">{rows.length}</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D9433B] to-[#B13A33] flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-white" />
-            </div>
-          </div>
-        </Card>
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Pending</h3>
-              <p className="text-2xl font-bold text-gray-900">{rows.filter(r => r.status === 'Pending').length}</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EFBF71] to-[#D4A574] flex items-center justify-center">
-              <Clock className="w-5 h-5 text-white" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Resolved</h3>
-              <p className="text-2xl font-bold text-gray-900">{rows.filter(r => r.status === 'Resolved').length}</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-white" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Avg Rating</h3>
-              <p className="text-2xl font-bold text-gray-900">4.2</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FADADD] to-[#F2C2C7] flex items-center justify-center">
-              <Star className="w-5 h-5 text-white" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Search and Filter Bar */}
-      <Card>
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search feedback by user or message..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-2 bg-white border border-[#EADCD2] rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div className="relative">
-            <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-12 pr-8 py-2 bg-white border border-[#EADCD2] rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 appearance-none min-w-[140px]"
-            >
-              {statuses.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Rating Filter */}
-          <div className="relative">
-            <select
-              value={ratingFilter}
-              onChange={(e) => setRatingFilter(e.target.value)}
-              className="pl-4 pr-8 py-2 bg-white border border-[#EADCD2] rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 appearance-none min-w-[140px]"
-            >
-              <option value="All">All Ratings</option>
-              <option value="5">5 Stars</option>
-              <option value="4">4 Stars</option>
-              <option value="3">3 Stars</option>
-              <option value="2">2 Stars</option>
-              <option value="1">1 Star</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Results Summary */}
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-          <span>Showing {filteredRows.length} of {rows.length} feedback items</span>
-          {(searchTerm || statusFilter !== 'All' || ratingFilter !== 'All') && (
-            <button 
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('All');
-                setRatingFilter('All');
-              }}
-              className="text-[#D9433B] hover:text-[#B13A33] transition-colors"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      </Card>
-
-      {/* Feedback Table */}
-      <Card>
-        <Table
-          columns={columns}
-          data={filteredRows}
-          actions={(row) => (
-            <div className="flex gap-2">
-              <button 
-                className="p-2 border border-[#D9433B] text-[#D9433B] hover:bg-[#FFF0EE] rounded-xl transition-all duration-200" 
-                onClick={() => { setReplyTo(row); setOpen(true); }}
-                title="Reply to feedback"
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
-              <button 
-                className="p-2 bg-green-500 text-white hover:bg-green-600 rounded-xl transition-all duration-200" 
-                onClick={() => { 
-                  setRows(prev => prev.map(r => r === row ? { ...r, status: 'Resolved' } : r)); 
-                  add('Marked as resolved'); 
-                }}
-                title="Mark as resolved"
-              >
-                <CheckCircle className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        />
-      </Card>
-      
-      {/* Reply Modal */}
-      <Modal open={open} onClose={() => setOpen(false)} title={`Reply to ${replyTo?.user || ''}`}
-        actions={(
-          <>
-            <button 
-              className="border border-[#D9433B] text-[#D9433B] hover:bg-[#FFF0EE] rounded-xl px-4 py-2 font-medium transition-all duration-200" 
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </button>
-            <button 
-              className="bg-[#D9433B] text-white hover:bg-[#B13A33] rounded-xl px-4 py-2 font-medium transition-all duration-200" 
-              onClick={() => { setOpen(false); add('Reply sent'); }}
-            >
-              Send Reply
-            </button>
-          </>
-        )}
-      >
-        <div className="space-y-4">
-          <div className="p-4 bg-[#FAF6F1] rounded-xl">
-            <p className="text-sm font-medium text-gray-900 mb-2">Original Message:</p>
-            <p className="text-sm text-gray-700">{replyTo?.message}</p>
-          </div>
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <label className="block text-sm text-gray-700 font-medium mb-2">Your Reply</label>
-            <textarea 
-              className="w-full min-h-32 rounded-xl border border-[#EADCD2] p-4 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
-              placeholder="Type your reply..." 
-            />
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Feedback</h1>
+            <p className="text-gray-600">Monitor and respond to customer insights</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="px-4 py-2 bg-white border rounded-xl hover:bg-[var(--surface)] transition-all duration-200 flex items-center gap-2 text-sm font-medium" style={{ borderColor: 'var(--border)' }}>
+              <Archive className="w-4 h-4" />
+              Archive
+            </button>
+            <button className="px-4 py-2 bg-[#D9433B] hover:bg-[#B13A33] text-white rounded-xl hover:shadow-md transition-all duration-200 flex items-center gap-2 text-sm font-medium">
+              <Sparkles className="w-4 h-4" />
+              AI Insights
+            </button>
           </div>
         </div>
-      </Modal>
+
+        {/* Enhanced Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
+                  <MessageSquare className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-xs font-semibold px-2 py-1 rounded-full border" style={{ color: 'var(--accent-dark)', backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>{stats.trend}</span>
+              </div>
+              <h3 className="text-sm font-medium text-gray-600 mb-1">Total Feedback</h3>
+              <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-gray-500 mt-2">All time submissions</p>
+            </div>
+          </Card>
+          
+          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <AlertCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+              </div>
+              <h3 className="text-sm font-medium text-gray-600 mb-1">Pending</h3>
+              <p className="text-3xl font-bold text-gray-900">{stats.pending}</p>
+              <p className="text-xs text-gray-500 mt-2">Requires attention</p>
+            </div>
+          </Card>
+
+          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+              </div>
+              <h3 className="text-sm font-medium text-gray-600 mb-1">Resolved</h3>
+              <p className="text-3xl font-bold text-gray-900">{stats.resolved}</p>
+              <p className="text-xs text-gray-500 mt-2">Successfully handled</p>
+            </div>
+          </Card>
+
+          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
+                  <Star className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <h3 className="text-sm font-medium text-gray-600 mb-1">Avg Rating</h3>
+              <div className="flex items-end gap-2">
+                <p className="text-3xl font-bold text-gray-900">{stats.avgRating}</p>
+                <div className="mb-1">{renderStars(Math.round(stats.avgRating))}</div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Customer satisfaction</p>
+            </div>
+          </Card>
+        </div>
+
+        {/* Search and Filters */}
+        <Card>
+          <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or message..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
+                  style={{ borderColor: 'var(--border)' }}
+                />
+              </div>
+              
+              <button 
+                onClick={() => setShowFilters(!showFilters)}
+                className="px-4 py-3 bg-white border rounded-xl hover:bg-[var(--surface)] transition-all duration-200 flex items-center gap-2 text-sm font-medium"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-4 py-2 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <option value="All">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Priority</label>
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value)}
+                    className="w-full px-4 py-2 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <option value="All">All Priorities</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full px-4 py-2 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Bug">Bug</option>
+                    <option value="Feature">Feature</option>
+                    <option value="UX">UX</option>
+                    <option value="Support">Support</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+              <span className="text-sm text-gray-600">
+                Showing <span className="font-semibold text-gray-900">{filteredRows.length}</span> of <span className="font-semibold text-gray-900">{rows.length}</span> items
+              </span>
+              {(searchTerm || statusFilter !== 'All' || priorityFilter !== 'All' || categoryFilter !== 'All') && (
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('All');
+                    setPriorityFilter('All');
+                    setCategoryFilter('All');
+                  }}
+                  className="text-sm text-[#D9433B] hover:text-[#B13A33] font-medium transition-colors"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Feedback Grid */}
+        <div className="grid grid-cols-1 gap-4">
+          {filteredRows.map((feedback) => (
+            <Card key={feedback.id} className="hover:shadow-md transition-all duration-300 cursor-pointer group">
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="w-12 h-12 rounded-xl bg-[#D9433B] flex items-center justify-center text-white font-semibold flex-shrink-0">
+                  {feedback.avatar}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-gray-900">{feedback.user}</h3>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium border ${getStatusColor(feedback.status)}`}>
+                          {feedback.status}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-lg font-medium ${getPriorityColor(feedback.priority)}`}>
+                          {feedback.priority}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">{feedback.email}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="mb-1">{renderStars(feedback.rating)}</div>
+                      <p className="text-xs text-gray-500">{feedback.date}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-700 mb-3 leading-relaxed">{feedback.message}</p>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs px-3 py-1 rounded-full font-medium border" style={{ backgroundColor: 'var(--surface)', color: 'var(--accent-dark)', borderColor: 'var(--border)' }}>
+                      {feedback.category}
+                    </span>
+
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button 
+                        onClick={() => setSelectedFeedback(feedback)}
+                        className="p-2 border rounded-lg transition-all duration-200 text-sm flex items-center gap-1.5 hover:bg-[var(--surface)]"
+                        style={{ color: 'var(--accent-dark)', borderColor: 'var(--border)' }}
+                        title="View details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setSelectedFeedback(feedback)}
+                        className="p-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] rounded-lg transition-all duration-200 text-sm flex items-center gap-1.5"
+                        title="Reply"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </button>
+                      {feedback.status !== 'Resolved' && (
+                        <button 
+                          onClick={() => handleStatusChange(feedback, 'Resolved')}
+                          className="p-2 border rounded-lg transition-all duration-200 text-sm flex items-center gap-1.5 hover:bg-[var(--surface)]"
+                          style={{ color: 'var(--accent-dark)', borderColor: 'var(--border)' }}
+                          title="Mark as resolved"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Detail Modal */}
+        {selectedFeedback && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setSelectedFeedback(null)}>
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="p-6 border-b sticky top-0 bg-white" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-[#D9433B] flex items-center justify-center text-white font-semibold text-lg">
+                      {selectedFeedback.avatar}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedFeedback.user}</h2>
+                      <p className="text-sm text-gray-600">{selectedFeedback.email}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        {renderStars(selectedFeedback.rating)}
+                        <span className="text-xs text-gray-500">{selectedFeedback.date}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedFeedback(null)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Feedback Details</h3>
+                  <div className="rounded-xl p-4 space-y-3 border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Status</span>
+                      <select
+                        value={selectedFeedback.status}
+                        onChange={(e) => handleStatusChange(selectedFeedback, e.target.value)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedFeedback.status)}`}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Category</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedFeedback.category}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Priority</span>
+                      <span className={`text-xs px-2 py-1 rounded-lg font-medium ${getPriorityColor(selectedFeedback.priority)}`}>
+                        {selectedFeedback.priority}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Message</h3>
+                  <div className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                    <p className="text-gray-700 leading-relaxed">{selectedFeedback.message}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Response</h3>
+                  <textarea 
+                    className="w-full min-h-32 rounded-xl border p-4 focus:ring-2 focus:ring-[#D9433B] focus:outline-none focus:border-transparent transition-all duration-200 resize-none" 
+                    style={{ borderColor: 'var(--border)' }}
+                    placeholder="Type your response here..."
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 border-t flex justify-end gap-3 sticky bottom-0 bg-white" style={{ borderColor: 'var(--border)' }}>
+                <button 
+                  onClick={() => setSelectedFeedback(null)}
+                  className="px-6 py-2.5 border text-gray-700 hover:bg-[var(--surface)] rounded-xl font-medium transition-all duration-200"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => setSelectedFeedback(null)}
+                  className="px-6 py-2.5 bg-[#D9433B] hover:bg-[#B13A33] text-white hover:shadow-md rounded-xl font-medium transition-all duration-200 flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send Response
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
