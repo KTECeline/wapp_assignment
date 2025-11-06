@@ -32,6 +32,14 @@ public class Course
     [StringLength(255)]
     public string CourseType { get; set; } = string.Empty;
 
+    [Column("badge_img")]
+    [StringLength(255)]
+    public string BadgeImg { get; set; } = string.Empty;
+
+    [Column("quiz_badge_img")]
+    [StringLength(255)]
+    public string QuizBadgeImg { get; set; } = string.Empty;
+
     [Column("level_id")]
     [ForeignKey("Level")]
     public int LevelId { get; set; }

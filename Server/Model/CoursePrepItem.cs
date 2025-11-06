@@ -15,6 +15,10 @@ public class CoursePrepItem
     [Column("description")]
     public string Description { get; set; } = string.Empty;
 
+    [Column("item_img")]
+    [StringLength(255)]
+    public string ItemImg { get; set; } = string.Empty;
+
     [Column("type")]
     [StringLength(255)]
     public string Type { get; set; } = string.Empty;
