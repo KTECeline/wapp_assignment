@@ -14,10 +14,6 @@ public class Question
     [StringLength(255)]
     public string QuestionType { get; set; } = string.Empty;
 
-    [Column("test_type")]
-    [StringLength(255)]
-    public string TestType { get; set; } = string.Empty;
-
     [Column("deleted")]
     public bool Deleted { get; set; }
 

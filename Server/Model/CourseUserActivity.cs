@@ -35,15 +35,6 @@ public class CourseUserActivity
     [Column("quiz_progress")]
     public int QuizProgress { get; set; }
 
-    [Column("exam_status")]
-    public string ExamStatus { get; set; } = string.Empty;
-
-    [Column("exam_atternpt")]
-    public int ExamAttempt { get; set; }
-
-    [Column("exam_correct")]
-    public int ExamCorrect { get; set; }
-
     [Column("bookmark")]
     public bool Bookmark { get; set; }
 }

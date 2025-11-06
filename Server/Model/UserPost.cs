@@ -21,16 +21,20 @@ public class UserPost
     public int CourseId { get; set; }
     public Course Course { get; set; } = null!;
 
-    [Column("file")]
+    [Column("title")]
     [StringLength(255)]
-    public string File { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
 
     [Column("description")]
     public string Description { get; set; } = string.Empty;
 
-    [Column("post_main")]
+    [Column("post_img")]
     [StringLength(255)]
-    public string PostMain { get; set; } = string.Empty;
+    public string PostImg { get; set; } = string.Empty;
+
+    [Column("approve_status")]
+    [StringLength(255)]
+    public string ApproveStatus { get; set; } = string.Empty;
 
     [Column("created_AT")]
     public DateTime CreatedAt { get; set; }

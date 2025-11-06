@@ -16,6 +16,10 @@ public class CourseStep
     [Column("deleted")]
     public bool Deleted { get; set; }
 
+    [Column("course_step_img")]
+    [StringLength(255)]
+    public string CourseStepImg { get; set; } = string.Empty;
+
     [Column("course_id")]
     [ForeignKey("Course")]
     public int CourseId { get; set; }
