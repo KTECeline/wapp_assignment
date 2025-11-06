@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, MessageSquare, MessagesSquare, Medal, Megaphone, BarChart3, Settings, Search, Bell, User } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, MessageSquare, MessagesSquare, Megaphone, BarChart3, Settings, Search, Bell, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const navItems = [
@@ -9,7 +9,6 @@ const navItems = [
   { to: '/admin/courses', label: 'Manage Courses', icon: BookOpen },
   { to: '/admin/posts', label: 'Manage Posts', icon: MessageSquare },
   { to: '/admin/feedback', label: 'Manage Feedback', icon: MessagesSquare },
-  { to: '/admin/badges', label: 'Manage Badges', icon: Medal },
   { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
@@ -20,12 +19,6 @@ export default function AdminLayout() {
   const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
 
   return (
     <div className="min-h-screen bg-[#FAF6F1] font-inter">

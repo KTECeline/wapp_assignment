@@ -7,7 +7,6 @@ import Courses from '../pages/admin/Courses';
 import CoursesEdit from '../pages/admin/CoursesEdit';
 import Posts from '../pages/admin/Posts';
 import Feedback from '../pages/admin/Feedback';
-import Badges from '../pages/admin/Badges';
 import Announcements from '../pages/admin/Announcements';
 import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
@@ -23,7 +22,6 @@ export default function AdminRoutes() {
   <Route path="courses/edit" element={<CoursesEdit />} />
         <Route path="posts" element={<Posts />} />
         <Route path="feedback" element={<Feedback />} />
-        <Route path="badges" element={<Badges />} />
         <Route path="announcements" element={<Announcements />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />

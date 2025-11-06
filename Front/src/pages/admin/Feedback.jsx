@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, MessageSquare, CheckCircle, Clock, Star, TrendingUp, AlertCircle, Eye, Archive, MoreVertical, Send, Sparkles, ChevronDown } from 'lucide-react';
+import { Search, Filter, MessageSquare, CheckCircle, Clock, Star, TrendingUp, AlertCircle, Eye, Archive, Send, Sparkles, ChevronDown } from 'lucide-react';
 
 // Mock data
 const seedFeedback = [
@@ -26,7 +26,7 @@ export default function FeedbackV2() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'detail'
+  
   const [showFilters, setShowFilters] = useState(false);
 
   // Filter functionality

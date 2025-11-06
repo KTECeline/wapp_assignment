@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Users, BookOpen, MessageSquare, TrendingUp, CheckCircle, ArrowUpRight, ArrowDownRight, Plus, BarChart3, Bell, Settings } from 'lucide-react';
+import {  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { Users, BookOpen, MessageSquare, TrendingUp, CheckCircle, ArrowUpRight, ArrowDownRight, BarChart3, Bell, Settings } from 'lucide-react';
 
 const stats = [
   {
@@ -110,7 +110,7 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function Dashboard() {
-  const [hoveredStat, setHoveredStat] = useState(null);
+  const [ setHoveredStat] = useState(null);
 
   return (
   <div className="min-h-screen">
