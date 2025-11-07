@@ -9,7 +9,6 @@ dist/
 # ASP.NET
 bin/
 obj/
-*.db
 
 # Mac
 .DS_Store
