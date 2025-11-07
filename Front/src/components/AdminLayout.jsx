@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, MessageSquare, MessagesSquare, Megaphone, BarChart3, Settings, Search, Bell, User } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, MessageSquare, MessagesSquare, Megaphone, BarChart3, Settings, Search, Bell, User, FolderTree, Layers, LifeBuoy } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/users', label: 'Manage Users', icon: Users },
-  { to: '/admin/courses', label: 'Manage Courses', icon: BookOpen },
-  { to: '/admin/posts', label: 'Manage Posts', icon: MessageSquare },
-  { to: '/admin/feedback', label: 'Manage Feedback', icon: MessagesSquare },
+  { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/course-categories', label: 'Courses', icon: BookOpen },
+  { to: '/admin/posts', label: 'Posts', icon: MessageSquare },
+  { to: '/admin/feedback', label: 'Feedback', icon: MessagesSquare },
+  { to: '/admin/help-sessions', label: 'Help Sessions', icon: LifeBuoy },
   { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
@@ -100,25 +101,57 @@ export default function AdminLayout() {
             </div>
 
             {/* Navigation */}
-            <nav className="p-4">
+            <nav className="p-4 overflow-y-auto h-[calc(100vh-80px)]">
               <div className="mb-6">
                 <h2 className="text-xs font-semibold text-[#D9433B] uppercase tracking-wider mb-3">Navigation</h2>
                 <div className="space-y-1">
-                  {navItems.map(({ to, label, icon: Icon }) => (
-                    <a
-                      key={to}
-                      href={to}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                        location.pathname === to
-                          ? 'bg-[#FFF0EE] text-[#D9433B] border-l-4 border-[#D9433B]'
-                          : 'text-gray-600 hover:bg-[#FFF8F2] hover:text-[#D9433B]'
-                      }`}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{label}</span>
-                    </a>
-                  ))}
+                  {navItems.map((item, index) => {
+                    // If it's a section with sub-items
+                    if (item.section) {
+                      return (
+                        <div key={index} className="mb-4">
+                          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3">
+                            {item.section}
+                          </h3>
+                          <div className="space-y-1">
+                            {item.items.map(({ to, label, icon: Icon }) => (
+                              <a
+                                key={to}
+                                href={to}
+                                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 ${
+                                  location.pathname === to
+                                    ? 'bg-[#FFF0EE] text-[#D9433B] border-l-4 border-[#D9433B]'
+                                    : 'text-gray-600 hover:bg-[#FFF8F2] hover:text-[#D9433B]'
+                                }`}
+                                onClick={() => setSidebarOpen(false)}
+                              >
+                                <Icon className="w-4 h-4" />
+                                <span className="font-medium text-sm">{label}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Regular single item
+                    const { to, label, icon: Icon } = item;
+                    return (
+                      <a
+                        key={to}
+                        href={to}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                          location.pathname === to
+                            ? 'bg-[#FFF0EE] text-[#D9433B] border-l-4 border-[#D9433B]'
+                            : 'text-gray-600 hover:bg-[#FFF8F2] hover:text-[#D9433B]'
+                        }`}
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span className="font-medium">{label}</span>
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </nav>

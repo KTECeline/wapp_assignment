@@ -25,6 +25,13 @@ public class Course
     [Column("cooking_time_min")]
     public int CookingTimeMin { get; set; }
 
+    [Column("servings")]
+    public int Servings { get; set; }
+
+    [Column("video")]
+    [StringLength(500)]
+    public string Video { get; set; } = string.Empty;
+
     [Column("deleted")]
     public bool Deleted { get; set; }
 

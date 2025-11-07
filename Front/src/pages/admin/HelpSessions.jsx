@@ -1,0 +1,404 @@
+import React, { useState } from 'react';
+import { MessageCircle, Send, X, User, Clock, CheckCircle, AlertCircle, Search, Filter } from 'lucide-react';
+import { useToast } from '../../components/Toast';
+
+const Card = ({ children, className = '' }) => (
+  <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
+    {children}
+  </div>
+);
+
+// Mock data - replace with API
+const initialSessions = [
+  {
+    id: 1,
+    userId: 101,
+    userName: 'Sarah Chen',
+    userEmail: 'sarah@example.com',
+    startSession: '2025-11-07T10:30:00',
+    endSession: null,
+    status: 'active',
+    messages: [
+      { id: 1, content: 'Hi, I need help with the sourdough recipe', sentDate: '2025-11-07T10:30:00', sentByAdmin: false, viewedByAdmin: true },
+      { id: 2, content: 'Hello Sarah! I\'d be happy to help. What specific issue are you facing?', sentDate: '2025-11-07T10:35:00', sentByAdmin: true, viewedByUser: true },
+      { id: 3, content: 'My dough isn\'t rising properly', sentDate: '2025-11-07T10:40:00', sentByAdmin: false, viewedByAdmin: false }
+    ]
+  },
+  {
+    id: 2,
+    userId: 102,
+    userName: 'Mike Rodriguez',
+    userEmail: 'mike@example.com',
+    startSession: '2025-11-06T14:20:00',
+    endSession: '2025-11-06T14:45:00',
+    status: 'closed',
+    messages: [
+      { id: 1, content: 'Can I substitute butter with oil?', sentDate: '2025-11-06T14:20:00', sentByAdmin: false, viewedByAdmin: true },
+      { id: 2, content: 'Yes, you can use a 1:1 ratio. The texture might be slightly different but it will work!', sentDate: '2025-11-06T14:25:00', sentByAdmin: true, viewedByUser: true },
+      { id: 3, content: 'Perfect, thank you!', sentDate: '2025-11-06T14:30:00', sentByAdmin: false, viewedByAdmin: true }
+    ]
+  },
+  {
+    id: 3,
+    userId: 103,
+    userName: 'Emma Wilson',
+    userEmail: 'emma@example.com',
+    startSession: '2025-11-07T09:15:00',
+    endSession: null,
+    status: 'active',
+    messages: [
+      { id: 1, content: 'I can\'t access the video for lesson 3', sentDate: '2025-11-07T09:15:00', sentByAdmin: false, viewedByAdmin: false }
+    ]
+  }
+];
+
+export default function HelpSessions() {
+  const { add } = useToast();
+  const [sessions, setSessions] = useState(initialSessions);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [messageInput, setMessageInput] = useState('');
+  const [filter, setFilter] = useState('all'); // 'all', 'active', 'closed'
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!messageInput.trim() || !selectedSession) return;
+
+    const newMessage = {
+      id: Date.now(),
+      content: messageInput,
+      sentDate: new Date().toISOString(),
+      sentByAdmin: true,
+      viewedByUser: false
+    };
+
+    setSessions(prev => prev.map(session =>
+      session.id === selectedSession.id
+        ? { ...session, messages: [...session.messages, newMessage] }
+        : session
+    ));
+
+    // Update local selected session
+    setSelectedSession(prev => ({
+      ...prev,
+      messages: [...prev.messages, newMessage]
+    }));
+
+    setMessageInput('');
+    add('Message sent!');
+  };
+
+  const handleCloseSession = (sessionId) => {
+    setSessions(prev => prev.map(session =>
+      session.id === sessionId
+        ? { ...session, status: 'closed', endSession: new Date().toISOString() }
+        : session
+    ));
+    if (selectedSession?.id === sessionId) {
+      setSelectedSession(null);
+    }
+    add('Session closed');
+  };
+
+  const markAsRead = (sessionId) => {
+    setSessions(prev => prev.map(session =>
+      session.id === sessionId
+        ? {
+            ...session,
+            messages: session.messages.map(msg =>
+              !msg.sentByAdmin ? { ...msg, viewedByAdmin: true } : msg
+            )
+          }
+        : session
+    ));
+  };
+
+  const filteredSessions = sessions.filter(session => {
+    const matchesFilter = filter === 'all' || session.status === filter;
+    const matchesSearch = session.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         session.userEmail.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  const stats = {
+    total: sessions.length,
+    active: sessions.filter(s => s.status === 'active').length,
+    closed: sessions.filter(s => s.status === 'closed').length,
+    unread: sessions.filter(s => s.messages.some(m => !m.sentByAdmin && !m.viewedByAdmin)).length
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <MessageCircle className="w-8 h-8" style={{ color: 'var(--accent)' }} />
+            Help Sessions
+          </h1>
+          <p className="text-gray-600 mt-1">Manage user support conversations</p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setFilter('all')}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Total Sessions</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--surface)' }}>
+                <MessageCircle className="w-6 h-6" style={{ color: 'var(--accent)' }} />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setFilter('active')}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Active</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.active}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-100">
+                <AlertCircle className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setFilter('closed')}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Closed</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.closed}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100">
+                <CheckCircle className="w-6 h-6 text-gray-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 font-medium">Unread Messages</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.unread}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--surface)' }}>
+                <span className="text-xl" style={{ color: 'var(--accent)' }}>📬</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Sessions List */}
+          <Card className="lg:col-span-4 h-[calc(100vh-400px)] flex flex-col">
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border focus:ring-2 focus:ring-[var(--accent)] outline-none text-sm"
+                    style={{ borderColor: 'var(--border)' }}
+                  />
+                </div>
+                <button
+                  className="p-2 border rounded-lg hover:bg-[var(--surface)] transition-colors"
+                  style={{ borderColor: 'var(--border)' }}
+                  title="Filter"
+                >
+                  <Filter className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex gap-2">
+                {['all', 'active', 'closed'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilter(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      filter === status
+                        ? 'bg-[var(--accent)] text-white'
+                        : 'bg-white border text-gray-600 hover:bg-[var(--surface)]'
+                    }`}
+                    style={filter !== status ? { borderColor: 'var(--border)' } : {}}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 space-y-2">
+              {filteredSessions.map((session) => {
+                const hasUnread = session.messages.some(m => !m.sentByAdmin && !m.viewedByAdmin);
+                const lastMessage = session.messages[session.messages.length - 1];
+                const isActive = selectedSession?.id === session.id;
+
+                return (
+                  <div
+                    key={session.id}
+                    onClick={() => {
+                      setSelectedSession(session);
+                      markAsRead(session.id);
+                    }}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all hover:shadow-sm ${
+                      isActive ? 'bg-[var(--surface)]' : 'bg-white'
+                    }`}
+                    style={{ borderColor: isActive ? 'var(--accent)' : 'var(--border)' }}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                          style={{ backgroundColor: 'var(--accent)' }}
+                        >
+                          {session.userName.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-sm text-gray-900">{session.userName}</h4>
+                            {hasUnread && (
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--accent)' }}></span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500">{session.userEmail}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          session.status === 'active'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {session.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 truncate mb-1">
+                      {lastMessage.content}
+                    </p>
+                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatTime(lastMessage.sentDate)}
+                    </p>
+                  </div>
+                );
+              })}
+
+              {filteredSessions.length === 0 && (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  No sessions found
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Chat Area */}
+          <Card className="lg:col-span-8 h-[calc(100vh-400px)] flex flex-col">
+            {selectedSession ? (
+              <>
+                {/* Chat Header */}
+                <div className="pb-4 border-b mb-4 flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold"
+                      style={{ backgroundColor: 'var(--accent)' }}
+                    >
+                      {selectedSession.userName.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">{selectedSession.userName}</h3>
+                      <p className="text-sm text-gray-500">{selectedSession.userEmail}</p>
+                    </div>
+                  </div>
+                  {selectedSession.status === 'active' && (
+                    <button
+                      onClick={() => handleCloseSession(selectedSession.id)}
+                      className="px-4 py-2 border text-sm font-medium rounded-lg hover:bg-[var(--surface)] transition-colors"
+                      style={{ borderColor: 'var(--border)', color: 'var(--accent-dark)' }}
+                    >
+                      Close Session
+                    </button>
+                  )}
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto pr-2 mb-4 space-y-3">
+                  {selectedSession.messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sentByAdmin ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[70%] p-3 rounded-2xl ${
+                          message.sentByAdmin
+                            ? 'bg-[var(--accent)] text-white rounded-br-sm'
+                            : 'bg-[var(--surface)] text-gray-900 rounded-bl-sm'
+                        }`}
+                      >
+                        <p className="text-sm leading-relaxed">{message.content}</p>
+                        <p className={`text-xs mt-1 ${message.sentByAdmin ? 'text-white/70' : 'text-gray-500'}`}>
+                          {formatTime(message.sentDate)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Message Input */}
+                {selectedSession.status === 'active' ? (
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      placeholder="Type your message..."
+                      className="flex-1 px-4 py-3 rounded-xl border focus:ring-2 focus:ring-[var(--accent)] outline-none"
+                      style={{ borderColor: 'var(--border)' }}
+                    />
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white rounded-xl font-medium transition-all flex items-center gap-2 shadow-sm"
+                    >
+                      <Send className="w-5 h-5" />
+                      Send
+                    </button>
+                  </form>
+                ) : (
+                  <div className="text-center py-4 text-gray-500 text-sm border rounded-xl" style={{ borderColor: 'var(--border)' }}>
+                    This session is closed
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                  <p className="text-lg font-medium">Select a session to view messages</p>
+                  <p className="text-sm mt-1">Choose a help session from the list</p>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
