@@ -27,6 +27,7 @@ if (app.Environment.IsDevelopment())
 // 👉 Enable CORS before mapping controllers/endpoints
 app.UseCors("AllowAll");
 
+app.UseStaticFiles();  // Add this line to serve static files
 app.UseHttpsRedirection();
 
 app.MapControllers();

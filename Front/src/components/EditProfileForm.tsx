@@ -6,6 +6,7 @@ import { BsCheck } from "react-icons/bs";
 import IconLoading from "./IconLoading.tsx";
 import DropUpload from "./DropUpload.tsx";
 import Select from 'react-select';
+import { updateUser } from '../api/client';
 
 const customStyles = {
     control: (base: any, state: { isFocused: boolean }) => ({
@@ -161,22 +162,35 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
     });
 
     useEffect(() => {
-        if (isEdit) {
-            // Mock existing profile
-            setInitialValues({
-                fname: "Loy",
-                lname: "Hean Wei",
-                gender: "Male",
-                DOB: "2004-03-15",
-                profileimage: null,
-                plevel: "Amateur",
-                pcat: "Pastry",
-                username: "loyheanwei",
-                email: "loy@example.com",
-                userId,
-            });
+        async function loadUserData() {
+            if (isEdit && userId) {
+                try {
+                    const response = await fetch(`/api/Users/${userId}`);
+                    if (!response.ok) throw new Error('Failed to fetch user data');
+                    const userData = await response.json();
+                    
+                    // Map backend data to form fields
+                    setInitialValues({
+                        fname: userData.firstName || "",
+                        lname: userData.lastName || "",
+                        gender: userData.gender || "",
+                        DOB: userData.dob ? userData.dob.split('T')[0] : "",
+                        profileimage: null,
+                        plevel: userData.levelId === 1 ? "Beginner" : userData.levelId === 2 ? "Amateur" : "Master",
+                        pcat: pcats[userData.categoryId - 1]?.value || "",
+                        username: userData.username || "",
+                        email: userData.email || "",
+                        userId: userData.userId
+                    });
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                    alert('Failed to load user data. Please try again.');
+                }
+            }
         }
-    }, [isEdit, userId]);
+        
+        loadUserData();
+    }, [isEdit, userId, pcats]);
 
     return (
         <div className="fixed top-0 left-0 w-full h-full bg-black/30 z-80 flex items-center justify-center">
@@ -215,14 +229,47 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                     enableReinitialize
                     initialValues={initialValues}
                     validationSchema={validationSchema}
-                    onSubmit={(values, { resetForm }) => {
-                        // 🔒 When backend ready, replace this with submit logic
-                        console.log("🧩 Form submitted (mock):", values);
+                    onSubmit={async (values, { resetForm, setSubmitting }) => {
+                        setSubmitting(true);
+                        // Map frontend field names to the backend User model property names
+                        const payload: any = {
+                            username: values.username,
+                            email: values.email,
+                            firstName: values.fname,
+                            lastName: values.lname,
+                            gender: values.gender,
+                            // Format date as ISO string for .NET DateTime
+                            dob: values.DOB ? new Date(values.DOB).toISOString() : null,
+                            // Map string values to IDs
+                            levelId: values.plevel === 'Beginner' ? 1 : values.plevel === 'Amateur' ? 2 : 3,
+                            categoryId: pcats.findIndex(cat => cat.value === values.pcat) + 1,
+                            // Include password if it's required (you might want to handle this differently)
+                            password: "changeme" // Required by the model, you should implement proper password handling
+                        };
 
-                        // ✅ Pass back to parent for frontend preview
-                        onSave(values as any, isEdit);
-                        resetForm();
-                        onClose();
+                        // Attach file if present — client.updateUser will build FormData when a File is present
+                        const maybeFile = values.profileimage as any;
+                        const isFile = maybeFile && typeof maybeFile.size === 'number' && typeof maybeFile.name === 'string';
+                        if (isFile) {
+                            payload.profileimage = maybeFile;
+                        }
+
+                        try {
+                            // Call API to update user (userId is passed as prop)
+                            const updated = await updateUser(userId, payload);
+                            console.log("✅ Profile updated:", updated);
+
+                            // Notify parent and close modal
+                            onSave(updated as any, isEdit);
+                            resetForm();
+                            onClose();
+                        } catch (err: any) {
+                            console.error("Failed to update profile:", err);
+                            // Basic error feedback — you can replace with a toast UI
+                            alert(err?.message || "Failed to update profile. See console for details.");
+                        } finally {
+                            setSubmitting(false);
+                        }
                     }}
 
                 >

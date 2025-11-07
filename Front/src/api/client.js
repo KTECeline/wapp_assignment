@@ -15,10 +15,37 @@ export async function createUser(user) {
 }
 
 export async function updateUser(id, user) {
+  // Always use FormData to handle both file uploads and regular fields
+  const formData = new FormData();
+  
+  // Map and add fields using exact column names from User.cs
+  const fieldMappings = {
+    username: 'username',
+    email: 'email',
+    firstName: 'first_name',
+    lastName: 'last_name',
+    gender: 'gender',
+    dob: 'DOB',
+    levelId: 'level_id',
+    categoryId: 'category_id'
+  };
+
+  // Add mapped fields to FormData
+  Object.entries(user).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      if (key === 'profileimage') {
+        formData.append('profileimage', value);
+      } else {
+        const dbField = fieldMappings[key] || key;
+        formData.append(dbField, value);
+      }
+    }
+  });
+
   const res = await fetch(`/api/Users/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user),
+    // Let the browser set the correct Content-Type for FormData
+    body: formData
   });
   if (!res.ok) throw new Error(`Failed to update user: ${res.status}`);
   return res.json();

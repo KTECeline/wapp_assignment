@@ -47,17 +47,50 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, User update)
+    public async Task<IActionResult> UpdateUser(int id, [FromForm] User update, IFormFile? profileimage)
     {
-        var user = await _context.Users.FindAsync(id);
-        if (user == null) return NotFound();
+        try
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
 
-        // Update a safe subset of fields for now
-        if (!string.IsNullOrWhiteSpace(update.Username)) user.Username = update.Username;
-        if (!string.IsNullOrWhiteSpace(update.Email)) user.Email = update.Email;
-        if (!string.IsNullOrWhiteSpace(update.FirstName)) user.FirstName = update.FirstName;
-        if (!string.IsNullOrWhiteSpace(update.LastName)) user.LastName = update.LastName;
-        if (!string.IsNullOrWhiteSpace(update.UserType)) user.UserType = update.UserType;
+            // Handle profile image upload
+            if (profileimage != null)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{Guid.NewGuid()}_{profileimage.FileName}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await profileimage.CopyToAsync(stream);
+                }
+
+                user.ProfileImg = $"/uploads/{uniqueFileName}";
+            }
+
+            // Update user fields, preserving existing values if not provided
+            user.Username = update.Username ?? user.Username;
+            user.Email = update.Email ?? user.Email;
+            user.FirstName = update.FirstName ?? user.FirstName;
+            user.LastName = update.LastName ?? user.LastName;
+            user.Gender = update.Gender ?? user.Gender;
+            user.DOB = update.DOB ?? user.DOB;
+            user.LevelId = update.LevelId ?? user.LevelId;
+            user.CategoryId = update.CategoryId ?? user.CategoryId;
+            user.Password = user.Password; // Preserve existing password
+
+            await _context.SaveChangesAsync();
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        if (update.CategoryId.HasValue) user.CategoryId = update.CategoryId;
 
         await _context.SaveChangesAsync();
         return Ok(user);
