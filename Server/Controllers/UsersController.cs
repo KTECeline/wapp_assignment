@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
+using Microsoft.AspNetCore.Http;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -15,7 +18,29 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
-        return await _context.Users.ToListAsync();
+        // Return users with their related Level and Category data, excluding deleted users
+        var users = await _context.Users
+            .Where(u => u.DeletedAt == null)
+            .Include(u => u.Level)
+            .Include(u => u.Category)
+            .Select(u => new
+            {
+                u.UserId,
+                u.Username,
+                u.Email,
+                u.UserType,
+                u.FirstName,
+                u.LastName,
+                u.ProfileImg,
+                u.Gender,
+                u.DOB,
+                u.CreatedAt,
+                Level = u.Level != null ? u.Level.Title : null,
+                Category = u.Category != null ? u.Category.Title : null
+            })
+            .ToListAsync();
+
+        return Ok(users);
     }
 
     [HttpGet("{id}")]
@@ -28,22 +53,87 @@ public class UsersController : ControllerBase
 
     // Add [HttpPost], [HttpPut], [HttpDelete] for full CRUD
     [HttpPost]
-    public async Task<ActionResult<User>> CreateUser(User user)
+    public async Task<ActionResult<User>> CreateUser([FromForm] string username, [FromForm] string email, 
+        [FromForm] string password, [FromForm] string firstName, [FromForm] string lastName,
+        [FromForm] string gender, [FromForm] string DOB, [FromForm] int? levelId,
+        [FromForm] int? categoryId, IFormFile? profileimage)
     {
-        // Provide simple defaults for required fields when omitted by client
-        if (string.IsNullOrWhiteSpace(user.Email))
+        try
         {
-            var name = string.IsNullOrWhiteSpace(user.Username) ? "user" : user.Username.ToLower().Replace(" ", "");
-            user.Email = $"{name}{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}@example.com";
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(username) || 
+                string.IsNullOrWhiteSpace(email) || 
+                string.IsNullOrWhiteSpace(password))
+            {
+                return BadRequest("Username, email and password are required.");
+            }
+
+            // Check if email already exists
+            if (await _context.Users.AnyAsync(u => u.Email == email))
+            {
+                return BadRequest("Email already exists.");
+            }
+
+            // Check if username already exists
+            if (await _context.Users.AnyAsync(u => u.Username == username))
+            {
+                return BadRequest("Username already exists.");
+            }
+
+            DateTime? parsedDob = null;
+            if (!string.IsNullOrWhiteSpace(DOB) && DateTime.TryParse(DOB, out var _dt))
+            {
+                parsedDob = _dt;
+            }
+
+            var user = new User
+            {
+                Username = username,
+                Email = email,
+                Password = BCrypt.Net.BCrypt.HashPassword(password),
+                FirstName = firstName,
+                LastName = lastName,
+                Gender = gender,
+                DOB = parsedDob,
+                LevelId = levelId,
+                CategoryId = categoryId,
+                CreatedAt = DateTime.UtcNow,
+                UserType = "user" // Default user type
+            };
+
+            // Handle profile image if provided
+            if (profileimage != null)
+            {
+                var fileName = $"{Guid.NewGuid()}_{profileimage.FileName}";
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                var path = Path.Combine(uploadsFolder, fileName);
+                
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+                
+                using (var stream = new FileStream(path, FileMode.Create))
+                {
+                    await profileimage.CopyToAsync(stream);
+                }
+                
+                user.ProfileImg = $"/uploads/{fileName}";
+            }
+
+            // Add user to database
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Remove password from response
+            user.Password = string.Empty; // Using empty string instead of null for non-nullable string
+            
+            return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, user);
         }
-        if (string.IsNullOrWhiteSpace(user.Password))
+        catch (Exception ex)
         {
-            user.Password = "changeme"; // TODO: replace with proper hashing & onboarding flow
+            return BadRequest(new { message = ex.Message });
         }
-        user.CreatedAt = DateTime.UtcNow;
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, user);
     }
 
     [HttpPut("{id}")]

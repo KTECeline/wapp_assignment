@@ -4,13 +4,40 @@ export async function getUsers() {
   return res.json();
 }
 
-export async function createUser(user) {
+export async function createUser(userData) {
+  const formData = new FormData();
+  
+  // Add all user data fields with exact field names matching the backend
+  formData.append('username', userData.username);
+  formData.append('email', userData.email);
+  formData.append('password', userData.password);
+  formData.append('firstName', userData.firstName);
+  formData.append('lastName', userData.lastName);
+  formData.append('gender', userData.gender);
+  formData.append('DOB', userData.DOB);
+  
+  if (userData.levelId) {
+    formData.append('levelId', userData.levelId.toString());
+  }
+  if (userData.categoryId) {
+    formData.append('categoryId', userData.categoryId.toString());
+  }
+  
+  // Handle the profile image
+  if (userData.profileimage instanceof File) {
+    formData.append('profileimage', userData.profileimage);
+  }
+
   const res = await fetch('/api/Users', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user),
+    body: formData,
   });
-  if (!res.ok) throw new Error(`Failed to create user: ${res.status}`);
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || `Failed to create user: ${res.status}`);
+  }
+  
   return res.json();
 }
 

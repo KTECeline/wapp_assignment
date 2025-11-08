@@ -8,6 +8,7 @@ import { RxCross2 } from "react-icons/rx";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import Select from 'react-select';
 import { Link } from "react-router-dom";
+import { createUser } from "../api/client.js";
 
 const customStyles = {
     control: (base: any, state: { isFocused: boolean }) => ({
@@ -355,15 +356,47 @@ const Registration: FC = () => {
             validationSchema={validationSchema}
             validateOnChange={true}
 
-            onSubmit={async (values, formikHelpers) => {
-                if (step === 2) {
-                    // await onSubmit(values, formikHelpers);
-                } else {
-                    // setStep(1);
-                    // formikHelpers.setFieldValue("step", 2);
-                }
+            onSubmit={async (values, { setSubmitting, validateForm, setFieldValue }) => {
+                try {
+                    if (step === 2) {
+                        // Create the user data object
+                        const userData = {
+                            username: values.username,
+                            email: values.email,
+                            password: values.password,
+                            firstName: values.fname,
+                            lastName: values.lname,
+                            gender: values.gender,
+                            DOB: values.DOB,
+                            profileimage: values.profileimage,
+                            levelId: values.plevel ? parseInt(values.plevel) : null,
+                            categoryId: values.pcat ? parseInt(values.pcat) : null
+                        };
 
-                formikHelpers.setSubmitting(false);
+                        // Call the API to create user
+                        await createUser(userData);
+                        
+                        // Show success message and redirect
+                        alert("Registration successful!");
+                        window.location.href = "/login";
+                    } else {
+                        // Move to step 2 if all step 1 validations pass
+                        const step1Fields = ["fname", "lname", "gender", "DOB", "profileimage", "plevel", "pcat"];
+                        const errors = await validateForm();
+                        const step1Errors = Object.keys(errors)
+                            .filter(field => step1Fields.includes(field));
+                        
+                        if (step1Errors.length === 0) {
+                            setStep(2);
+                            setFieldValue("step", 2);
+                        }
+                    }
+                } catch (error: any) {
+                    console.error("Registration error:", error);
+                    alert(error.message || "Failed to register. Please try again.");
+                } finally {
+                    setSubmitting(false);
+                }
             }
             }
 
