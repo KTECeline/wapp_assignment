@@ -4,7 +4,8 @@ import * as Yup from "yup";
 import IconLoading from "../components/IconLoading.tsx";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import VisitorLayout from "../components/VisitorLayout.tsx";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import login, { testConnection } from "../services/authService.ts";
 
 type FormValues = {
     fname: string;
@@ -21,6 +22,19 @@ type FormValues = {
 };
 
 const Login: FC = () => {
+    // Test server connection on component mount
+    useEffect(() => {
+        const testServer = async () => {
+            try {
+                const result = await testConnection();
+                console.log('Server test result:', result);
+            } catch (error) {
+                console.error('Server test failed:', error);
+            }
+        };
+        testServer();
+    }, []);
+
     // Dynamic Text Animation
     const dynamicTextRef = useRef<HTMLSpanElement>(null);
     useEffect(() => {
@@ -70,36 +84,24 @@ const Login: FC = () => {
                     .required("Email or Username is required"),
                 password: Yup.string().required("Password is required"),
             })}
-            onSubmit={async (values, { setSubmitting }) => {
-                // try {
-                //     console.log("Logging in with:", values.loginId);
+            onSubmit={async (values, { setSubmitting, setFieldError }) => {
+                try {
+                    const result = await login({
+                        loginId: values.loginId.trim(),
+                        password: values.password
+                    });
 
-                //     // Decide whether it's an email or username
-                //     const isEmail = values.loginId.includes("@");
-
-                //     const { data, error } = await supabase
-                //         .from("user")
-                //         .select("*")
-                //         .eq(isEmail ? "email" : "username", values.loginId.trim().toLowerCase())
-                //         .maybeSingle();
-
-                //     if (error || !data) {
-                //         throw new Error("Invalid login credentials.");
-                //     }
-
-                //     const match = await bcrypt.compare(values.password, data.password);
-                //     if (!match) {
-                //         throw new Error("Incorrect password.");
-                //     }
-
-                //     alert("Login successful!");
-                //     router.push("/dashboard");
-                // } catch (err: any) {
-                //     console.error("Login error:", err);
-                //     alert(err.message || "Login failed.");
-                // } finally {
-                //     setSubmitting(false);
-                // }
+                    // TODO: Store user data in your application state/context
+                    localStorage.setItem('user', JSON.stringify(result));
+                    
+                    // TODO: Redirect to dashboard or home page
+                    window.location.href = '/dashboard';
+                } catch (error: any) {
+                    const errorMessage = error.message || 'Login failed. Please try again.';
+                    setFieldError('loginId', errorMessage);
+                } finally {
+                    setSubmitting(false);
+                }
             }}
         >
             {({ isSubmitting, values, setFieldValue, touched, errors, resetForm, isValid, validateForm, setTouched }) => {
@@ -207,7 +209,7 @@ const Login: FC = () => {
                                 >
                                     {isSubmitting ? (
                                         <IconLoading className="text-black w-5 h-5 animate-spin ml-4" />
-                                    ) : <span>Register Now</span>}
+                                    ) : <span>Login Now</span>}
                                 </button>
                             </div>
                         </div>

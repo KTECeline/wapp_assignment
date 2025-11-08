@@ -6,12 +6,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<ApplicationDbContext>();
 builder.Services.AddControllers(); 
 
-// 👉 Add CORS service
+// Add CORS service
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policyBuilder =>
+    options.AddPolicy("AllowFrontend", policyBuilder =>
         policyBuilder
-            .AllowAnyOrigin()
+            .WithOrigins("http://localhost:3000")
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
@@ -24,11 +24,15 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// 👉 Enable CORS before mapping controllers/endpoints
-app.UseCors("AllowAll");
+// Enable CORS before mapping controllers/endpoints
+app.UseCors("AllowFrontend");
 
-app.UseStaticFiles();  // Add this line to serve static files
+// Configure middleware in the correct order
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseCors("AllowFrontend"); // Make sure CORS is after UseRouting
+app.UseAuthorization();
 
 app.MapControllers();
 

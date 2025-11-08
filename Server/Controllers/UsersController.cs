@@ -15,6 +15,12 @@ public class UsersController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("test")]
+    public ActionResult<string> Test()
+    {
+        return Ok("Server is running!");
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
@@ -49,6 +55,63 @@ public class UsersController : ControllerBase
         var user = await _context.Users.FindAsync(id);
         if (user == null) return NotFound();
         return user;
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<object>> Login([FromBody] LoginRequest request)
+    {
+        try
+        {
+            Console.WriteLine($"Login attempt received for: {request?.LoginId}");
+
+            if (request == null || string.IsNullOrEmpty(request.LoginId) || string.IsNullOrEmpty(request.Password))
+            {
+                Console.WriteLine("Invalid request: Missing credentials");
+                return BadRequest("Login ID and password are required.");
+            }
+
+            // Check if login is email or username
+            var user = await _context.Users
+                .Where(u => u.DeletedAt == null && 
+                    (u.Email.ToLower() == request.LoginId.ToLower() || 
+                     u.Username.ToLower() == request.LoginId.ToLower()))
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                Console.WriteLine($"User not found for login ID: {request.LoginId}");
+                return BadRequest("Invalid login credentials.");
+            }
+
+            Console.WriteLine($"User found: {user.Username}");
+
+            // Verify password
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            {
+                Console.WriteLine("Password verification failed");
+                return BadRequest("Invalid login credentials.");
+            }
+
+            Console.WriteLine("Login successful");
+
+            // Return user data (excluding sensitive information)
+            return Ok(new
+            {
+                userId = user.UserId,
+                username = user.Username,
+                email = user.Email,
+                userType = user.UserType,
+                firstName = user.FirstName,
+                lastName = user.LastName,
+                profileImg = user.ProfileImg
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            return StatusCode(500, "An error occurred during login.");
+        }
     }
 
     // Add [HttpPost], [HttpPut], [HttpDelete] for full CRUD
