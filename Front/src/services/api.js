@@ -160,6 +160,20 @@ export const messagesAPI = {
   }),
 };
 
+// ========== AUTH ==========
+export const logout = async () => {
+  try {
+    console.log('Logging out...');
+    // Clear user data from localStorage
+    localStorage.removeItem('user');
+    console.log('Logout successful');
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Clear localStorage anyway, even if API call fails
+    localStorage.removeItem('user');
+  }
+};
+
 export default {
   courses: coursesAPI,
   categories: categoriesAPI,

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, MessageSquare, MessagesSquare, Megaphone, BarChart3, Settings, Search, Bell, User, FolderTree, Layers, LifeBuoy } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { logout } from '../services/api';
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -19,6 +20,17 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/Login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      navigate('/Login');
+    }
+  };
 
 
   return (
@@ -75,7 +87,12 @@ export default function AdminLayout() {
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors">Profile</button>
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors">Settings</button>
                   <hr className="my-2 border-[#F2E6E0]" />
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors text-[#D9433B]">Logout</button>
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors text-[#D9433B]"
+                  >
+                    Logout
+                  </button>
                 </div>
               )}
             </div>

@@ -1,10 +1,13 @@
 import React from 'react';
 import Card from '../../components/Card';
 import { useToast } from '../../components/Toast';
+import { useNavigate } from 'react-router-dom';
+import { logout } from '../../services/api';
 import { User, Bell, Shield, Palette, Database, LogOut } from 'lucide-react';
 
 export default function Settings() {
   const { add } = useToast();
+  const navigate = useNavigate();
   
   const onSave = (e) => { 
     e.preventDefault(); 
@@ -15,8 +18,16 @@ export default function Settings() {
     add('Theme preference updated');
   };
 
-  const onLogout = () => {
-    add('Logged out successfully');
+  const onLogout = async () => {
+    try {
+      await logout();
+      add('Logged out successfully');
+      navigate('/Login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      add('Logout failed, but redirecting...');
+      navigate('/Login');
+    }
   };
 
   return (
