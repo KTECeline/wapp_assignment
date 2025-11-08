@@ -95,8 +95,12 @@ const Login: FC = () => {
                     // Store user data in localStorage
                     localStorage.setItem('user', JSON.stringify(result));
                     
-                    // Redirect to RgUserHome for regular users
-                    navigate('/RgUserHome');
+                    // Check user type and redirect accordingly
+                    if (result.userType === 'admin') {
+                        navigate('/admin/dashboard');
+                    } else {
+                        navigate('/RgUserHome');
+                    }
                 } catch (error: any) {
                     const errorMessage = error.message || 'Login failed. Please try again.';
                     setFieldError('loginId', errorMessage);
