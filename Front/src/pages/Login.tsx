@@ -206,7 +206,7 @@ const Login: FC = () => {
                         </div>
 
                         <div className="w-full flex flex-row justify-center ">
-                            <div className="w-full px-8 pb-4 gap-[16px] flex flex-row justify-center mt-2">
+                            <div className="w-full px-8 pb-4 gap-[16px] flex flex-col justify-center mt-2">
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
@@ -215,6 +215,13 @@ const Login: FC = () => {
                                     {isSubmitting ? (
                                         <IconLoading className="text-black w-5 h-5 animate-spin ml-4" />
                                     ) : <span>Login Now</span>}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/VisitorHome')}
+                                    className="w-full h-[37px] hover:scale-105 flex justify-center items-center rounded-full transition-all duration-[600ms] bg-gray-400 text-white hover:bg-gray-500"
+                                >
+                                    Continue as Guest
                                 </button>
                             </div>
                         </div>

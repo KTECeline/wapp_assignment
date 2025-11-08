@@ -22,6 +22,7 @@ import RgUserSearch from "./pages/RgUserSearch.tsx";
 import RgUserSet from "./pages/RgUserSet.tsx"; 
 import RgUserPost from "./pages/RgUserPost.tsx"; 
 import RgUserReview from "./pages/RgUserReview.tsx"; 
+import VisitorHome from "./pages/visitor/VisitorHome.tsx";
 import Register from "./pages/Register.tsx"; 
 import Login from "./pages/Login.tsx"; 
 import LandingPage from "./pages/LandingPage.tsx"; 
@@ -51,6 +52,7 @@ function App() {
         <Route path="/RgUserSet" element={<RgUserSet />} />
         <Route path="/RgUserPost" element={<RgUserPost />} />
         <Route path="/RgUserReview" element={<RgUserReview />} />
+        <Route path="/VisitorHome" element={<VisitorHome />} />
         <Route path="/Register" element={<Register />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/landing" element={<LandingPage />} />
