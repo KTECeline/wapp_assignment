@@ -22,6 +22,7 @@ type FormValues = {
 };
 
 const Login: FC = () => {
+    const navigate = useNavigate();
     // Test server connection on component mount
     useEffect(() => {
         const testServer = async () => {
@@ -91,11 +92,11 @@ const Login: FC = () => {
                         password: values.password
                     });
 
-                    // TODO: Store user data in your application state/context
+                    // Store user data in localStorage
                     localStorage.setItem('user', JSON.stringify(result));
                     
-                    // TODO: Redirect to dashboard or home page
-                    window.location.href = '/dashboard';
+                    // Redirect to RgUserHome for regular users
+                    navigate('/RgUserHome');
                 } catch (error: any) {
                     const errorMessage = error.message || 'Login failed. Please try again.';
                     setFieldError('loginId', errorMessage);
