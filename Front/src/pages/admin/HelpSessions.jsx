@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send, X, User, Clock, CheckCircle, AlertCircle, Search, Filter } from 'lucide-react';
 import { useToast } from '../../components/Toast';
+import { getHelpSessions, createMessage, closeHelpSession, markMessageViewed } from '../../api/client';
 
 const Card = ({ children, className = '' }) => (
   <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
@@ -8,49 +9,8 @@ const Card = ({ children, className = '' }) => (
   </div>
 );
 
-// Mock data - replace with API
-const initialSessions = [
-  {
-    id: 1,
-    userId: 101,
-    userName: 'Sarah Chen',
-    userEmail: 'sarah@example.com',
-    startSession: '2025-11-07T10:30:00',
-    endSession: null,
-    status: 'active',
-    messages: [
-      { id: 1, content: 'Hi, I need help with the sourdough recipe', sentDate: '2025-11-07T10:30:00', sentByAdmin: false, viewedByAdmin: true },
-      { id: 2, content: 'Hello Sarah! I\'d be happy to help. What specific issue are you facing?', sentDate: '2025-11-07T10:35:00', sentByAdmin: true, viewedByUser: true },
-      { id: 3, content: 'My dough isn\'t rising properly', sentDate: '2025-11-07T10:40:00', sentByAdmin: false, viewedByAdmin: false }
-    ]
-  },
-  {
-    id: 2,
-    userId: 102,
-    userName: 'Mike Rodriguez',
-    userEmail: 'mike@example.com',
-    startSession: '2025-11-06T14:20:00',
-    endSession: '2025-11-06T14:45:00',
-    status: 'closed',
-    messages: [
-      { id: 1, content: 'Can I substitute butter with oil?', sentDate: '2025-11-06T14:20:00', sentByAdmin: false, viewedByAdmin: true },
-      { id: 2, content: 'Yes, you can use a 1:1 ratio. The texture might be slightly different but it will work!', sentDate: '2025-11-06T14:25:00', sentByAdmin: true, viewedByUser: true },
-      { id: 3, content: 'Perfect, thank you!', sentDate: '2025-11-06T14:30:00', sentByAdmin: false, viewedByAdmin: true }
-    ]
-  },
-  {
-    id: 3,
-    userId: 103,
-    userName: 'Emma Wilson',
-    userEmail: 'emma@example.com',
-    startSession: '2025-11-07T09:15:00',
-    endSession: null,
-    status: 'active',
-    messages: [
-      { id: 1, content: 'I can\'t access the video for lesson 3', sentDate: '2025-11-07T09:15:00', sentByAdmin: false, viewedByAdmin: false }
-    ]
-  }
-];
+// initial empty state; real data fetched from API
+const initialSessions = [];
 
 export default function HelpSessions() {
   const { add } = useToast();
@@ -60,57 +20,89 @@ export default function HelpSessions() {
   const [filter, setFilter] = useState('all'); // 'all', 'active', 'closed'
   const [searchTerm, setSearchTerm] = useState('');
 
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getHelpSessions();
+        if (!mounted) return;
+        setSessions(data);
+      } catch (err) {
+        console.error(err);
+        add('Failed to load help sessions');
+      }
+    })();
+    return () => { mounted = false; };
+  }, [add]);
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!messageInput.trim() || !selectedSession) return;
 
     const newMessage = {
-      id: Date.now(),
+      // server will assign id and timestamps; include session id
+      sessionId: selectedSession.id,
       content: messageInput,
-      sentDate: new Date().toISOString(),
-      sentByAdmin: true,
-      viewedByUser: false
+      sentByAdmin: true
     };
 
-    setSessions(prev => prev.map(session =>
-      session.id === selectedSession.id
-        ? { ...session, messages: [...session.messages, newMessage] }
-        : session
-    ));
+    // send to backend
+    createMessage(newMessage).then((created) => {
+      // backend returns created message with id and sentDate
+      setSessions(prev => prev.map(session =>
+        session.id === selectedSession.id
+          ? { ...session, messages: [...session.messages, created] }
+          : session
+      ));
 
-    // Update local selected session
-    setSelectedSession(prev => ({
-      ...prev,
-      messages: [...prev.messages, newMessage]
-    }));
+      setSelectedSession(prev => ({
+        ...prev,
+        messages: [...prev.messages, created]
+      }));
 
-    setMessageInput('');
-    add('Message sent!');
+      setMessageInput('');
+      add('Message sent!');
+    }).catch(err => {
+      console.error(err);
+      add('Failed to send message');
+    });
   };
 
   const handleCloseSession = (sessionId) => {
-    setSessions(prev => prev.map(session =>
-      session.id === sessionId
-        ? { ...session, status: 'closed', endSession: new Date().toISOString() }
-        : session
-    ));
-    if (selectedSession?.id === sessionId) {
-      setSelectedSession(null);
-    }
-    add('Session closed');
+    // call backend to close session
+    closeHelpSession(sessionId).then((updated) => {
+      setSessions(prev => prev.map(session =>
+        session.id === sessionId
+          ? { ...session, status: 'closed', endSession: updated.endSession }
+          : session
+      ));
+      if (selectedSession?.id === sessionId) {
+        setSelectedSession(prev => ({ ...prev, status: 'closed', endSession: updated.endSession }));
+      }
+      add('Session closed');
+    }).catch(err => {
+      console.error(err);
+      add('Failed to close session');
+    });
   };
 
   const markAsRead = (sessionId) => {
-    setSessions(prev => prev.map(session =>
-      session.id === sessionId
-        ? {
-            ...session,
-            messages: session.messages.map(msg =>
-              !msg.sentByAdmin ? { ...msg, viewedByAdmin: true } : msg
-            )
-          }
-        : session
-    ));
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    // Mark messages locally and call API for each message that needs marking
+    const toMark = session.messages.filter(m => !m.sentByAdmin && !m.viewedByAdmin);
+    toMark.forEach(m => {
+      markMessageViewed(m.id, true).then(() => {
+        setSessions(prev => prev.map(s =>
+          s.id === sessionId
+            ? { ...s, messages: s.messages.map(msg => msg.id === m.id ? { ...msg, viewedByAdmin: true } : msg) }
+            : s
+        ));
+      }).catch(err => {
+        console.error('Failed to mark message viewed', err);
+      });
+    });
   };
 
   const filteredSessions = sessions.filter(session => {

@@ -64,3 +64,42 @@ export async function getBadgeStats() {
   if (!res.ok) throw new Error(`Failed to fetch badge stats: ${res.status}`);
   return res.json();
 }
+
+// Help sessions and messages
+export async function getHelpSessions() {
+  const res = await fetch('/api/HelpSessions');
+  if (!res.ok) throw new Error(`Failed to fetch help sessions: ${res.status}`);
+  return res.json();
+}
+
+export async function getHelpSession(id) {
+  const res = await fetch(`/api/HelpSessions/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch help session ${id}: ${res.status}`);
+  return res.json();
+}
+
+export async function createMessage(message) {
+  const res = await fetch('/api/Messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(message)
+  });
+  if (!res.ok) throw new Error(`Failed to create message: ${res.status}`);
+  return res.json();
+}
+
+export async function closeHelpSession(id) {
+  const res = await fetch(`/api/HelpSessions/${id}/close`, { method: 'PUT' });
+  if (!res.ok) throw new Error(`Failed to close help session: ${res.status}`);
+  return res.json();
+}
+
+export async function markMessageViewed(id, byAdmin = true) {
+  const res = await fetch(`/api/Messages/${id}/mark-viewed`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(byAdmin)
+  });
+  if (!res.ok) throw new Error(`Failed to mark message viewed: ${res.status}`);
+  return res.json();
+}

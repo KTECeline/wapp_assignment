@@ -90,10 +90,11 @@ public class UsersController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        if (update.CategoryId.HasValue) user.CategoryId = update.CategoryId;
+       // if (update.CategoryId.HasValue) user.CategoryId = update.CategoryId;
 
-        await _context.SaveChangesAsync();
-        return Ok(user);
+        //await _context.SaveChangesAsync();
+        //return Ok(user);
+   
     }
 
     [HttpDelete("{id}")]
