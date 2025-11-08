@@ -8,7 +8,13 @@ import { RxCross2 } from "react-icons/rx";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import Select from 'react-select';
 import { Link } from "react-router-dom";
-import { createUser } from "../api/client.js";
+import { createUser, getCategories } from "../api/client.js";
+
+interface Category {
+    categoryId: number;
+    title: string;
+    description: string;
+}
 
 const customStyles = {
     control: (base: any, state: { isFocused: boolean }) => ({
@@ -89,18 +95,6 @@ const plevels = [
     { value: "Master", label: "Master" },
 ];
 
-const pcats = [
-    { value: "Bread", label: "Bread" },
-    { value: "Pastry", label: "Pastry" },
-    { value: "Cookies", label: "Cookies" },
-    { value: "Cake", label: "Cake" },
-    { value: "Pie & Tarts", label: "Pie & Tarts" },
-    { value: "SourDough", label: "SourDough" },
-    { value: "Pizza", label: "Pizza" },
-    { value: "Scones & Muffins", label: "Scones & Muffins" },
-    { value: "Others", label: "Others" },
-];
-
 type FormValues = {
     fname: string;
     lname: string;
@@ -153,6 +147,67 @@ const Registration: FC = () => {
     }, []);
 
     const [emailExists, setEmailExists] = useState(false);
+    const [categories, setCategories] = useState<Array<{ value: string; label: string }>>([]);
+
+    useEffect(() => {
+        let mounted = true;
+        
+        const fetchCategories = async () => {
+            try {
+                // First try to fetch hardcoded categories for testing
+                const testCategories = [
+                    { categoryId: 1, title: "Bread" },
+                    { categoryId: 2, title: "Pastry" },
+                    { categoryId: 3, title: "Cookies" },
+                    { categoryId: 4, title: "Cake" },
+                    { categoryId: 5, title: "Pie & Tarts" },
+                    { categoryId: 6, title: "Sourdough" },
+                    { categoryId: 7, title: "Pizza" },
+                    { categoryId: 8, title: "Scones & Muffins" },
+                    { categoryId: 9, title: "Others" }
+                ];
+
+                if (mounted) {
+                    const formattedCategories = testCategories.map(cat => ({
+                        value: String(cat.categoryId),
+                        label: cat.title
+                    }));
+                    console.log('Using test categories:', formattedCategories);
+                    setCategories(formattedCategories);
+                }
+
+                // Then try the API call
+                console.log('Also fetching from API...');
+                const response = await fetch('/api/Categories');
+                console.log('API Response:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const categoriesData = await response.json();
+                console.log('API categories received:', categoriesData);
+                
+                if (mounted && categoriesData && categoriesData.length > 0) {
+                    const formattedCategories = categoriesData.map((cat: Category) => ({
+                        value: String(cat.categoryId),
+                        label: cat.title
+                    }));
+                    console.log('Using API categories:', formattedCategories);
+                    setCategories(formattedCategories);
+                }
+            } catch (error) {
+                console.error('Failed to fetch categories from API:', error);
+                // API error is logged but won't affect the UI since we have test categories
+            }
+        };
+        
+        fetchCategories();
+        
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     const validationSchema = Yup.object({
         // Step 1
@@ -369,8 +424,8 @@ const Registration: FC = () => {
                             gender: values.gender,
                             DOB: values.DOB,
                             profileimage: values.profileimage,
-                            levelId: values.plevel ? parseInt(values.plevel) : null,
-                            categoryId: values.pcat ? parseInt(values.pcat) : null
+                            levelId: values.plevel ? (values.plevel === "Beginner" ? 1 : values.plevel === "Amateur" ? 2 : 3) : null,
+                            categoryId: values.pcat ? parseInt(values.pcat, 10) : null
                         };
 
                         // Call the API to create user
@@ -717,13 +772,14 @@ const Registration: FC = () => {
 
                                             <div className="flex flex-row h-[37px] items-center">
                                                 <Select
-                                                    options={pcats}
-                                                    value={pcats.find(option => option.value === values.pcat) || null}
+                                                    options={categories}
+                                                    value={categories.find(option => option.value === values.pcat) || null}
                                                     onChange={(selectedOption) => {
                                                         setFieldValue("pcat", selectedOption?.value);
+                                                        console.log("Selected category:", selectedOption);
                                                     }}
                                                     styles={customStyles}
-                                                    placeholder="Select Preferred cat"
+                                                    placeholder="Select Preferred Category"
                                                     isClearable
                                                 />
                                             </div>
@@ -1035,12 +1091,10 @@ const Registration: FC = () => {
                             </video>
 
                             <div className="font-ibarra text-white text-[50px] leading-[55px] absolute left-[60px] bottom-[105px] w-[500px] drop-shadow-[0px_2px_5px_rgba(0,0,0,0.55)]">
-                                Welcome to De Pastry Lab<span ref={dynamicTextRef} className=""></span>
+                                Welcome to De Pastry Lab
                             </div>
                             <div className="text-white text-[15px] leading-[55px] absolute left-[65px] bottom-[50px] w-[500px] drop-shadow-[0px_2px_5px_rgba(0,0,0,0.55)]">
-                                <span ref={dynamicTextRef} className="">
-
-                                </span>
+                                <span ref={dynamicTextRef} className=""></span>
                             </div>
                         </div>
                     </div>

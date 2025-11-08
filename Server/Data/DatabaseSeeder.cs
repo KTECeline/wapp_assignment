@@ -52,9 +52,15 @@ public static class DatabaseSeeder
 
         var categories = new[]
         {
-            new Category { Title = "Beginner", Description = "For beginners" },
-            new Category { Title = "Intermediate", Description = "For intermediate users" },
-            new Category { Title = "Advanced", Description = "For advanced users" }
+            new Category { Title = "Bread", Description = "All types of bread recipes and techniques" },
+            new Category { Title = "Pastry", Description = "Delicate pastry creations" },
+            new Category { Title = "Cookies", Description = "Cookie recipes and decorating techniques" },
+            new Category { Title = "Cake", Description = "Cake baking and decorating" },
+            new Category { Title = "Pie & Tarts", Description = "Sweet and savory pies and tarts" },
+            new Category { Title = "Sourdough", Description = "Sourdough bread making" },
+            new Category { Title = "Pizza", Description = "Pizza dough and toppings" },
+            new Category { Title = "Scones & Muffins", Description = "Quick breads and breakfast pastries" },
+            new Category { Title = "Others", Description = "Other baking specialties" }
         };
 
         context.Categories.AddRange(categories);

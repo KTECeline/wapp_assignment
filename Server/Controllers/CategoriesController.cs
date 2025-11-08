@@ -15,9 +15,17 @@ public class CategoriesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
     {
-        return await _context.Categories
+        var categories = await _context.Categories
             .Where(c => !c.Deleted)
             .ToListAsync();
+        
+        Console.WriteLine($"Found {categories.Count} categories:");
+        foreach (var category in categories)
+        {
+            Console.WriteLine($"- {category.CategoryId}: {category.Title}");
+        }
+        
+        return categories;
     }
 
     [HttpGet("{id}")]

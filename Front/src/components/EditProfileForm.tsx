@@ -171,13 +171,13 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                     
                     // Map backend data to form fields
                     setInitialValues({
-                        fname: userData.firstName || "",
-                        lname: userData.lastName || "",
+                        fname: userData.firstName || userData.fname || "",
+                        lname: userData.lastName || userData.lname || "",
                         gender: userData.gender || "",
                         DOB: userData.dob ? userData.dob.split('T')[0] : "",
                         profileimage: null,
                         plevel: userData.levelId === 1 ? "Beginner" : userData.levelId === 2 ? "Amateur" : "Master",
-                        pcat: pcats[userData.categoryId - 1]?.value || "",
+                        pcat: userData.categoryId ? pcats[userData.categoryId - 1]?.value || "" : "",
                         username: userData.username || "",
                         email: userData.email || "",
                         userId: userData.userId

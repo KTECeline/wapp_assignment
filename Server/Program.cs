@@ -1,6 +1,11 @@
 using Server.Data;
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 // Add services to the container.
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<ApplicationDbContext>();

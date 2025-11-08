@@ -4,6 +4,12 @@ export async function getUsers() {
   return res.json();
 }
 
+export async function getCategories() {
+  const res = await fetch('/api/Categories');
+  if (!res.ok) throw new Error(`Failed to fetch categories: ${res.status}`);
+  return res.json();
+}
+
 export async function createUser(userData) {
   const formData = new FormData();
   
@@ -15,11 +21,12 @@ export async function createUser(userData) {
   formData.append('lastName', userData.lastName);
   formData.append('gender', userData.gender);
   formData.append('DOB', userData.DOB);
+  formData.append('userType', 'user');  // Default user type
   
   if (userData.levelId) {
     formData.append('levelId', userData.levelId.toString());
   }
-  if (userData.categoryId) {
+  if (userData.categoryId !== null && userData.categoryId !== undefined) {
     formData.append('categoryId', userData.categoryId.toString());
   }
   

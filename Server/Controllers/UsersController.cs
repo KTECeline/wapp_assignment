@@ -9,10 +9,12 @@ using Microsoft.AspNetCore.Http;
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(ApplicationDbContext context)
+    public UsersController(ApplicationDbContext context, ILogger<UsersController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     [HttpGet("test")]
@@ -119,10 +121,61 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<User>> CreateUser([FromForm] string username, [FromForm] string email, 
         [FromForm] string password, [FromForm] string firstName, [FromForm] string lastName,
         [FromForm] string gender, [FromForm] string DOB, [FromForm] int? levelId,
-        [FromForm] int? categoryId, IFormFile? profileimage)
+        [FromForm] int? categoryId, [FromForm] string userType, IFormFile? profileimage)
     {
         try
         {
+            // Debug log
+            _logger.LogInformation("Checking database state...");
+            var categoryCount = await _context.Categories.CountAsync();
+            var levelCount = await _context.Levels.CountAsync();
+            _logger.LogInformation("Database state: {CategoryCount} categories and {LevelCount} levels", categoryCount, levelCount);
+
+            // Make sure levels exist
+            if (levelCount == 0)
+            {
+                var defaultLevels = new[]
+                {
+                    new Level { Title = "Beginner", Description = "For beginners" },
+                    new Level { Title = "Amateur", Description = "For intermediate users" },
+                    new Level { Title = "Master", Description = "For advanced users" }
+                };
+                await _context.Levels.AddRangeAsync(defaultLevels);
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Added default levels");
+            }
+
+            // Make sure categories exist
+            if (categoryCount == 0)
+            {
+                var defaultCategories = new[]
+                {
+                    new Category { Title = "Bread", Description = "All types of bread recipes" },
+                    new Category { Title = "Pastry", Description = "Delicate pastry creations" },
+                    new Category { Title = "Cookies", Description = "Cookie recipes and decorating" },
+                    new Category { Title = "Cake", Description = "Cake baking and decorating" },
+                    new Category { Title = "Pie & Tarts", Description = "Sweet and savory pies" },
+                    new Category { Title = "Sourdough", Description = "Sourdough bread making" },
+                    new Category { Title = "Pizza", Description = "Pizza making techniques" },
+                    new Category { Title = "Scones & Muffins", Description = "Quick breads" },
+                    new Category { Title = "Others", Description = "Other baking specialties" }
+                };
+                await _context.Categories.AddRangeAsync(defaultCategories);
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Added default categories");
+            }
+
+            Console.WriteLine("Creating user with data:");
+            Console.WriteLine($"Username: {username}");
+            Console.WriteLine($"Email: {email}");
+            Console.WriteLine($"FirstName: {firstName}");
+            Console.WriteLine($"LastName: {lastName}");
+            Console.WriteLine($"Gender: {gender}");
+            Console.WriteLine($"DOB: {DOB}");
+            Console.WriteLine($"LevelId: {levelId}");
+            Console.WriteLine($"CategoryId: {categoryId}");
+            Console.WriteLine($"UserType: {userType}");
+            Console.WriteLine($"Has Profile Image: {profileimage != null}");
             // Validate required fields
             if (string.IsNullOrWhiteSpace(username) || 
                 string.IsNullOrWhiteSpace(email) || 
@@ -143,6 +196,26 @@ public class UsersController : ControllerBase
                 return BadRequest("Username already exists.");
             }
 
+            // Validate category and level if provided
+            if (categoryId.HasValue)
+            {
+                var category = await _context.Categories.FindAsync(categoryId.Value);
+                if (category == null)
+                {
+                    return BadRequest($"Category with ID {categoryId.Value} not found.");
+                }
+            }
+
+            if (levelId.HasValue)
+            {
+                var level = await _context.Levels.FindAsync(levelId.Value);
+                if (level == null)
+                {
+                    return BadRequest($"Level with ID {levelId.Value} not found.");
+                }
+            }
+
+            // Parse DOB
             DateTime? parsedDob = null;
             if (!string.IsNullOrWhiteSpace(DOB) && DateTime.TryParse(DOB, out var _dt))
             {
@@ -154,14 +227,14 @@ public class UsersController : ControllerBase
                 Username = username,
                 Email = email,
                 Password = BCrypt.Net.BCrypt.HashPassword(password),
-                FirstName = firstName,
-                LastName = lastName,
-                Gender = gender,
+                FirstName = firstName ?? "",
+                LastName = lastName ?? "",
+                Gender = gender ?? "",
                 DOB = parsedDob,
                 LevelId = levelId,
                 CategoryId = categoryId,
                 CreatedAt = DateTime.UtcNow,
-                UserType = "user" // Default user type
+                UserType = userType ?? "user" // Use provided userType or default to "user"
             };
 
             // Handle profile image if provided
