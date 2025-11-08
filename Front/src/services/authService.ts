@@ -63,4 +63,22 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
     }
 };
 
+export const logout = async (): Promise<void> => {
+    try {
+        console.log('Logging out...');
+        
+        // Clear user data from localStorage
+        localStorage.removeItem('user');
+        
+        // Optional: Call backend logout endpoint if needed
+        // await axiosInstance.post('/users/logout');
+        
+        console.log('Logout successful');
+    } catch (error: any) {
+        console.error('Logout error:', error);
+        // Clear localStorage anyway, even if API call fails
+        localStorage.removeItem('user');
+    }
+};
+
 export default login;

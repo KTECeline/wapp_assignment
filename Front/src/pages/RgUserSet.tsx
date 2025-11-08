@@ -8,6 +8,8 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import IconLoading from "../components/IconLoading.tsx";
 import * as Yup from "yup";
 import ProfileForm from "../components/EditProfileForm.tsx";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../services/authService.ts";
 
 type Profile = {
     id: string;
@@ -24,6 +26,7 @@ type Profile = {
 };
 
 const RgUserCat = () => {
+    const navigate = useNavigate();
     const [userId] = useState(1); // 🔹 Placeholder user ID
     const [active, setActive] = useState("My Profile");
 
@@ -47,6 +50,18 @@ const RgUserCat = () => {
         console.log("✅ Profile updated:", updatedProfile);
         setShowProfileForm(false);
         // 🧠 Later: call Supabase or API to update profile
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            // Navigate to login page after successful logout
+            navigate('/Login');
+        } catch (error) {
+            console.error('Logout failed:', error);
+            // Still navigate to login page even if logout fails
+            navigate('/Login');
+        }
     };
 
     return (
@@ -772,7 +787,10 @@ const RgUserCat = () => {
 
                     <div className="mt-[36px] w-[270px] h-[1px] bg-black mx-auto" />
 
-                    <button className="mt-[6px] w-full h-[47px] flex justify-center items-center hover:bg-[#f7eee2]/60 transition-all duration-300 rounded-[15px]">
+                    <button 
+                        onClick={handleLogout}
+                        className="mt-[6px] w-full h-[47px] flex justify-center items-center hover:bg-[#f7eee2]/60 transition-all duration-300 rounded-[15px]"
+                    >
                         Logout
                     </button>
                 </div>
