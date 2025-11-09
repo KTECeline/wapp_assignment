@@ -8,6 +8,7 @@ const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/course-categories', label: 'Courses', icon: BookOpen },
+  { to: '/admin/course-management', label: 'Course Management', icon: Layers },
   { to: '/admin/posts', label: 'Posts', icon: MessageSquare },
   { to: '/admin/feedback', label: 'Feedback', icon: MessagesSquare },
   { to: '/admin/help-sessions', label: 'Help Sessions', icon: LifeBuoy },

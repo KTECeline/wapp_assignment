@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FolderTree, BarChart3, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Settings, TrendingUp, Users, Star } from 'lucide-react';
+import { BookOpen, FolderTree, BarChart3, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Settings, TrendingUp, Star } from 'lucide-react';
+import { getCourses, getCategories, getLevels } from '../../api/client';
 
 const Card = ({ children, className = '' }) => (
   <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
@@ -10,13 +11,46 @@ const Card = ({ children, className = '' }) => (
 
 export default function CourseManagement() {
   const navigate = useNavigate();
+  const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock stats - replace with real API data
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [coursesData, categoriesData, levelsData] = await Promise.all([
+        getCourses(),
+        getCategories(),
+        getLevels()
+      ]);
+      setCourses(coursesData);
+      setCategories(categoriesData);
+      setLevels(levelsData);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate average rating from courses
+  const avgRating = courses.length > 0 
+    ? (courses.reduce((acc, course) => acc + (course.rating || 0), 0) / courses.length).toFixed(1)
+    : '0.0';
+
   const stats = [
-    { label: 'Total Courses', value: 28, icon: BookOpen, change: '+3', color: 'var(--accent)' },
-    { label: 'Categories', value: 8, icon: FolderTree, change: '+1', color: 'var(--accent)' },
-    { label: 'Levels', value: 3, icon: BarChart3, change: '0', color: 'var(--accent)' },
-    { label: 'Avg Rating', value: '4.8', icon: Star, change: '+0.2', color: 'var(--accent)' }
+    { label: 'Total Courses', value: courses.length, icon: BookOpen, change: '', color: 'var(--accent)' },
+    { label: 'Categories', value: categories.length, icon: FolderTree, change: '', color: 'var(--accent)' },
+    { label: 'Levels', value: levels.length, icon: BarChart3, change: '', color: 'var(--accent)' },
+    { label: 'Avg Rating', value: avgRating, icon: Star, change: '', color: 'var(--accent)' }
   ];
 
   const managementCards = [
@@ -27,7 +61,7 @@ export default function CourseManagement() {
       path: '/admin/courses',
       color: 'var(--accent)',
       bgColor: 'var(--surface)',
-      stats: '28 courses'
+      stats: `${courses.length} courses`
     },
     {
       title: 'Course Categories',
@@ -36,7 +70,7 @@ export default function CourseManagement() {
       path: '/admin/course-categories',
       color: 'var(--accent)',
       bgColor: 'var(--surface)',
-      stats: '8 categories'
+      stats: `${categories.length} categories`
     },
     {
       title: 'Difficulty Levels',
@@ -45,7 +79,7 @@ export default function CourseManagement() {
       path: '/admin/course-levels',
       color: 'var(--accent)',
       bgColor: 'var(--surface)',
-      stats: '3 levels'
+      stats: `${levels.length} levels`
     }
   ];
 
@@ -96,165 +130,187 @@ export default function CourseManagement() {
       icon: BookOpen,
       action: () => navigate('/admin/courses')
     },
-    {
-      label: 'Course Settings',
-      icon: Settings,
-      action: () => navigate('/admin/settings')
-    }
+    
   ];
 
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Course Management</h1>
-            <p className="text-gray-600">Complete control over your learning platform content</p>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)]"></div>
           </div>
-          <button
-            onClick={() => navigate('/admin/courses/edit', { state: { mode: 'create' } })}
-            className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            Create New Course
-          </button>
-        </div>
+        )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <Card key={index} className="relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer">
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--surface)' }} />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform" style={{ backgroundColor: stat.color }}>
-                    <stat.icon className="w-6 h-6 text-white" />
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p className="font-medium">Error loading data</p>
+            <p className="text-sm">{error}</p>
+            <button 
+              onClick={fetchData}
+              className="mt-2 text-sm underline hover:no-underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* Content - Show when not loading */}
+        {!loading && (
+          <>
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Course Management</h1>
+                <p className="text-gray-600">Complete control over your learning platform content</p>
+              </div>
+              <button
+                onClick={() => navigate('/admin/courses/edit', { state: { mode: 'create' } })}
+                className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+              >
+                <Plus className="w-5 h-5" />
+                Create New Course
+              </button>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
+                <Card key={index} className="relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer">
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--surface)' }} />
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform" style={{ backgroundColor: stat.color }}>
+                        <stat.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-semibold px-2 py-1 rounded-full border" style={{ color: 'var(--accent-dark)', backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+                        {stat.change}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.label}</h3>
+                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
                   </div>
-                  <span className="text-xs font-semibold px-2 py-1 rounded-full border" style={{ color: 'var(--accent-dark)', backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-                    {stat.change}
-                  </span>
+                </Card>
+              ))}
+            </div>
+
+            {/* Main Management Cards */}
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Settings className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                Core Management
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {managementCards.map((card, index) => (
+                  <Card
+                    key={index}
+                    className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                    onClick={() => navigate(card.path)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-4 rounded-2xl group-hover:scale-110 transition-transform" style={{ backgroundColor: card.bgColor }}>
+                        <card.icon className="w-8 h-8" style={{ color: card.color }} />
+                      </div>
+                      <TrendingUp className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent)' }} />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
+                    <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
+                    <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                      <span className="text-xs font-semibold" style={{ color: 'var(--accent-dark)' }}>{card.stats}</span>
+                      <span className="text-xs font-medium text-gray-400 group-hover:text-[var(--accent)] transition-colors">
+                        Manage →
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Course Components */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                    Course Components
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">These are managed within the Course Editor</p>
                 </div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.label}</h3>
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {courseComponentCards.map((card, index) => (
+                  <Card
+                    key={index}
+                    className="group hover:shadow-md transition-all duration-300 cursor-pointer relative"
+                    onClick={() => navigate(card.path)}
+                  >
+                    <div className="absolute top-4 right-4">
+                      <span className="text-xs px-2 py-1 rounded-full border font-medium" style={{ backgroundColor: 'var(--surface)', color: 'var(--accent-dark)', borderColor: 'var(--border)' }}>
+                        {card.badge}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-xl mb-3 inline-block group-hover:scale-110 transition-transform" style={{ backgroundColor: 'var(--surface)' }}>
+                      <card.icon className="w-6 h-6" style={{ color: card.color }} />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900 mb-2">{card.title}</h3>
+                    <p className="text-xs text-gray-600 leading-relaxed">{card.description}</p>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <Card>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Quick Actions</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Common course management tasks</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {quickActions.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={action.action}
+                    className={`px-5 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                      action.primary
+                        ? 'bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white shadow-sm hover:shadow-md'
+                        : 'bg-white border hover:bg-[var(--surface)] text-gray-700'
+                    }`}
+                    style={!action.primary ? { borderColor: 'var(--border)' } : {}}
+                  >
+                    <action.icon className="w-5 h-5" />
+                    {action.label}
+                  </button>
+                ))}
               </div>
             </Card>
-          ))}
-        </div>
 
-        {/* Main Management Cards */}
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Settings className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-            Core Management
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {managementCards.map((card, index) => (
-              <Card
-                key={index}
-                className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1"
-                onClick={() => navigate(card.path)}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-4 rounded-2xl group-hover:scale-110 transition-transform" style={{ backgroundColor: card.bgColor }}>
-                    <card.icon className="w-8 h-8" style={{ color: card.color }} />
-                  </div>
-                  <TrendingUp className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent)' }} />
+            {/* Help Card */}
+            <Card className="border-2" style={{ borderColor: 'var(--accent)', backgroundColor: 'var(--surface)' }}>
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-white rounded-xl shadow-sm">
+                  <HelpCircle className="w-6 h-6" style={{ color: 'var(--accent)' }} />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{card.title}</h3>
-                <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
-                <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--accent-dark)' }}>{card.stats}</span>
-                  <span className="text-xs font-medium text-gray-400 group-hover:text-[var(--accent)] transition-colors">
-                    Manage →
-                  </span>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Need Help?</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    To manage course tips, ingredients, steps, and quizzes, create or edit a course first. These components are managed within the Course Editor.
+                  </p>
+                  <button
+                    onClick={() => navigate('/admin/courses')}
+                    className="text-sm font-medium px-4 py-2 rounded-lg border bg-white hover:bg-gray-50 transition-colors"
+                    style={{ borderColor: 'var(--accent)', color: 'var(--accent-dark)' }}
+                  >
+                    Go to Courses
+                  </button>
                 </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Course Components */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                Course Components
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">These are managed within the Course Editor</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {courseComponentCards.map((card, index) => (
-              <Card
-                key={index}
-                className="group hover:shadow-md transition-all duration-300 cursor-pointer relative"
-                onClick={() => navigate(card.path)}
-              >
-                <div className="absolute top-4 right-4">
-                  <span className="text-xs px-2 py-1 rounded-full border font-medium" style={{ backgroundColor: 'var(--surface)', color: 'var(--accent-dark)', borderColor: 'var(--border)' }}>
-                    {card.badge}
-                  </span>
-                </div>
-                <div className="p-3 rounded-xl mb-3 inline-block group-hover:scale-110 transition-transform" style={{ backgroundColor: 'var(--surface)' }}>
-                  <card.icon className="w-6 h-6" style={{ color: card.color }} />
-                </div>
-                <h3 className="text-base font-bold text-gray-900 mb-2">{card.title}</h3>
-                <p className="text-xs text-gray-600 leading-relaxed">{card.description}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Quick Actions</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Common course management tasks</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={action.action}
-                className={`px-5 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
-                  action.primary
-                    ? 'bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white shadow-sm hover:shadow-md'
-                    : 'bg-white border hover:bg-[var(--surface)] text-gray-700'
-                }`}
-                style={!action.primary ? { borderColor: 'var(--border)' } : {}}
-              >
-                <action.icon className="w-5 h-5" />
-                {action.label}
-              </button>
-            ))}
-          </div>
-        </Card>
-
-        {/* Help Card */}
-        <Card className="border-2" style={{ borderColor: 'var(--accent)', backgroundColor: 'var(--surface)' }}>
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm">
-              <HelpCircle className="w-6 h-6" style={{ color: 'var(--accent)' }} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">Need Help?</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                To manage course tips, ingredients, steps, and quizzes, create or edit a course first. These components are managed within the Course Editor.
-              </p>
-              <button
-                onClick={() => navigate('/admin/courses')}
-                className="text-sm font-medium px-4 py-2 rounded-lg border bg-white hover:bg-gray-50 transition-colors"
-                style={{ borderColor: 'var(--accent)', color: 'var(--accent-dark)' }}
-              >
-                Go to Courses
-              </button>
-            </div>
-          </div>
-        </Card>
+              </div>
+            </Card>
+          </>
+        )}
       </div>
     </div>
   );

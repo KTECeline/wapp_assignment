@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 public class Course
 {
@@ -19,7 +20,6 @@ public class Course
     public float Rating { get; set; }
 
     [Column("course_img")]
-    [StringLength(255)]
     public string CourseImg { get; set; } = string.Empty;
 
     [Column("cooking_time_min")]
@@ -40,20 +40,22 @@ public class Course
     public string CourseType { get; set; } = string.Empty;
 
     [Column("badge_img")]
-    [StringLength(255)]
     public string BadgeImg { get; set; } = string.Empty;
 
     [Column("quiz_badge_img")]
-    [StringLength(255)]
     public string QuizBadgeImg { get; set; } = string.Empty;
 
     [Column("level_id")]
     [ForeignKey("Level")]
     public int LevelId { get; set; }
-    public Level Level { get; set; } = null!;
+    
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Level? Level { get; set; }
 
     [Column("category_id")]
     [ForeignKey("Category")]
     public int CategoryId { get; set; }
-    public Category Category { get; set; } = null!;
+    
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public Category? Category { get; set; }
 }

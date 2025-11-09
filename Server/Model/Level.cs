@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 public class Level
 {
@@ -18,6 +19,7 @@ public class Level
     [Column("deleted")]
     public bool Deleted { get; set; }
 
-    // Navigation property
+    // Navigation property - ignore to prevent circular references
+    [JsonIgnore]
     public ICollection<Course> Courses { get; set; } = new List<Course>();
 }

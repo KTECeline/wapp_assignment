@@ -1,21 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, BookOpen, Users, BarChart3 } from 'lucide-react';
-
-// Mock data
-const courses = [
-  { title: 'Introduction to React', category: 'Web Development', difficulty: 'Beginner', enrolled: 1234 },
-  { title: 'Advanced JavaScript', category: 'Programming', difficulty: 'Advanced', enrolled: 856 },
-  { title: 'Python for Data Science', category: 'Data Science', difficulty: 'Intermediate', enrolled: 2103 },
-  { title: 'UI/UX Design Fundamentals', category: 'Design', difficulty: 'Beginner', enrolled: 1567 },
-  { title: 'Machine Learning Basics', category: 'AI/ML', difficulty: 'Intermediate', enrolled: 943 }
-];
+import { getCourses, deleteCourse } from '../../api/client';
+import { useToast } from '../../components/Toast';
 
 // Note: All accents on this page use red; neutral grays are reserved for text only.
 
 export default function CoursesSwiper() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { add } = useToast();
+
+  const fetchCourses = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCourses();
+      setCourses(data);
+      if (data.length === 0) {
+        setError('No courses found. Create your first course!');
+      }
+    } catch (err) {
+      console.error('Error fetching courses:', err);
+      setError('Failed to load courses');
+      add('Failed to load courses', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [add]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   const nextCourse = () => {
     setCurrentIndex((prev) => (prev + 1) % courses.length);
@@ -29,11 +48,28 @@ export default function CoursesSwiper() {
     setCurrentIndex(index);
   };
 
-  const handleDelete = () => {
-    alert('Course deleted! (Demo only)');
+  const handleDelete = async () => {
+    if (!courses[currentIndex]) return;
+    
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${courses[currentIndex].title}"?`);
+    if (!confirmDelete) return;
+
+    try {
+      await deleteCourse(courses[currentIndex].courseId);
+      add('Course deleted successfully', 'success');
+      await fetchCourses();
+      // Adjust index if we deleted the last item
+      if (currentIndex >= courses.length - 1 && currentIndex > 0) {
+        setCurrentIndex(currentIndex - 1);
+      }
+    } catch (err) {
+      console.error('Error deleting course:', err);
+      add('Failed to delete course', 'error');
+    }
   };
 
   const handleEdit = () => {
+    if (!courses[currentIndex]) return;
     const course = courses[currentIndex];
     navigate('/admin/courses/edit', { state: { course, mode: 'edit' } });
   };
@@ -61,9 +97,35 @@ export default function CoursesSwiper() {
         </div>
       </div>
 
-      {/* Main Card Container */}
-      <div className="max-w-7xl mx-auto">
-        <div className="relative">
+      {/* Loading State */}
+      {loading && (
+        <div className="max-w-7xl mx-auto flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D9433B]"></div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl text-center">
+            <p className="font-medium">{error}</p>
+            {courses.length === 0 && (
+              <button
+                onClick={handleAddCourse}
+                className="mt-4 inline-flex items-center gap-2 bg-[#D9433B] hover:bg-[#B13A33] text-white px-4 py-2 rounded-xl shadow-sm transition-all"
+              >
+                <Plus size={20} />
+                Create First Course
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - Show when not loading and has courses */}
+      {!loading && courses.length > 0 && (
+        <div className="max-w-7xl mx-auto">
+          <div className="relative">{/* Main Card Container */}
           {/* Large Course Card */}
           <div className="relative overflow-hidden">
             <div
@@ -81,7 +143,7 @@ export default function CoursesSwiper() {
                 {/* Category Badge */}
                 <div className="inline-block">
                   <span className="bg-[#FFF8F2] text-[#B13A33] px-3 py-1 rounded-full text-xs font-medium border" style={{ borderColor: '#F2E6E0' }}>
-                    {courses[currentIndex].category}
+                    {courses[currentIndex].category?.title || 'Uncategorized'}
                   </span>
                 </div>
 
@@ -89,6 +151,13 @@ export default function CoursesSwiper() {
                 <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-snug">
                   {courses[currentIndex].title}
                 </h2>
+
+                {/* Description */}
+                {courses[currentIndex].description && (
+                  <p className="text-gray-600 text-sm line-clamp-2">
+                    {courses[currentIndex].description}
+                  </p>
+                )}
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
@@ -98,7 +167,7 @@ export default function CoursesSwiper() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 font-medium">Difficulty</p>
-                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].difficulty}</p>
+                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].level?.title || 'N/A'}</p>
                     </div>
                   </div>
 
@@ -107,8 +176,8 @@ export default function CoursesSwiper() {
                       <Users className="text-white" size={24} />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 font-medium">Enrolled</p>
-                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].enrolled.toLocaleString()}</p>
+                      <p className="text-xs text-gray-600 font-medium">Servings</p>
+                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].servings || 0}</p>
                     </div>
                   </div>
 
@@ -117,8 +186,8 @@ export default function CoursesSwiper() {
                       <BookOpen className="text-white" size={24} />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600 font-medium">Lessons</p>
-                      <p className="text-base font-semibold text-gray-900">24</p>
+                      <p className="text-xs text-gray-600 font-medium">Cook Time</p>
+                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].cookingTimeMin || 0} min</p>
                     </div>
                   </div>
                 </div>
@@ -195,20 +264,21 @@ export default function CoursesSwiper() {
               >
                 <p className="font-medium text-sm truncate">{course.title}</p>
                 <p className={`text-xs mt-1 ${index === currentIndex ? 'text-[#FFE1DE]' : 'text-[#B13A33]'}`}>
-                  {course.enrolled} students
+                  {course.category?.title || 'Uncategorized'}
                 </p>
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Keyboard Hint */}
-      <div className="max-w-7xl mx-auto mt-6 text-center">
-        <p className="text-gray-500 text-xs">
-          💡 Use arrow keys ← → to navigate between courses
-        </p>
+        {/* Keyboard Hint */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-500 text-xs">
+            💡 Use arrow keys ← → to navigate between courses
+          </p>
+        </div>
       </div>
+      )}
     </div>
   );
 }

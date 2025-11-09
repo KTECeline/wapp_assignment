@@ -145,13 +145,23 @@ export default function CourseCategories() {
               </p>
             </div>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-          >
-            <Plus className="w-5 h-5" />
-            Add Category
-          </button>
+          {!selectedCategory ? (
+            <button
+              onClick={openCreateModal}
+              className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+            >
+              <Plus className="w-5 h-5" />
+              Add Category
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/admin/courses/edit', { state: { mode: 'create', categoryId: selectedCategory.categoryId } })}
+              className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+            >
+              <Plus className="w-5 h-5" />
+              Add Course
+            </button>
+          )}
         </div>
 
         {/* Stats */}

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 public class Category
 {
@@ -26,6 +27,7 @@ public class Category
     [StringLength(255)]
     public string CatBanner { get; set; } = string.Empty;
 
-    // Navigation property
+    // Navigation property - ignore to prevent circular references
+    [JsonIgnore]
     public ICollection<Course> Courses { get; set; } = new List<Course>();
 }

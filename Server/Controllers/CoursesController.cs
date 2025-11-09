@@ -74,10 +74,36 @@ public class CoursesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Course>> CreateCourse(Course course)
     {
+        // Validate that LevelId and CategoryId exist
+        var levelExists = await _context.Levels.AnyAsync(l => l.LevelId == course.LevelId && !l.Deleted);
+        var categoryExists = await _context.Categories.AnyAsync(c => c.CategoryId == course.CategoryId && !c.Deleted);
+
+        if (!levelExists)
+        {
+            return BadRequest(new { error = "Invalid LevelId. Level does not exist." });
+        }
+
+        if (!categoryExists)
+        {
+            return BadRequest(new { error = "Invalid CategoryId. Category does not exist." });
+        }
+
         course.Deleted = false;
+        
+        // Clear navigation properties to avoid validation issues
+        course.Level = null!;
+        course.Category = null!;
+        
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetCourse), new { id = course.CourseId }, course);
+        
+        // Reload with navigation properties
+        var createdCourse = await _context.Courses
+            .Include(c => c.Level)
+            .Include(c => c.Category)
+            .FirstOrDefaultAsync(c => c.CourseId == course.CourseId);
+        
+        return CreatedAtAction(nameof(GetCourse), new { id = course.CourseId }, createdCourse);
     }
 
     [HttpPut("{id}")]

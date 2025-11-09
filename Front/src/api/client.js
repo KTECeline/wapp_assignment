@@ -244,30 +244,137 @@ export async function deleteUserFeedback(id) {
   return true;
 }
 
-// User posts: reporting and approval workflow
-export async function getUserPosts(status) {
-  const url = status ? `/api/UserPosts?status=${encodeURIComponent(status)}` : '/api/UserPosts';
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch user posts: ${res.status}`);
+// Courses
+export async function getCourses() {
+  const res = await fetch('/api/Courses');
+  if (!res.ok) throw new Error(`Failed to fetch courses: ${res.status}`);
   return res.json();
 }
 
-export async function reportUserPost(id) {
-  const res = await fetch(`/api/UserPosts/${id}/report`, { method: 'PUT' });
+export async function getCourse(id) {
+  const res = await fetch(`/api/Courses/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch course: ${res.status}`);
+  return res.json();
+}
+
+export async function getCourseWithDetails(id) {
+  const res = await fetch(`/api/Courses/${id}/full`);
+  if (!res.ok) throw new Error(`Failed to fetch course details: ${res.status}`);
+  return res.json();
+}
+
+export async function createCourse(courseData) {
+  const res = await fetch('/api/Courses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(courseData)
+  });
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(t || `Failed to report post: ${res.status}`);
+    const text = await res.text();
+    throw new Error(text || `Failed to create course: ${res.status}`);
   }
   return res.json();
 }
 
-export async function setUserPostApproveStatus(id, approveStatus) {
-  const form = new FormData();
-  form.append('approveStatus', approveStatus);
-  const res = await fetch(`/api/UserPosts/${id}/approve`, { method: 'PUT', body: form });
+export async function updateCourse(id, courseData) {
+  const res = await fetch(`/api/Courses/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(courseData)
+  });
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(t || `Failed to set approve status: ${res.status}`);
+    const text = await res.text();
+    throw new Error(text || `Failed to update course: ${res.status}`);
   }
   return res.json();
+}
+
+export async function deleteCourse(id) {
+  const res = await fetch(`/api/Courses/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Failed to delete course: ${res.status}`);
+  return true;
+}
+
+// Levels
+export async function getLevels() {
+  const res = await fetch('/api/Levels');
+  if (!res.ok) throw new Error(`Failed to fetch levels: ${res.status}`);
+  return res.json();
+}
+
+export async function getLevel(id) {
+  const res = await fetch(`/api/Levels/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch level: ${res.status}`);
+  return res.json();
+}
+
+export async function createLevel(levelData) {
+  const res = await fetch('/api/Levels', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(levelData)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to create level: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function updateLevel(id, levelData) {
+  const res = await fetch(`/api/Levels/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(levelData)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to update level: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function deleteLevel(id) {
+  const res = await fetch(`/api/Levels/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Failed to delete level: ${res.status}`);
+  return true;
+}
+
+// Categories (adding missing methods)
+export async function getCategory(id) {
+  const res = await fetch(`/api/Categories/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch category: ${res.status}`);
+  return res.json();
+}
+
+export async function createCategory(categoryData) {
+  const res = await fetch('/api/Categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(categoryData)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to create category: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function updateCategory(id, categoryData) {
+  const res = await fetch(`/api/Categories/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(categoryData)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to update category: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function deleteCategory(id) {
+  const res = await fetch(`/api/Categories/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Failed to delete category: ${res.status}`);
+  return true;
 }

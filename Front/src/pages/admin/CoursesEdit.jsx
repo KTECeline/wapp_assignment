@@ -2,23 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Card from '../../components/Card';
 import { motion } from 'framer-motion';
-import { Save, ListChecks, ChevronRight, ImagePlus, Video, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Trash2, Clock, Users as UsersIcon, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { Save, ChevronRight, ImagePlus, Video, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Trash2, Clock, Users as UsersIcon, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import DropUpload from '../../components/DropUpload.jsx';
-
-// Mock data for levels and categories - replace with API calls
-const mockLevels = [
-  { id: 1, title: 'Beginner' },
-  { id: 2, title: 'Intermediate' },
-  { id: 3, title: 'Advanced' }
-];
-
-const mockCategories = [
-  { id: 1, title: 'Bread' },
-  { id: 2, title: 'Pastry' },
-  { id: 3, title: 'Cake' },
-  { id: 4, title: 'Cookies' }
-];
+import { createCourse, updateCourse, getCategories, getLevels } from '../../api/client';
 
 const seedQuestions = [
   { id: 1, title: 'What is gluten?', content: 'Explain how gluten forms and its role in bread structure.', type: 'mcq', options: ['Protein', 'Sugar', 'Fat', 'Water'], correctAnswer: 0 },
@@ -29,8 +16,32 @@ export default function CoursesEdit() {
   const location = useLocation();
   const navigate = useNavigate();
   const courseFromState = location.state?.course;
-  const mode = location.state?.mode || (courseFromState ? 'edit' : 'edit');
+  const mode = location.state?.mode || (courseFromState ? 'edit' : 'create');
   const { add } = useToast();
+
+  // Load categories and levels from database
+  const [categories, setCategories] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [categoriesData, levelsData] = await Promise.all([
+          getCategories(),
+          getLevels()
+        ]);
+        setCategories(categoriesData);
+        setLevels(levelsData);
+      } catch (err) {
+        console.error('Error fetching categories/levels:', err);
+        add('Error loading form data', 'error');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Active section management
   const [activeSection, setActiveSection] = useState('basic');
@@ -40,20 +51,33 @@ export default function CoursesEdit() {
     title: courseFromState?.title || '',
     description: courseFromState?.description || '',
     category: courseFromState?.category || '',
-    categoryId: courseFromState?.categoryId || 1,
+    categoryId: courseFromState?.categoryId || '',
     difficulty: courseFromState?.difficulty || '',
-    levelId: courseFromState?.levelId || 1,
-    cookingTime: courseFromState?.cookingTime || '',
+    levelId: courseFromState?.levelId || '',
+    cookingTime: courseFromState?.cookingTimeMin || '',
     servings: courseFromState?.servings || '',
     courseType: courseFromState?.courseType || 'Recipe',
     video: courseFromState?.video || '',
-    courseImage: undefined,
-    badgeImage: undefined,
-    quizBadgeImage: undefined
+    courseImage: courseFromState?.courseImg || undefined,
+    badgeImage: courseFromState?.badgeImg || undefined,
+    quizBadgeImage: courseFromState?.quizBadgeImg || undefined
   });
 
+  // Set default category and level when data loads
+  useEffect(() => {
+    if (categories.length > 0 && !courseMeta.categoryId) {
+      setCourseMeta(prev => ({ ...prev, categoryId: categories[0].categoryId }));
+    }
+  }, [categories, courseMeta.categoryId]);
+
+  useEffect(() => {
+    if (levels.length > 0 && !courseMeta.levelId) {
+      setCourseMeta(prev => ({ ...prev, levelId: levels[0].levelId }));
+    }
+  }, [levels, courseMeta.levelId]);
+
   // Tips
-  const [tips, setTips] = useState([
+  const [tips, setTips] = useState(mode === 'create' ? [] : [
     { id: 1, description: 'Always use room temperature eggs for better mixing.' },
     { id: 2, description: 'Preheat your oven at least 15 minutes before baking.' }
   ]);
@@ -61,7 +85,7 @@ export default function CoursesEdit() {
   const [tipForm, setTipForm] = useState({ description: '' });
 
   // Prep Items (Ingredients)
-  const [prepItems, setPrepItems] = useState([
+  const [prepItems, setPrepItems] = useState(mode === 'create' ? [] : [
     { id: 1, title: 'All-Purpose Flour', description: 'Sifted', amount: 2, metric: 'cups', type: 'Dry', itemImg: '' },
     { id: 2, title: 'Sugar', description: 'Granulated', amount: 1, metric: 'cup', type: 'Dry', itemImg: '' }
   ]);
@@ -69,7 +93,7 @@ export default function CoursesEdit() {
   const [prepItemForm, setPrepItemForm] = useState({ title: '', description: '', amount: '', metric: '', type: 'Dry', itemImg: undefined });
 
   // Course Steps
-  const [steps, setSteps] = useState([
+  const [steps, setSteps] = useState(mode === 'create' ? [] : [
     { id: 1, step: 1, description: 'Preheat the oven to 350°F (175°C).', stepImg: '' },
     { id: 2, step: 2, description: 'Mix flour, sugar, and salt in a large bowl.', stepImg: '' }
   ]);
@@ -133,17 +157,81 @@ export default function CoursesEdit() {
     setCourseMeta(prev => ({ ...prev, [name]: value }));
   };
 
-  const onSaveCourse = () => {
-    const courseData = {
-      ...courseMeta,
-      tips,
-      prepItems,
-      steps,
-      questions
-    };
-    console.log('Saving course:', courseData);
-    add(`${mode === 'create' ? 'Course created' : 'Course updated'} successfully!`);
-    // TODO: API call to save course
+  const onSaveCourse = async () => {
+    try {
+      // Validate required fields
+      if (!courseMeta.title || !courseMeta.categoryId || !courseMeta.levelId) {
+        add('Please fill in all required fields', 'error');
+        return;
+      }
+
+      // Helper function to convert File to base64 data URL
+      const fileToDataURL = (file) => {
+        return new Promise((resolve, reject) => {
+          if (!file) {
+            resolve('');
+            return;
+          }
+          if (typeof file === 'string') {
+            resolve(file);
+            return;
+          }
+          if (file instanceof File) {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          } else {
+            resolve('');
+          }
+        });
+      };
+
+      // Convert all images to base64
+      const [courseImgData, badgeImgData, quizBadgeImgData] = await Promise.all([
+        fileToDataURL(courseMeta.courseImage),
+        fileToDataURL(courseMeta.badgeImage),
+        fileToDataURL(courseMeta.quizBadgeImage)
+      ]);
+
+      // Use exact C# property names (PascalCase)
+      const courseData = {
+        Title: courseMeta.title,
+        Description: courseMeta.description || '',
+        CourseImg: courseImgData,
+        CookingTimeMin: parseInt(courseMeta.cookingTime) || 0,
+        Servings: parseInt(courseMeta.servings) || 0,
+        Video: courseMeta.video || '',
+        CourseType: courseMeta.courseType || 'Recipe',
+        BadgeImg: badgeImgData,
+        QuizBadgeImg: quizBadgeImgData,
+        LevelId: parseInt(courseMeta.levelId),
+        CategoryId: parseInt(courseMeta.categoryId),
+        Rating: courseFromState?.rating || 0
+      };
+
+      console.log('Saving course data:', courseData); // Debug log
+
+      if (mode === 'create') {
+        const newCourse = await createCourse(courseData);
+        add('Course created successfully!', 'success');
+        // TODO: Save tips, prepItems, steps, and questions with the new course ID
+        console.log('Created course:', newCourse);
+        console.log('Tips to save:', tips);
+        console.log('Prep items to save:', prepItems);
+        console.log('Steps to save:', steps);
+        console.log('Questions to save:', questions);
+        navigate('/admin/courses');
+      } else {
+        await updateCourse(courseFromState.courseId, courseData);
+        add('Course updated successfully!', 'success');
+        // TODO: Update tips, prepItems, steps, and questions
+        navigate('/admin/courses');
+      }
+    } catch (err) {
+      console.error('Error saving course:', err);
+      add(`Failed to ${mode === 'create' ? 'create' : 'update'} course: ${err.message}`, 'error');
+    }
   };
 
   // Tips handlers
@@ -337,10 +425,15 @@ export default function CoursesEdit() {
                       onChange={onChangeCourseMeta}
                       className="w-full rounded-xl border px-4 py-3 focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none"
                       style={{ borderColor: 'var(--border)' }}
+                      disabled={loadingData}
                     >
-                      {mockCategories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.title}</option>
-                      ))}
+                      {loadingData ? (
+                        <option>Loading...</option>
+                      ) : (
+                        categories.map(cat => (
+                          <option key={cat.categoryId} value={cat.categoryId}>{cat.title}</option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -352,10 +445,15 @@ export default function CoursesEdit() {
                       onChange={onChangeCourseMeta}
                       className="w-full rounded-xl border px-4 py-3 focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none"
                       style={{ borderColor: 'var(--border)' }}
+                      disabled={loadingData}
                     >
-                      {mockLevels.map(level => (
-                        <option key={level.id} value={level.id}>{level.title}</option>
-                      ))}
+                      {loadingData ? (
+                        <option>Loading...</option>
+                      ) : (
+                        levels.map(level => (
+                          <option key={level.levelId} value={level.levelId}>{level.title}</option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>
