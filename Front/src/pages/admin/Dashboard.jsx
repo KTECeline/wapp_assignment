@@ -115,26 +115,6 @@ export default function Dashboard() {
 
   return (
   <div className="min-h-screen">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur border-b sticky top-0 z-10" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Welcome back! Here's what's happening today.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="p-2 hover:bg-[var(--surface)] rounded-lg transition-colors relative">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute top-1 right-1 w-2 h-2" style={{ backgroundColor: 'var(--accent)' }}></span>
-              </button>
-              <button className="p-2 hover:bg-[var(--surface)] rounded-lg transition-colors">
-                <Settings className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         {/* Stats Grid */}

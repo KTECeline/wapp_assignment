@@ -273,7 +273,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromForm] User update, IFormFile? profileimage)
+    public async Task<IActionResult> UpdateUser(int id, [FromForm] User update, IFormFile? profileimage, [FromForm] string? adminLogin = null, [FromForm] string? adminPassword = null)
     {
         try
         {
@@ -307,7 +307,28 @@ public class UsersController : ControllerBase
             user.DOB = update.DOB ?? user.DOB;
             user.LevelId = update.LevelId ?? user.LevelId;
             user.CategoryId = update.CategoryId ?? user.CategoryId;
-            user.Password = user.Password; // Preserve existing password
+            // Handle password change: require admin validation
+            if (!string.IsNullOrWhiteSpace(update.Password))
+            {
+                // Admin credentials must be provided to change another user's password
+                if (string.IsNullOrWhiteSpace(adminLogin) || string.IsNullOrWhiteSpace(adminPassword))
+                {
+                    return BadRequest("Admin credentials are required to change a user's password.");
+                }
+
+                var adminUser = await _context.Users
+                    .Where(u => u.DeletedAt == null && u.UserType == "admin" &&
+                        (u.Username.ToLower() == adminLogin.ToLower() || u.Email.ToLower() == adminLogin.ToLower()))
+                    .FirstOrDefaultAsync();
+
+                if (adminUser == null || !BCrypt.Net.BCrypt.Verify(adminPassword, adminUser.Password))
+                {
+                    return Unauthorized("Invalid admin credentials.");
+                }
+
+                // Hash new password before storing
+                user.Password = BCrypt.Net.BCrypt.HashPassword(update.Password);
+            }
 
             await _context.SaveChangesAsync();
             return Ok(user);

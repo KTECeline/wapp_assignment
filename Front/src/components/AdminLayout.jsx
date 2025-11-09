@@ -66,10 +66,7 @@ export default function AdminLayout() {
 
           {/* Right side - Notifications and Profile */}
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-xl hover:bg-[#FFF8F2] transition-all duration-200 relative">
-              <Bell className="w-5 h-5 text-[#D9433B]" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#D9433B] rounded-full"></span>
-            </button>
+            
             
             <div className="relative">
               <button 

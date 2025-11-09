@@ -1,14 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, MessageSquare, CheckCircle, Clock, Star, TrendingUp, AlertCircle, Eye, Archive, Send, Sparkles, ChevronDown } from 'lucide-react';
-
-// Mock data
-const seedFeedback = [
-  { id: 1, user: 'Sarah Chen', email: 'sarah@example.com', message: 'Love the new dashboard! The analytics are super helpful.', status: 'Resolved', rating: 5, date: '2024-11-04', category: 'Feature', priority: 'low', avatar: 'SC' },
-  { id: 2, user: 'Mike Rodriguez', email: 'mike@example.com', message: 'The app crashes when I try to export reports.', status: 'Pending', rating: 2, date: '2024-11-03', category: 'Bug', priority: 'high', avatar: 'MR' },
-  { id: 3, user: 'Emma Wilson', email: 'emma@example.com', message: 'Great service but could use more payment options.', status: 'In Progress', rating: 4, date: '2024-11-02', category: 'Feature', priority: 'medium', avatar: 'EW' },
-  { id: 4, user: 'James Liu', email: 'james@example.com', message: 'Support team is amazing! Resolved my issue in minutes.', status: 'Resolved', rating: 5, date: '2024-11-01', category: 'Support', priority: 'low', avatar: 'JL' },
-  { id: 5, user: 'Olivia Brown', email: 'olivia@example.com', message: 'UI is confusing on mobile devices.', status: 'Pending', rating: 3, date: '2024-10-31', category: 'UX', priority: 'medium', avatar: 'OB' },
-];
+import { getUserFeedbacks, updateUserFeedback, deleteUserFeedback } from '../../api/client';
 
 function Card({ children, className = '' }) {
   return (
@@ -19,8 +11,8 @@ function Card({ children, className = '' }) {
 }
 
 export default function FeedbackV2() {
-  const [rows, setRows] = useState(seedFeedback);
-  const [filteredRows, setFilteredRows] = useState(seedFeedback);
+  const [rows, setRows] = useState([]);
+  const [filteredRows, setFilteredRows] = useState([]);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -56,6 +48,35 @@ export default function FeedbackV2() {
     setFilteredRows(filtered);
   }, [rows, searchTerm, statusFilter, priorityFilter, categoryFilter]);
 
+  // Load feedbacks from backend
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getUserFeedbacks();
+        if (!mounted) return;
+        // Map backend data to UI shape
+        const mapped = data.map(f => ({
+          id: f.id,
+          user: f.userName || 'Unknown',
+          email: f.userEmail || '',
+          message: f.description || '',
+          status: ['Pending','In Progress','Resolved'].includes((f.type || '').toString()) ? f.type : 'Pending',
+          rating: f.rating || 0,
+          date: f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '',
+          category: (['Pending','In Progress','Resolved'].includes((f.type || '').toString()) ? 'General' : (f.type || 'General')),
+          priority: f.rating <= 2 ? 'high' : (f.rating === 3 ? 'medium' : 'low'),
+          avatar: (f.userName || 'U').split(' ').map(x=>x[0]).slice(0,2).join('') || 'U'
+        }));
+        setRows(mapped);
+        setFilteredRows(mapped);
+      } catch (err) {
+        console.error('Failed to load feedbacks', err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   const stats = {
     total: rows.length,
     pending: rows.filter(r => r.status === 'Pending').length,
@@ -84,7 +105,9 @@ export default function FeedbackV2() {
   };
 
   const handleStatusChange = (feedback, newStatus) => {
+    // Update local UI and persist to backend by setting `type` to the status value
     setRows(prev => prev.map(r => r.id === feedback.id ? { ...r, status: newStatus } : r));
+    updateUserFeedback(feedback.id, { type: newStatus }).catch(err => console.error('Failed to persist status', err));
   };
 
   return (
@@ -98,13 +121,10 @@ export default function FeedbackV2() {
             <p className="text-gray-600">Monitor and respond to customer insights</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-white border rounded-xl hover:bg-[var(--surface)] transition-all duration-200 flex items-center gap-2 text-sm font-medium" style={{ borderColor: 'var(--border)' }}>
-              <Archive className="w-4 h-4" />
-              Archive
-            </button>
+            
             <button className="px-4 py-2 bg-[#D9433B] hover:bg-[#B13A33] text-white rounded-xl hover:shadow-md transition-all duration-200 flex items-center gap-2 text-sm font-medium">
               <Sparkles className="w-4 h-4" />
-              AI Insights
+              Archive
             </button>
           </div>
         </div>

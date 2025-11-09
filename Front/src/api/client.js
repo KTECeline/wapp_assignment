@@ -99,6 +99,19 @@ export async function getBadgeStats() {
   return res.json();
 }
 
+export async function login(loginId, password) {
+  const res = await fetch('/api/Users/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ loginId, password })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Login failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 // Help sessions and messages
 export async function getHelpSessions() {
   const res = await fetch('/api/HelpSessions');
@@ -135,5 +148,126 @@ export async function markMessageViewed(id, byAdmin = true) {
     body: JSON.stringify(byAdmin)
   });
   if (!res.ok) throw new Error(`Failed to mark message viewed: ${res.status}`);
+  return res.json();
+}
+
+// Announcements
+export async function getAnnouncements() {
+  const res = await fetch('/api/Announcements');
+  if (!res.ok) throw new Error(`Failed to fetch announcements: ${res.status}`);
+  return res.json();
+}
+
+export async function createAnnouncement({ title, body, annFile, annDataUrl, visible = true }) {
+  // Use FormData so we can send either a file or plain text
+  const form = new FormData();
+  form.append('title', title || '');
+  form.append('body', body || '');
+  form.append('visible', visible ? 'true' : 'false');
+
+  if (annFile instanceof File) {
+    form.append('ann_img', annFile, annFile.name);
+  } else if (annDataUrl) {
+    // convert dataURL to blob
+    const res = await fetch(annDataUrl);
+    const blob = await res.blob();
+    form.append('ann_img', blob, 'banner.jpg');
+  }
+
+  const r = await fetch('/api/Announcements', { method: 'POST', body: form });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(t || `Failed to create announcement: ${r.status}`);
+  }
+  return r.json();
+}
+
+export async function updateAnnouncement(id, { title, body, annFile, annDataUrl, visible }) {
+  const form = new FormData();
+  if (title !== undefined) form.append('title', title);
+  if (body !== undefined) form.append('body', body);
+  if (visible !== undefined) form.append('visible', visible ? 'true' : 'false');
+
+  if (annFile instanceof File) {
+    form.append('ann_img', annFile, annFile.name);
+  } else if (annDataUrl) {
+    const res = await fetch(annDataUrl);
+    const blob = await res.blob();
+    form.append('ann_img', blob, 'banner.jpg');
+  }
+
+  const r = await fetch(`/api/Announcements/${id}`, { method: 'PUT', body: form });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(t || `Failed to update announcement: ${r.status}`);
+  }
+  return r.json();
+}
+
+export async function deleteAnnouncement(id) {
+  const r = await fetch(`/api/Announcements/${id}`, { method: 'DELETE' });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(t || `Failed to delete announcement: ${r.status}`);
+  }
+  return true;
+}
+
+// User feedback
+export async function getUserFeedbacks() {
+  const res = await fetch('/api/UserFeedbacks');
+  if (!res.ok) throw new Error(`Failed to fetch feedbacks: ${res.status}`);
+  return res.json();
+}
+
+export async function updateUserFeedback(id, { rating, title, description, type }) {
+  const form = new FormData();
+  if (rating !== undefined) form.append('rating', rating.toString());
+  if (title !== undefined) form.append('title', title);
+  if (description !== undefined) form.append('description', description);
+  if (type !== undefined) form.append('type', type);
+
+  const res = await fetch(`/api/UserFeedbacks/${id}`, { method: 'PUT', body: form });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t || `Failed to update feedback: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function deleteUserFeedback(id) {
+  const res = await fetch(`/api/UserFeedbacks/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t || `Failed to delete feedback: ${res.status}`);
+  }
+  return true;
+}
+
+// User posts: reporting and approval workflow
+export async function getUserPosts(status) {
+  const url = status ? `/api/UserPosts?status=${encodeURIComponent(status)}` : '/api/UserPosts';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch user posts: ${res.status}`);
+  return res.json();
+}
+
+export async function reportUserPost(id) {
+  const res = await fetch(`/api/UserPosts/${id}/report`, { method: 'PUT' });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t || `Failed to report post: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function setUserPostApproveStatus(id, approveStatus) {
+  const form = new FormData();
+  form.append('approveStatus', approveStatus);
+  const res = await fetch(`/api/UserPosts/${id}/approve`, { method: 'PUT', body: form });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t || `Failed to set approve status: ${res.status}`);
+  }
   return res.json();
 }

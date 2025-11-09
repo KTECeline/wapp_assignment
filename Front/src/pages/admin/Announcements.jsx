@@ -1,10 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Plus, Image as ImageIcon, Edit2, Trash2, Calendar, X } from 'lucide-react';
-
-const announcements = [
-  { title: 'Platform Update', body: 'We have released new features including dark mode and improved notifications.', date: '2025-11-01', banner: null },
-  { title: 'Maintenance Notice', body: 'Scheduled maintenance on Sunday, 3 AM - 5 AM EST.', date: '2025-10-28', banner: null },
-];
+import { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement } from '../../api/client';
 
 const Card = ({ children, className = '' }) => (
   <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
@@ -46,7 +42,7 @@ const ConfirmDialog = ({ title, body, onConfirm, onCancel }) => (
 );
 
 export default function Announcements() {
-  const [items, setItems] = useState(announcements);
+  const [items, setItems] = useState([]);
   const [query, setQuery] = useState('');
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
@@ -69,6 +65,29 @@ export default function Announcements() {
     reader.readAsDataURL(banner);
     reader.onloadend = () => setBannerPreview(reader.result);
   }, [banner]);
+
+  // fetch announcements from backend on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const list = await getAnnouncements();
+        if (!mounted) return;
+        // map backend shape to UI shape
+        setItems(list.map(a => ({
+          id: a.id,
+          title: a.title,
+          body: a.body,
+          date: a.date || new Date().toISOString().slice(0,10),
+          banner: a.annImg || null,
+          visible: a.visible
+        })));
+      } catch (err) {
+        console.error('Failed to load announcements', err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     if (!bannerPreview) { setImgMeta({ width: 0, height: 0 }); return; }
@@ -105,23 +124,41 @@ export default function Announcements() {
   const onCreate = async () => {
     if (!title.trim() && !text.trim()) return;
     const finalBanner = await cropBanner();
-    const record = {
-      title: (title || text).slice(0, 80),
-      body: text,
-      date: new Date().toISOString().slice(0, 10),
-      banner: finalBanner || bannerPreview,
-    };
-    setItems(prev => [record, ...prev]);
-    setTitle('');
-    setText('');
-    setBanner(undefined);
-    setZoom(1);
-    setOffsetX(0);
-    setOffsetY(0);
-    setImgMeta({ width: 0, height: 0 });
-    setIsCreating(false);
-    setToast('Announcement posted successfully!');
-    setTimeout(() => setToast(null), 3000);
+
+    try {
+      const created = await createAnnouncement({
+        title: (title || text).slice(0, 80),
+        body: text,
+        annFile: banner instanceof File ? banner : undefined,
+        annDataUrl: !(banner instanceof File) && finalBanner ? finalBanner : undefined,
+        visible: true
+      });
+
+      const uiItem = {
+        id: created.id,
+        title: created.title,
+        body: created.body,
+        date: new Date().toISOString().slice(0,10),
+        banner: created.annImg || null,
+        visible: created.visible
+      };
+
+      setItems(prev => [uiItem, ...prev]);
+      setTitle('');
+      setText('');
+      setBanner(undefined);
+      setZoom(1);
+      setOffsetX(0);
+      setOffsetY(0);
+      setImgMeta({ width: 0, height: 0 });
+      setIsCreating(false);
+      setToast('Announcement posted successfully!');
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      console.error(err);
+      setToast('Failed to create announcement');
+      setTimeout(() => setToast(null), 3000);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -369,11 +406,17 @@ export default function Announcements() {
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const newTitle = prompt('Edit title:', a.title);
-                      if (newTitle != null) {
-                        setItems(prev => prev.map((x, idx) => idx === i ? { ...x, title: newTitle } : x));
+                      if (newTitle == null) return;
+                      try {
+                        const updated = await updateAnnouncement(a.id, { title: newTitle });
+                        setItems(prev => prev.map(x => x.id === a.id ? { ...x, title: updated.title } : x));
                         setToast('Announcement updated');
+                        setTimeout(() => setToast(null), 3000);
+                      } catch (err) {
+                        console.error(err);
+                        setToast('Failed to update announcement');
                         setTimeout(() => setToast(null), 3000);
                       }
                     }}
@@ -384,17 +427,25 @@ export default function Announcements() {
                   </button>
                   <button
                     onClick={() => {
-                      setConfirm({
-                        title: 'Delete announcement?',
-                        body: 'This action cannot be undone.',
-                        onConfirm: () => {
-                          setItems(prev => prev.filter((_, idx) => idx !== i));
-                          setToast('Announcement deleted');
-                          setTimeout(() => setToast(null), 3000);
-                          setConfirm(null);
-                        },
-                      });
-                    }}
+                        setConfirm({
+                          title: 'Delete announcement?',
+                          body: 'This action cannot be undone.',
+                          onConfirm: async () => {
+                            try {
+                              await deleteAnnouncement(a.id);
+                              setItems(prev => prev.filter(x => x.id !== a.id));
+                              setToast('Announcement deleted');
+                              setTimeout(() => setToast(null), 3000);
+                              setConfirm(null);
+                            } catch (err) {
+                              console.error(err);
+                              setToast('Failed to delete announcement');
+                              setTimeout(() => setToast(null), 3000);
+                              setConfirm(null);
+                            }
+                          },
+                        });
+                      }}
                     className="p-2 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors"
                     title="Delete"
                   >

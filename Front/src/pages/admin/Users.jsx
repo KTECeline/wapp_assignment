@@ -3,7 +3,7 @@ import Card from '../../components/Card';
 import Table from '../../components/Table';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { getUsers, createUser, updateUser, deleteUser } from '../../api/client';
+import { getUsers, createUser, updateUser, deleteUser, login } from '../../api/client';
 import { useConfirm } from '../../components/Confirm';
 import { Search, Filter, Plus, Edit, Trash2 } from 'lucide-react';
 
@@ -13,6 +13,12 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [adminValidated, setAdminValidated] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminLoginInput, setAdminLoginInput] = useState('');
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [validatedAdmin, setValidatedAdmin] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const { add } = useToast();
@@ -58,10 +64,12 @@ export default function Users() {
       );
     }
 
-    // Role filter (placeholder for future role functionality)
+    // Role filter (Admin / User)
     if (roleFilter !== 'All') {
-      // This would filter by role when role field is added
-      filtered = filtered.filter(user => user.role === roleFilter);
+      filtered = filtered.filter(user => {
+        // Normalize both sides to lower-case for safe comparison
+        return (user.userType || '').toString().toLowerCase() === roleFilter.toLowerCase();
+      });
     }
 
     setFilteredRows(filtered);
@@ -74,13 +82,23 @@ export default function Users() {
     try {
       if (editing != null) {
         const current = rows[editing];
-        const updated = await updateUser(current.userId, {
+        const updatePayload = {
           username: record.name || current.username,
           email: record.email || current.email,
           firstName: record.firstName || current.firstName,
           lastName: record.lastName || current.lastName,
           userType: record.userType || current.userType,
-        });
+        };
+
+        // If admin validated and a new password is provided, include it and admin creds
+        if (newPassword) {
+          if (!adminValidated) throw new Error('Admin validation required to change password');
+          updatePayload.password = newPassword;
+          updatePayload.adminLogin = validatedAdmin?.login;
+          updatePayload.adminPassword = validatedAdmin?.password;
+        }
+
+        const updated = await updateUser(current.userId, updatePayload);
         const next = [...rows];
         next[editing] = updated;
         setRows(next);
@@ -101,6 +119,10 @@ export default function Users() {
     }
     setOpen(false);
     setEditing(null);
+    // reset password/admin validation when modal closes
+    setNewPassword('');
+    setAdminValidated(false);
+    setValidatedAdmin(null);
   };
 
   return (
@@ -130,8 +152,7 @@ export default function Users() {
             >
               <option value="All">All Roles</option>
               <option value="Admin">Admin</option>
-              <option value="Student">Student</option>
-              <option value="Instructor">Instructor</option>
+              <option value="User">User</option>
             </select>
           </div>
 
@@ -212,7 +233,7 @@ export default function Users() {
               Cancel
             </button>
             <button 
-              form="user-form" 
+              form="user-form"
               className="bg-[#D9433B] text-white hover:bg-[#B13A33] rounded-xl px-4 py-2 font-medium transition-all duration-200"
             >
               Save
@@ -268,7 +289,70 @@ export default function Users() {
               placeholder="Enter user type (e.g. admin, user)"
             />
           </div>
+          {editing != null && (
+            <div>
+              <label className="block text-sm text-gray-700 font-medium mb-2">New Password (admin validation required)</label>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  name="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={!adminValidated}
+                  className="flex-1 rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200"
+                  placeholder={adminValidated ? 'Enter new password' : 'Validate as admin to enable'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAdminModal(true)}
+                  className="px-4 py-2 border rounded-xl text-sm font-medium"
+                >
+                  {adminValidated ? 'Admin validated' : 'Validate Admin'}
+                </button>
+              </div>
+            </div>
+          )}
           {/* Additional fields can be added here when backend supports them */}
+        </form>
+      </Modal>
+      {/* Admin validation modal */}
+      <Modal open={showAdminModal} onClose={() => setShowAdminModal(false)} title="Admin validation"
+        actions={(
+          <>
+            <button className="border rounded-xl px-4 py-2" onClick={() => setShowAdminModal(false)}>Cancel</button>
+            <button
+              className="bg-[#D9433B] text-white rounded-xl px-4 py-2"
+              onClick={async () => {
+                try {
+                  const resp = await login(adminLoginInput, adminPasswordInput);
+                  if (resp.userType && resp.userType.toLowerCase() === 'admin') {
+                    setAdminValidated(true);
+                    setValidatedAdmin({ login: adminLoginInput, password: adminPasswordInput });
+                    setShowAdminModal(false);
+                    add('Admin validated');
+                  } else {
+                    add('Provided account is not an admin', 'error');
+                  }
+                } catch (err) {
+                  console.error(err);
+                  add('Admin validation failed', 'error');
+                }
+              }}
+            >
+              Validate
+            </button>
+          </>
+        )}
+      >
+        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <div>
+            <label className="block text-sm text-gray-700 font-medium mb-2">Admin username or email</label>
+            <input value={adminLoginInput} onChange={(e) => setAdminLoginInput(e.target.value)} className="w-full rounded-xl border border-[#EADCD2] px-4 py-3" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 font-medium mb-2">Admin password</label>
+            <input type="password" value={adminPasswordInput} onChange={(e) => setAdminPasswordInput(e.target.value)} className="w-full rounded-xl border border-[#EADCD2] px-4 py-3" />
+          </div>
         </form>
       </Modal>
     </div>
