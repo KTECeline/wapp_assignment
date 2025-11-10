@@ -13,7 +13,7 @@ export default function Settings() {
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
-   
+  
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -33,45 +33,79 @@ export default function Settings() {
         const parsed = JSON.parse(raw);
         console.debug('Settings: parsed stored user ->', parsed);
 
-        // common shapes:
-        // 1) { username, email }
-        // 2) { user: { username, email } }
-        // 3) { data: { user: {...} } }
-        // 4) token-like objects that include 'login' or 'name'
-        const candidate =
-          parsed?.username ||
-          parsed?.email ||
-          parsed?.user ||
-          parsed?.data?.user ||
-          parsed?.currentUser ||
-          parsed?.account ||
-          parsed;
-
         const getEmailFromToken = (obj) => {
           try {
-            const token = obj?.token || obj?.accessToken || obj?.authToken;
+            const token = obj?.token || obj?.accessToken || obj?.authToken || obj?.access_token;
             if (!token || typeof token !== 'string') return null;
             const payload = token.split('.')[1];
             if (!payload) return null;
             const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-            return decoded?.email || decoded?.sub || null;
+            return decoded?.email || decoded?.sub || decoded?.preferred_username || null;
           } catch (e) {
             return null;
           }
         };
 
-        const userObj =
-          typeof candidate === 'string'
-            ? { username: candidate, email: '' }
-            : candidate?.username || candidate?.name || candidate?.login || candidate?.email
-            ? {
-                username: candidate?.username || candidate?.name || candidate?.login || '',
-                email: candidate?.email || candidate?.emailAddress || getEmailFromToken(parsed) || '',
-              }
-            : { username: '', email: '' };
+        // Try a number of plausible locations for username/email
+        const candidate =
+          parsed?.user ||
+          parsed?.data?.user ||
+          parsed?.currentUser ||
+          parsed?.account ||
+          parsed ||
+          {};
+
+        const username =
+          parsed?.username ||
+          parsed?.name ||
+          parsed?.login ||
+          candidate?.username ||
+          candidate?.name ||
+          candidate?.login ||
+          '';
+
+        const email =
+          parsed?.email ||
+          parsed?.emailAddress ||
+          candidate?.email ||
+          candidate?.emailAddress ||
+          (candidate?.user ? candidate.user.email : null) ||
+          parsed?.data?.user?.email ||
+          parsed?.account?.email ||
+          getEmailFromToken(parsed) ||
+          '';
+
+        const userObj = { username: username || '', email: email || '' };
 
         if (!mounted) return;
         setCurrentUser(userObj);
+
+        // If we still don't have an email, try calling a me endpoint (if api has auth token)
+        if (!userObj.email) {
+          try {
+            const meEndpoints = ['/auth/me', '/users/me', '/me'];
+            for (const ep of meEndpoints) {
+              try {
+                const res = await api.get(ep);
+                const d = res?.data || res;
+                const meEmail = d?.email || d?.data?.email || d?.user?.email;
+                const meUsername = d?.username || d?.name || d?.login;
+                if (meEmail || meUsername) {
+                  if (!mounted) break;
+                  setCurrentUser(prev => ({
+                    username: prev.username || meUsername || '',
+                    email: meEmail || prev.email || '',
+                  }));
+                  break;
+                }
+              } catch (e) {
+                // ignore and try next endpoint
+              }
+            }
+          } catch (_) {
+            // ignore
+          }
+        }
       } catch (err) {
         console.warn('Could not load current user', err);
       }
@@ -107,7 +141,7 @@ export default function Settings() {
         <form onSubmit={onSave} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm text-gray-700 font-medium mb-2">Full Name</label>
+              <label className="block text-sm text-gray-700 font-medium mb-2">Username</label>
               <input 
                 className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
                 value={currentUser.username}
@@ -163,35 +197,61 @@ export default function Settings() {
                     if (newPasswordInput !== confirmPasswordInput) return add('New passwords do not match', 'error');
                     setChangingPassword(true);
                     try {
-                      // try common validate endpoints then change endpoints
-                      const validateEndpoints = ['/auth/validate-password','/users/validate-password','/validate-password'];
+                      // 1) Validate current password by attempting common login endpoints
+                      const loginEndpoints = ['/auth/login', '/login', '/users/login', '/token'];
+                      let authToken = null;
                       let validated = false;
-                      for (const ep of validateEndpoints) {
+                      for (const ep of loginEndpoints) {
                         try {
-                          // some endpoints expect { password } others { currentPassword }
-                          await api.post(ep, { password: currentPasswordInput, currentPassword: currentPasswordInput, email: currentUser.email });
+                          const payload = currentUser.email
+                            ? { email: currentUser.email, password: currentPasswordInput }
+                            : { username: currentUser.username, password: currentPasswordInput };
+                          const res = await api.post(ep, payload);
+                          const data = res?.data || res;
+                          authToken = data?.token || data?.accessToken || data?.access_token || null;
                           validated = true;
                           break;
                         } catch (err) {
-                          // try next
+                          // try next login endpoint
                         }
                       }
+
+                      if (!validated) {
+                        // As a fallback, try a "validate-password" style endpoint
+                        try {
+                          const validateEndpoints = ['/auth/validate-password','/users/validate-password','/validate-password'];
+                          for (const ep of validateEndpoints) {
+                            try {
+                              await api.post(ep, { password: currentPasswordInput, email: currentUser.email, username: currentUser.username });
+                              validated = true;
+                              break;
+                            } catch (err) {
+                              // try next
+                            }
+                          }
+                        } catch (_) {}
+                      }
+
                       if (!validated) {
                         setChangingPassword(false);
                         return add('Current password validation failed', 'error');
                       }
 
-                      const changeEndpoints = ['/auth/change-password','/users/change-password','/change-password'];
+                      // 2) Call change-password endpoints. Prefer using auth token if we got one.
+                      const changeEndpoints = ['/auth/change-password','/users/change-password','/change-password','/user/change-password'];
                       let changed = false;
                       for (const ep of changeEndpoints) {
                         try {
-                          await api.post(ep, { currentPassword: currentPasswordInput, newPassword: newPasswordInput, password: newPasswordInput, email: currentUser.email });
+                          const payload = { currentPassword: currentPasswordInput, newPassword: newPasswordInput, password: newPasswordInput, email: currentUser.email, username: currentUser.username };
+                          const config = authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {};
+                          await api.post(ep, payload, config);
                           changed = true;
                           break;
                         } catch (err) {
                           // try next
                         }
                       }
+
                       if (!changed) {
                         add('Password change failed: no supported endpoint', 'error');
                       } else {
@@ -243,25 +303,6 @@ export default function Settings() {
               Export Data
             </button>
           </div>
-        </div>
-      </Card>
-
-      {/* Theme Settings */}
-      <Card title="Appearance" subtitle="Customize your interface">
-        <div className="flex items-center justify-between p-4 bg-[#FAF6F1] rounded-xl">
-          <div className="flex items-center gap-3">
-            <Palette className="w-5 h-5 text-[#D9433B]" />
-            <div>
-              <h4 className="font-medium text-gray-900">Dark Mode</h4>
-              <p className="text-sm text-gray-600">Switch between light and dark themes</p>
-            </div>
-          </div>
-          <button 
-            onClick={onThemeToggle}
-            className="border border-[#D9433B] text-[#D9433B] hover:bg-[#FFF0EE] rounded-xl px-4 py-2 font-medium transition-all duration-200"
-          >
-            Toggle Theme
-          </button>
         </div>
       </Card>
 
