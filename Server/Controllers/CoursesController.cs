@@ -117,8 +117,7 @@ public class CoursesController : ControllerBase
         course.CourseImg = update.CourseImg;
         course.CookingTimeMin = update.CookingTimeMin;
         course.Servings = update.Servings;
-        course.Video = update.Video;
-        course.CourseType = update.CourseType;
+    course.Video = update.Video;
         course.BadgeImg = update.BadgeImg;
         course.QuizBadgeImg = update.QuizBadgeImg;
         course.LevelId = update.LevelId;

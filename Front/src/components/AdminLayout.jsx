@@ -7,7 +7,6 @@ import { logout } from '../services/api';
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Users', icon: Users },
-  { to: '/admin/course-categories', label: 'Courses', icon: BookOpen },
   { to: '/admin/course-management', label: 'Course Management', icon: Layers },
   { to: '/admin/posts', label: 'Posts', icon: MessageSquare },
   { to: '/admin/feedback', label: 'Feedback', icon: MessagesSquare },
@@ -82,7 +81,6 @@ export default function AdminLayout() {
               
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-lg border border-[#F2E6E0] py-2 z-50">
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors">Profile</button>
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors">Settings</button>
                   <hr className="my-2 border-[#F2E6E0]" />
                   <button 

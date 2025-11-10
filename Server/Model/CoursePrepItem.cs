@@ -27,7 +27,8 @@ public class CoursePrepItem
     public float Amount { get; set; }
 
     [Column("metric")]
-    public float Metric { get; set; }
+    [StringLength(255)]
+    public string Metric { get; set; } = string.Empty;
 
     [Column("deleted")]
     public bool Deleted { get; set; }
