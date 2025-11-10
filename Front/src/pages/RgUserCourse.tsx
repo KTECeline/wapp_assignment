@@ -1,5 +1,6 @@
 import { IoIosArrowForward, IoMdHeart } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 import { CiBookmark } from "react-icons/ci";
 import { FaStar } from "react-icons/fa";
 import { IoAdd, IoBookmark } from "react-icons/io5";
@@ -7,8 +8,11 @@ import { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 
 const RgUserCourse = () => {
-    const UserRegisteredCourse = true;
-    const RegisteredUser = true;
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const Layout = user?.userId ? RgUserLayout : VisitorLayout;
+
+    const UserRegisteredCourse = false;
     const Saved = false;
 
     const course = {
@@ -87,7 +91,7 @@ const RgUserCourse = () => {
 
 
     return (
-        <RgUserLayout>
+        <Layout>
 
             {/* Banner */}
             <div
@@ -217,7 +221,7 @@ const RgUserCourse = () => {
                         <div className="bg-black w-[435px] mt-[26px] h-[1.5px]" />
 
                         {/* Action Buttons */}
-                        {!RegisteredUser ? (
+                        {!user?.userId ? (
                             <div className="flex flex-row gap-[10px] mt-[20px]">
                                 <button className="w-full h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                     Register now to start course
@@ -832,7 +836,7 @@ const RgUserCourse = () => {
                     </button>
                 </div>
             </div>
-        </RgUserLayout>
+        </Layout>
     );
 };
 
