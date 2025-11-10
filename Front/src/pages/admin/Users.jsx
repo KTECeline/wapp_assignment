@@ -104,12 +104,14 @@ export default function Users() {
         setRows(next);
         add('User updated');
       } else {
+        // include password when creating a user
         const created = await createUser({
           username: record.name,
           email: record.email,
           firstName: record.firstName || '',
           lastName: record.lastName || '',
-          userType: record.userType || '',
+          userType: record.userType || 'User',
+          password: record.password || '',
         });
         setRows(prev => [...prev, created]);
         add('User added');
@@ -282,13 +284,27 @@ export default function Users() {
           </div>
           <div>
             <label className="block text-sm text-gray-700 font-medium mb-2">User Type</label>
-            <input 
-              name="userType" 
-              defaultValue={editing != null ? rows[editing]?.userType : ''} 
-              className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
-              placeholder="Enter user type (e.g. admin, user)"
-            />
+            <select
+              name="userType"
+              defaultValue={editing != null ? rows[editing]?.userType : 'User'}
+              className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200 appearance-none"
+            >
+              <option value="User">User</option>
+              <option value="Admin">Admin</option>
+            </select>
           </div>
+          {editing == null && (
+            <div>
+              <label className="block text-sm text-gray-700 font-medium mb-2">Password</label>
+              <input
+                name="password"
+                type="password"
+                required
+                className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200"
+                placeholder="Enter password for new user"
+              />
+            </div>
+          )}
           {editing != null && (
             <div>
               <label className="block text-sm text-gray-700 font-medium mb-2">New Password (admin validation required)</label>
