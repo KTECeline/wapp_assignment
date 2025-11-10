@@ -32,6 +32,18 @@ export default function CoursesSwiper() {
     }
   }, [add]);
 
+  // Resolve image paths: prefer absolute backend URL in dev when given a relative '/uploads/...' path
+  const resolveImage = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/uploads/')) {
+      const host = window.location.hostname;
+      const backendPort = '5170';
+      return `${window.location.protocol}//${host}:${backendPort}${path}`;
+    }
+    return path;
+  };
+
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
@@ -139,6 +151,13 @@ export default function CoursesSwiper() {
               </div>
 
               {/* Content */}
+              {/* Banner Image */}
+              {courses[currentIndex].courseImg && (
+                <div className="w-full h-48 mb-4 overflow-hidden rounded-xl">
+                  <img src={resolveImage(courses[currentIndex].courseImg)} alt={courses[currentIndex].title} className="w-full h-full object-cover" />
+                </div>
+              )}
+
               <div className="space-y-6">
                 {/* Category Badge */}
                 <div className="inline-block">

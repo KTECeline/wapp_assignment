@@ -71,8 +71,28 @@ export default function DropUpload({
 
   useEffect(() => {
     const makePreview = async () => {
-      if (!value || !(value instanceof File)) {
+      if (!value) {
         setPreviewURL(defaultValue);
+        return;
+      }
+      // If value is a string, assume it's a URL/path and show it directly
+      if (typeof value === 'string') {
+        // If it's a relative uploads path like '/uploads/..', convert to absolute backend URL in dev
+        if (value.startsWith('/uploads/')) {
+          try {
+            const host = window.location.hostname;
+            // Default backend port used in this project is 5170 for development
+            const backendPort = '5170';
+            const absolute = `${window.location.protocol}//${host}:${backendPort}${value}`;
+            setPreviewURL(absolute);
+            return;
+          } catch (e) {
+            // fallback to value as-is
+            setPreviewURL(value);
+            return;
+          }
+        }
+        setPreviewURL(value);
         return;
       }
       if (customPreview) {

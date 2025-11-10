@@ -1,29 +1,26 @@
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Card from '../../components/Card';
 import { motion } from 'framer-motion';
 import { Save, ChevronRight, ImagePlus, Video, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Trash2, Clock, Users as UsersIcon, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../components/Toast';
-import DropUpload from '../../components/DropUpload.jsx';
-import { createCourse, updateCourse, getCategories, getLevels } from '../../api/client';
-
+import DropUpload from '../../components/DropUpload';
+import { createCourse, updateCourse, getCategories, getLevels } from '../../api/client.js';
 const seedQuestions = [
   { id: 1, title: 'What is gluten?', content: 'Explain how gluten forms and its role in bread structure.', type: 'mcq', options: ['Protein', 'Sugar', 'Fat', 'Water'], correctAnswer: 0 },
   { id: 2, title: 'Ideal dough temperature', content: 'What is the ideal dough temperature for sourdough bulk fermentation?', type: 'mcq', options: ['18°C', '22–24°C', '28°C', '35°C'], correctAnswer: 1 }
 ];
-
 export default function CoursesEdit() {
   const location = useLocation();
   const navigate = useNavigate();
   const courseFromState = location.state?.course;
   const mode = location.state?.mode || (courseFromState ? 'edit' : 'create');
   const { add } = useToast();
-
   // Load categories and levels from database
   const [categories, setCategories] = useState([]);
   const [levels, setLevels] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -42,10 +39,8 @@ export default function CoursesEdit() {
     };
     fetchData();
   }, []);
-
   // Active section management
   const [activeSection, setActiveSection] = useState('basic');
-
   // Course Meta
   const [courseMeta, setCourseMeta] = useState({
     title: courseFromState?.title || '',
@@ -62,20 +57,17 @@ export default function CoursesEdit() {
     badgeImage: courseFromState?.badgeImg || undefined,
     quizBadgeImage: courseFromState?.quizBadgeImg || undefined
   });
-
   // Set default category and level when data loads
   useEffect(() => {
     if (categories.length > 0 && !courseMeta.categoryId) {
       setCourseMeta(prev => ({ ...prev, categoryId: categories[0].categoryId }));
     }
   }, [categories, courseMeta.categoryId]);
-
   useEffect(() => {
     if (levels.length > 0 && !courseMeta.levelId) {
       setCourseMeta(prev => ({ ...prev, levelId: levels[0].levelId }));
     }
   }, [levels, courseMeta.levelId]);
-
   // Tips
   const [tips, setTips] = useState(mode === 'create' ? [] : [
     { id: 1, description: 'Always use room temperature eggs for better mixing.' },
@@ -83,7 +75,6 @@ export default function CoursesEdit() {
   ]);
   const [selectedTip, setSelectedTip] = useState(null);
   const [tipForm, setTipForm] = useState({ description: '' });
-
   // Prep Items (Ingredients)
   const [prepItems, setPrepItems] = useState(mode === 'create' ? [] : [
     { id: 1, title: 'All-Purpose Flour', description: 'Sifted', amount: 2, metric: 'cups', type: 'Dry', itemImg: '' },
@@ -91,7 +82,6 @@ export default function CoursesEdit() {
   ]);
   const [selectedPrepItem, setSelectedPrepItem] = useState(null);
   const [prepItemForm, setPrepItemForm] = useState({ title: '', description: '', amount: '', metric: '', type: 'Dry', itemImg: undefined });
-
   // Course Steps
   const [steps, setSteps] = useState(mode === 'create' ? [] : [
     { id: 1, step: 1, description: 'Preheat the oven to 350°F (175°C).', stepImg: '' },
@@ -99,14 +89,11 @@ export default function CoursesEdit() {
   ]);
   const [selectedStep, setSelectedStep] = useState(null);
   const [stepForm, setStepForm] = useState({ step: '', description: '', stepImg: undefined });
-
   // Questions
   const [questions, setQuestions] = useState(() => (mode === 'create' ? [] : seedQuestions));
   const [selectedQuestion, setSelectedQuestion] = useState(() => (mode === 'create' ? null : (seedQuestions[0]?.id ?? null)));
   const [questionForm, setQuestionForm] = useState({ title: '', content: '', type: 'mcq', options: [], correctAnswer: 0 });
-
   const selectedQuestionObj = useMemo(() => questions.find(q => q.id === selectedQuestion) || null, [questions, selectedQuestion]);
-
   // Collapsed sections state
   const [collapsedSections, setCollapsedSections] = useState({
     tips: false,
@@ -114,11 +101,9 @@ export default function CoursesEdit() {
     steps: false,
     questions: false
   });
-
   const toggleSection = (section) => {
     setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
-
   useEffect(() => {
     if (selectedQuestionObj) setQuestionForm({
       title: selectedQuestionObj.title,
@@ -128,11 +113,9 @@ export default function CoursesEdit() {
       correctAnswer: selectedQuestionObj.correctAnswer || 0
     });
   }, [selectedQuestionObj]);
-
   useEffect(() => {
     if (selectedTip) setTipForm({ description: selectedTip.description });
   }, [selectedTip]);
-
   useEffect(() => {
     if (selectedPrepItem) setPrepItemForm({
       title: selectedPrepItem.title,
@@ -143,7 +126,6 @@ export default function CoursesEdit() {
       itemImg: undefined
     });
   }, [selectedPrepItem]);
-
   useEffect(() => {
     if (selectedStep) setStepForm({
       step: selectedStep.step,
@@ -151,12 +133,10 @@ export default function CoursesEdit() {
       stepImg: undefined
     });
   }, [selectedStep]);
-
   const onChangeCourseMeta = (e) => {
     const { name, value } = e.target;
     setCourseMeta(prev => ({ ...prev, [name]: value }));
   };
-
   const onSaveCourse = async () => {
     try {
       // Validate required fields
@@ -164,36 +144,40 @@ export default function CoursesEdit() {
         add('Please fill in all required fields', 'error');
         return;
       }
+      // Upload images if they are files or data URLs, otherwise reuse existing URLs
+      const uploadMaybe = async (fileOrData) => {
+        if (!fileOrData) return '';
+        const form = new FormData();
 
-      // Helper function to convert File to base64 data URL
-      const fileToDataURL = (file) => {
-        return new Promise((resolve, reject) => {
-          if (!file) {
-            resolve('');
-            return;
+        if (fileOrData instanceof File) {
+          form.append('file', fileOrData, fileOrData.name);
+        } else if (typeof fileOrData === 'string') {
+          if (fileOrData.startsWith('/uploads/') || /^https?:\/\//.test(fileOrData)) {
+            return fileOrData;
           }
-          if (typeof file === 'string') {
-            resolve(file);
-            return;
-          }
-          if (file instanceof File) {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          } else {
-            resolve('');
-          }
-        });
+          // data URL -> convert to blob
+          const res = await fetch(fileOrData);
+          const blob = await res.blob();
+          form.append('file', blob, 'upload.jpg');
+        } else {
+          return '';
+        }
+
+        const r = await fetch('/api/Uploads', { method: 'POST', body: form });
+        if (!r.ok) {
+          const t = await r.text();
+          throw new Error(t || `Failed to upload file: ${r.status}`);
+        }
+        const json = await r.json();
+        // server now returns both relative path and absolute url; prefer absolute
+        return json.url || json.path || '';
       };
 
-      // Convert all images to base64
       const [courseImgData, badgeImgData, quizBadgeImgData] = await Promise.all([
-        fileToDataURL(courseMeta.courseImage),
-        fileToDataURL(courseMeta.badgeImage),
-        fileToDataURL(courseMeta.quizBadgeImage)
+        uploadMaybe(courseMeta.courseImage),
+        uploadMaybe(courseMeta.badgeImage),
+        uploadMaybe(courseMeta.quizBadgeImage)
       ]);
-
       // Use exact C# property names (PascalCase)
       const courseData = {
         Title: courseMeta.title,
@@ -209,9 +193,7 @@ export default function CoursesEdit() {
         CategoryId: parseInt(courseMeta.categoryId),
         Rating: courseFromState?.rating || 0
       };
-
       console.log('Saving course data:', courseData); // Debug log
-
       if (mode === 'create') {
         const newCourse = await createCourse(courseData);
         add('Course created successfully!', 'success');
@@ -233,7 +215,6 @@ export default function CoursesEdit() {
       add(`Failed to ${mode === 'create' ? 'create' : 'update'} course: ${err.message}`, 'error');
     }
   };
-
   // Tips handlers
   const onAddTip = () => {
     const newId = Date.now();
@@ -242,19 +223,16 @@ export default function CoursesEdit() {
     setSelectedTip(newTip);
     setTipForm({ description: '' });
   };
-
   const onSaveTip = () => {
     if (!selectedTip) return;
     setTips(prev => prev.map(t => t.id === selectedTip.id ? { ...t, ...tipForm } : t));
     add('Tip saved');
   };
-
   const onDeleteTip = (id) => {
     setTips(prev => prev.filter(t => t.id !== id));
     if (selectedTip?.id === id) setSelectedTip(null);
     add('Tip deleted');
   };
-
   // Prep Items handlers
   const onAddPrepItem = () => {
     const newId = Date.now();
@@ -263,19 +241,16 @@ export default function CoursesEdit() {
     setSelectedPrepItem(newItem);
     setPrepItemForm({ title: '', description: '', amount: '', metric: '', type: 'Dry', itemImg: undefined });
   };
-
   const onSavePrepItem = () => {
     if (!selectedPrepItem) return;
     setPrepItems(prev => prev.map(p => p.id === selectedPrepItem.id ? { ...p, ...prepItemForm } : p));
     add('Ingredient saved');
   };
-
   const onDeletePrepItem = (id) => {
     setPrepItems(prev => prev.filter(p => p.id !== id));
     if (selectedPrepItem?.id === id) setSelectedPrepItem(null);
     add('Ingredient deleted');
   };
-
   // Steps handlers
   const onAddStep = () => {
     const newId = Date.now();
@@ -284,19 +259,16 @@ export default function CoursesEdit() {
     setSelectedStep(newStep);
     setStepForm({ step: steps.length + 1, description: '', stepImg: undefined });
   };
-
   const onSaveStep = () => {
     if (!selectedStep) return;
     setSteps(prev => prev.map(s => s.id === selectedStep.id ? { ...s, ...stepForm } : s));
     add('Step saved');
   };
-
   const onDeleteStep = (id) => {
     setSteps(prev => prev.filter(s => s.id !== id));
     if (selectedStep?.id === id) setSelectedStep(null);
     add('Step deleted');
   };
-
   // Questions handlers
   const onAddQuestion = () => {
     const newId = Date.now();
@@ -305,19 +277,16 @@ export default function CoursesEdit() {
     setSelectedQuestion(newId);
     setQuestionForm({ title: '', content: '', type: 'mcq', options: [], correctAnswer: 0 });
   };
-
   const onSaveQuestion = () => {
     if (!selectedQuestionObj) return;
     setQuestions(prev => prev.map(q => q.id === selectedQuestionObj.id ? { ...q, ...questionForm } : q));
     add('Question saved');
   };
-
   const onDeleteQuestion = (id) => {
     setQuestions(prev => prev.filter(q => q.id !== id));
     if (selectedQuestion === id) setSelectedQuestion(null);
     add('Question deleted');
   };
-
   const sections = [
     { id: 'basic', label: 'Basic Info', icon: ImagePlus },
     { id: 'tips', label: 'Tips', icon: Lightbulb, count: tips.length },
@@ -325,7 +294,6 @@ export default function CoursesEdit() {
     { id: 'steps', label: 'Steps', icon: ListOrdered, count: steps.length },
     { id: 'quiz', label: 'Quiz', icon: HelpCircle, count: questions.length }
   ];
-
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -353,7 +321,6 @@ export default function CoursesEdit() {
             Save Course
           </button>
         </div>
-
         {/* Section Navigation */}
         <Card className="p-4">
           <div className="flex items-center gap-2 overflow-x-auto">
@@ -381,7 +348,6 @@ export default function CoursesEdit() {
             ))}
           </div>
         </Card>
-
         {/* Basic Info Section */}
         {activeSection === 'basic' && (
           <Card>
@@ -403,7 +369,6 @@ export default function CoursesEdit() {
                     placeholder="e.g., The Art of Sourdough Bread"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Description</label>
                   <textarea
@@ -415,7 +380,6 @@ export default function CoursesEdit() {
                     placeholder="Describe what students will learn in this course..."
                   />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2 text-gray-700">Category *</label>
@@ -436,7 +400,6 @@ export default function CoursesEdit() {
                       )}
                     </select>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium mb-2 text-gray-700">Difficulty Level *</label>
                     <select
@@ -457,7 +420,6 @@ export default function CoursesEdit() {
                     </select>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2 text-gray-700 flex items-center gap-2">
@@ -474,7 +436,6 @@ export default function CoursesEdit() {
                       placeholder="45"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium mb-2 text-gray-700 flex items-center gap-2">
                       <UsersIcon className="w-4 h-4" />
@@ -490,7 +451,6 @@ export default function CoursesEdit() {
                       placeholder="4"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium mb-2 text-gray-700">Course Type</label>
                     <input
@@ -503,7 +463,6 @@ export default function CoursesEdit() {
                     />
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700 flex items-center gap-2">
                     <Video className="w-4 h-4" />
@@ -519,7 +478,6 @@ export default function CoursesEdit() {
                   />
                 </div>
               </div>
-
               {/* Right Column - Image Uploads */}
               <div className="lg:col-span-4 space-y-4">
                 <div>
@@ -529,12 +487,13 @@ export default function CoursesEdit() {
                   </label>
                   <DropUpload
                     value={courseMeta.courseImage}
-                    onChange={(file) => setCourseMeta(prev => ({ ...prev, courseImage: file }))}
+                    onChange={(fileOrDataUrl) => setCourseMeta(prev => ({ ...prev, courseImage: fileOrDataUrl }))}
                     description="Main course image"
                     className="bg-white h-48"
+                    enableCrop
+                    cropAspect="4/3"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Badge Image</label>
                   <DropUpload
@@ -544,7 +503,6 @@ export default function CoursesEdit() {
                     className="bg-white h-32"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Quiz Badge Image</label>
                   <DropUpload
@@ -558,7 +516,6 @@ export default function CoursesEdit() {
             </div>
           </Card>
         )}
-
         {/* Tips Section */}
         {activeSection === 'tips' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -602,7 +559,6 @@ export default function CoursesEdit() {
                 )}
               </div>
             </Card>
-
             {/* Right editor */}
             <Card className="lg:col-span-8">
               <h2 className="text-lg font-bold mb-4">
@@ -637,7 +593,6 @@ export default function CoursesEdit() {
             </Card>
           </div>
         )}
-
         {/* Ingredients Section */}
         {activeSection === 'ingredients' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -679,7 +634,6 @@ export default function CoursesEdit() {
                 )}
               </div>
             </Card>
-
             <Card className="lg:col-span-8">
               <h2 className="text-lg font-bold mb-4">
                 {selectedPrepItem ? 'Edit Ingredient' : 'Select or Create an Ingredient'}
@@ -759,7 +713,6 @@ export default function CoursesEdit() {
             </Card>
           </div>
         )}
-
         {/* Steps Section */}
         {activeSection === 'steps' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -803,7 +756,6 @@ export default function CoursesEdit() {
                 )}
               </div>
             </Card>
-
             <Card className="lg:col-span-8">
               <h2 className="text-lg font-bold mb-4">
                 {selectedStep ? `Edit Step ${selectedStep.step}` : 'Select or Create a Step'}
@@ -857,7 +809,6 @@ export default function CoursesEdit() {
             </Card>
           </div>
         )}
-
         {/* Quiz Section */}
         {activeSection === 'quiz' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -899,7 +850,6 @@ export default function CoursesEdit() {
                 )}
               </div>
             </Card>
-
             <Card className="lg:col-span-8">
               <h2 className="text-lg font-bold mb-4">
                 {selectedQuestionObj ? 'Edit Question' : 'Select or Create a Question'}

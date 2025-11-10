@@ -48,6 +48,18 @@ export default function CourseCategories() {
     }
   };
 
+  // Helper to resolve image URLs: prefer absolute backend URL in dev when given a relative '/uploads/...' path
+  const resolveImage = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/uploads/')) {
+      const host = window.location.hostname;
+      const backendPort = '5170';
+      return `${window.location.protocol}//${host}:${backendPort}${path}`;
+    }
+    return path;
+  };
+
   const getCoursesByCategory = (categoryId) => {
     return courses.filter(course => course.categoryId === categoryId);
   };
@@ -277,7 +289,7 @@ export default function CourseCategories() {
                   {/* Course Image */}
                   <div className="w-full h-40 rounded-xl mb-4 flex items-center justify-center" style={{ backgroundColor: 'var(--surface)' }}>
                     {course.courseImg ? (
-                      <img src={course.courseImg} alt={course.title} className="w-full h-full object-cover rounded-xl" />
+                      <img src={resolveImage(course.courseImg)} alt={course.title} className="w-full h-full object-cover rounded-xl" />
                     ) : (
                       <BookOpen className="w-12 h-12" style={{ color: 'var(--accent)' }} />
                     )}
