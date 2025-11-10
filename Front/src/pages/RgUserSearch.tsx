@@ -1,14 +1,19 @@
 import { IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 import { FaStar } from "react-icons/fa";
 import { useState } from "react";
 
 const RgUserSearch = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const Layout = user?.userId ? RgUserLayout : VisitorLayout;
+
     const [active, setActive] = useState("Courses");
 
-    const tabs = ["Courses", "Posts", "Badges", "Reviews"];
+    const tabs = ["Courses", "Posts", "Reviews"];
     return (
-        <RgUserLayout>
+        <Layout>
             <div className="max-w-screen overflow-x-hidden">
                 <div className="w-full flex flex-col items-center">
                     <p className="font-ibarra font-bold text-black text-[36px] pt-[50px]">
@@ -565,7 +570,7 @@ const RgUserSearch = () => {
                     </div>
                 </div>
             </div>
-        </RgUserLayout>
+        </Layout>
     );
 };
 

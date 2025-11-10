@@ -4,16 +4,19 @@ import { CiFilter } from "react-icons/ci";
 import { TbArrowsSort } from "react-icons/tb";
 import { FaStar } from "react-icons/fa";
 import React, { useState } from "react";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 import { IoAdd, IoShareSocialSharp } from "react-icons/io5";
 
 const RgUserPost = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const Layout = user?.userId ? RgUserLayout : VisitorLayout;
 
     const [active, setActive] = useState("Discover Posts");
 
     const tabs = ["Discover Posts", "Liked Posts", "My Posts"];
 
     return (
-        <RgUserLayout>
+        <Layout>
             <div className="max-w-screen overflow-x-hidden">
                 <div className="w-full flex flex-col items-center">
                     <p className="font-ibarra font-bold text-black text-[36px] pt-[50px]">
@@ -34,30 +37,31 @@ const RgUserPost = () => {
                     `}
                 </style>
 
-                {/* Courses */}
+                {/* POsts */}
                 <div className="mt-[24px] items-center text-black flex flex-col w-[1090px] mx-auto">
-
-                    <div className="relative flex flex-row font-ibarra text-[22px] font-medium mb-[36px] gap-[16px] rounded-full bg-[#F8F5F0] p-2">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActive(tab)}
-                                className="relative px-8 py-1 rounded-full transition-all duration-300"
-                            >
-                                <span
-                                    className={`relative z-10 transition-colors duration-300 ${active === tab ? "text-[#DA1A32]" : "text-black"
-                                        }`}
+                    {user?.userId && (
+                        <div className="relative flex flex-row font-ibarra text-[22px] font-medium mb-[36px] gap-[16px] rounded-full bg-[#F8F5F0] p-2">
+                            {tabs.map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActive(tab)}
+                                    className="relative px-8 py-1 rounded-full transition-all duration-300"
                                 >
-                                    {tab}
-                                </span>
+                                    <span
+                                        className={`relative z-10 transition-colors duration-300 ${active === tab ? "text-[#DA1A32]" : "text-black"
+                                            }`}
+                                    >
+                                        {tab}
+                                    </span>
 
-                                {/* Animated rounded highlight */}
+                                    {/* Animated rounded highlight */}
 
-                                <span className={`absolute inset-0 border border-[#DA1A32] rounded-full transition-all duration-[300ms] bg-white ${active === tab ? "opacity-100" : "opacity-0"}`} />
+                                    <span className={`absolute inset-0 border border-[#DA1A32] rounded-full transition-all duration-[300ms] bg-white ${active === tab ? "opacity-100" : "opacity-0"}`} />
 
-                            </button>
-                        ))}
-                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px] justify-between w-full">
                         <div className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px]">
@@ -483,18 +487,19 @@ const RgUserPost = () => {
 
                     </div>
 
-
-                    <button className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                        <div className="font-inter text-[16px] font-light text-black">
-                            Post
-                        </div>
-                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                            <IoAdd className="text-white w-[32px] h-[32px]" />
-                        </div>
-                    </button>
+                    {user?.userId && (
+                        <button className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                            <div className="font-inter text-[16px] font-light text-black">
+                                Post
+                            </div>
+                            <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                                <IoAdd className="text-white w-[32px] h-[32px]" />
+                            </div>
+                        </button>
+                    )}
                 </div>
             </div>
-        </RgUserLayout>
+        </Layout>
     );
 };
 

@@ -1,17 +1,58 @@
 import { IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 import { CiFilter } from "react-icons/ci";
 import { TbArrowsSort } from "react-icons/tb";
 import { FaStar } from "react-icons/fa";
+import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+interface Category {
+    categoryId: number;
+    title: string;
+    catImg: string;
+    catBanner: string;
+    description: string;
+    deleted: boolean;
+}
 
 const RgUserCat = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const Layout = user?.userId ? RgUserLayout : VisitorLayout;
+
+    const { id } = useParams<{ id: string }>(); // get categoryId from URL
+    const [category, setCategory] = useState<Category | null>(null);
+
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/categories/${id}`) // fetch from your ASP.NET backend
+            .then(res => {
+                if (!res.ok) throw new Error("Network response was not ok");
+                return res.json();
+            })
+            .then(data => setCategory(data))
+            .catch(err => console.error("Error fetching category:", err));
+    }, [id]);
+
+    if (!category) {
+        return (
+            <Layout>
+                <div className="flex justify-center items-center h-[400px]">
+                    Loading category...
+                </div>
+            </Layout>
+        );
+    }
+
     return (
-        <RgUserLayout>
+        <Layout>
             <div className="max-w-screen overflow-x-hidden">
                 {/* Banner */}
                 <div
                     className="w-full h-[200px] relative bg-fixed bg-center bg-cover"
-                    style={{ backgroundImage: "url('/images/Pastry_Banner.jpg')" }}
+                    style={{ backgroundImage: `url(${category.catBanner})` }}
                 >
                     {/* Overlay */}
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[#000000]/40 to-[#000000]/0 z-10" />
@@ -20,7 +61,7 @@ const RgUserCat = () => {
                     <div className="absolute top-0 left-0 w-full h-full z-20">
                         <div className="relative w-[1090px] h-full mx-auto flex items-center">
                             <div className="font-ibarra text-[48px] max-w-[500px] leading-tight font-bold text-white">
-                                Pastry
+                                {category.title}
                             </div>
                         </div>
                     </div>
@@ -578,7 +619,7 @@ const RgUserCat = () => {
                     </div>
                 </div>
             </div>
-        </RgUserLayout>
+        </Layout>
     );
 };
 

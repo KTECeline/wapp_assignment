@@ -3,10 +3,11 @@ import { IoIosSend, IoMdArrowBack, IoMdArrowForward, IoMdHeart } from "react-ico
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { IoAdd } from "react-icons/io5";
 import { Link } from "react-router-dom";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 
 const RgUserHome = () => {
     return (
-        <RgUserLayout>
+        <VisitorLayout>
 
             {/* HeroSection */}
             <div className="w-full h-[500px] relative">
@@ -734,7 +735,7 @@ const RgUserHome = () => {
             </footer>
 
 
-        </RgUserLayout>
+        </VisitorLayout>
     );
 };
 

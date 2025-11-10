@@ -1,6 +1,6 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
-
+import { Link, NavLink } from "react-router-dom";
+import ScrollToTop from "./ScrollToTop.tsx";
 interface VisitorLayoutProps {
   children: React.ReactNode;
 }
@@ -8,6 +8,7 @@ interface VisitorLayoutProps {
 const VisitorLayout: React.FC<VisitorLayoutProps> = ({ children }) => {
   return (
     <div className="font-inter bg-white min-h-screen w-full overflow-hidden">
+      <ScrollToTop />
       {/* Header */}
       <header className="w-full h-[80px] bg-[#F8F5F0] left-0 top-0 fixed flex flex-row justify-between items-center z-50">
         {/* Logo */}
@@ -18,10 +19,9 @@ const VisitorLayout: React.FC<VisitorLayoutProps> = ({ children }) => {
         {/* Visitor Menu */}
         <div className="flex flex-row px-[68px] text-[16px] font-light gap-[88px] font-inter">
           {[
-            { to: "/RgUserHome", label: "Home" },
+            { to: "/", label: "Home" },
             { to: "/RgUserLearn", label: "Learn" },
             { to: "/RgUserPost", label: "Posts" },
-            { to: "/RgUserBadge", label: "Badges" },
           ].map((item) => (
             <NavLink
               key={item.to}
@@ -42,22 +42,26 @@ const VisitorLayout: React.FC<VisitorLayoutProps> = ({ children }) => {
 
           {/* Right Icons */}
           <div className="flex gap-[16px]">
-            <img
-              src="/images/Search.png"
-              alt="Search"
-              className="w-[22px] h-[22px] cursor-pointer"
-            />
-            <img
-              src="/images/Profile.png"
-              alt="Profile"
-              className="w-[22px] h-[22px] cursor-pointer"
-            />
+            <Link to="/RgUserSearch">
+              <img
+                src="/images/Search.png"
+                alt="Search"
+                className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+              />
+            </Link>
+            <Link to="/Register">
+              <img
+                src="/images/Profile.png"
+                alt="Profile"
+                className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+              />
+            </Link>
           </div>
         </div>
       </header>
 
       {/* Page Content */}
-      <div className="">{children}</div>
+      <div className="pt-[80px]">{children}</div>
     </div>
   );
 };

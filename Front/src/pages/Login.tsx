@@ -216,13 +216,6 @@ const Login: FC = () => {
                                         <IconLoading className="text-black w-5 h-5 animate-spin ml-4" />
                                     ) : <span>Login Now</span>}
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/VisitorHome')}
-                                    className="w-full h-[37px] hover:scale-105 flex justify-center items-center rounded-full transition-all duration-[600ms] bg-gray-400 text-white hover:bg-gray-500"
-                                >
-                                    Continue as Guest
-                                </button>
                             </div>
                         </div>
                     </Form>
@@ -233,7 +226,7 @@ const Login: FC = () => {
 
     return (
         <VisitorLayout>
-            <div className="relative h-screen overflow-y-scroll scrol pt-[80px]">
+            <div className="relative h-screen overflow-y-scroll scrol pt-[80px] -mt-[80px]">
                 <div className="flex flex-row items-center justify-between h-full overflow-hidden">
                     <div className="flex justify-center items-center w-[54%] overflow-hidden">
                         <div className="mx-[10px] my-[10px] relative h-[580px] w-[780px]  overflow-hidden rounded-[30px]">

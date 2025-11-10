@@ -1074,7 +1074,7 @@ const Registration: FC = () => {
 
     return (
         <VisitorLayout>
-            <div className="relative h-screen overflow-y-scroll scrol pt-[80px]">
+            <div className="relative h-screen overflow-y-scroll scroll pt-[80px] -mt-[80px]">
                 <div className="flex flex-row items-center justify-between h-full overflow-hidden">
                     <div className="flex justify-center items-center w-[54%] overflow-hidden">
                         <div className="mx-[10px] my-[10px] relative h-[580px] w-[780px]  overflow-hidden rounded-[30px]">

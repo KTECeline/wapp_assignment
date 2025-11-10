@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
-import ScrollToTop from "./ScrollToTop.tsx"; // <-- import
+import ScrollToTop from "./ScrollToTop.tsx";
 interface RgUserLayoutProps {
   children: React.ReactNode;
 }

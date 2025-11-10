@@ -2,16 +2,97 @@ import { IoIosArrowForward, IoMdHeart } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { CiBookmark } from "react-icons/ci";
 import { FaStar } from "react-icons/fa";
-import { IoAdd } from "react-icons/io5";
+import { IoAdd, IoBookmark } from "react-icons/io5";
+import { useState } from "react";
+import { RxCross2 } from "react-icons/rx";
 
 const RgUserCourse = () => {
+    const UserRegisteredCourse = true;
+    const RegisteredUser = true;
+    const Saved = false;
+
+    const course = {
+        course_id: 1,
+        title: "Small-Batch Brownies",
+        description:
+            "Some occasions call for a big batch of brownies: a bake sale or a neighborhood cookout. But when you crave just one or two rich, fudgy brownies, this small-batch recipe is the answer. The brownies are made in one bowl and are ready in 30 minutes, which means there's minimal clean-up and you don't need to plan ahead. Best of all, because these invitingly thick small-batch brownies are baked in a loaf pan, you’re sure to get an edge piece no matter how you slice them (edge-lovers, rejoice!).",
+        rating: 4.6,
+        course_img: "/images/Recipe.jpeg",
+        cooking_time_min: 30,
+        servings: 8,
+        level_id: 1,
+        category_id: 3
+    };
+
+    const TotalReviews = 3;
+
+    const levels: Record<number, string> = {
+        1: "Beginner",
+        2: "Intermediate",
+        3: "Advanced"
+    };
+
+    const categories: Record<number, string> = {
+        1: "Bread",
+        2: "Pastry",
+        3: "Cake",
+        4: "Asian Dessert"
+    };
+
+    function formatCookingTime(minutes: number) {
+        if (minutes < 60) return `${minutes} mins`;
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return m === 0 ? `${h}h` : `${h}h ${m}m`;
+    }
+
+    const coursePrepItems = [
+        { id: 1, type: "ingredient", title: "Unsalted butter", amount: 71, metric: "g", item_image: "/images/Recipe.jpeg", description: "Unsalted butter is butter that has no salt added to it. This product is solid at room temperature but melts at higher temperatures." },
+        { id: 2, type: "ingredient", title: "Granulated sugar", amount: 149, metric: "g", item_image: "/images/Recipe.jpeg", description: "Sweet stuff that makes brownies sweet." },
+        { id: 3, type: "ingredient", title: "Large egg", amount: 1, metric: "", item_image: "/images/Recipe.jpeg", description: "Binds ingredients together so brownies hold shape." },
+        { id: 4, type: "ingredient", title: "Vanilla extract", amount: 1, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Gives a nice vanilla smell and taste." },
+        { id: 5, type: "ingredient", title: "Unsweetened cocoa", amount: 6, metric: "tablespoon", item_image: "/images/Recipe.jpeg", description: "Makes brownies chocolatey." },
+        { id: 6, type: "ingredient", title: "Espresso powder (optional)", amount: 0.25, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Optional tiny coffee taste to make chocolate stronger." },
+        { id: 7, type: "ingredient", title: "All purpose flour", amount: 45, metric: "g", item_image: "/images/Recipe.jpeg", description: "Powder that gives structure to brownies." },
+        { id: 8, type: "ingredient", title: "Table salt", amount: 0.25, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Tiny bit of salt to make sweetness taste better." },
+        { id: 9, type: "ingredient", title: "Baking powder", amount: 0.0625, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Makes brownies puff up a little." },
+        { id: 10, type: "ingredient", title: "Chocolate chips", amount: 0.0625, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Tiny chocolate pieces for extra chocolate in bites." },
+        { id: 11, type: "tool", title: "Baking Pan (8.5 x 4.5) inch", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "The pan used to bake the brownies. This size helps them cook evenly." },
+        { id: 12, type: "tool", title: "Mixing Bowls", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Used to hold and mix all the ingredients." },
+        { id: 13, type: "tool", title: "Whisk or Hand Mixer", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Helps blend ingredients smoothly with no lumps." },
+        { id: 14, type: "tool", title: "Rubber Spatula", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Used to scrape batter from the bowl so nothing is wasted." },
+        { id: 15, type: "tool", title: "Measuring Cups & Spoons", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Tools for measuring each ingredient accurately." },
+        { id: 16, type: "tool", title: "Parchment Paper", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Prevents sticking and makes it easy to lift brownies from the pan." },
+        { id: 17, type: "tool", title: "Digital Scale", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Measures ingredients by weight for more accurate baking." },
+
+    ];
+
+
+
+    const [popupItem, setPopupItem] = useState(null as null | typeof coursePrepItems[0]);
+
+    function decimalToFraction(decimal: number): string {
+        const tolerance = 1.0e-6; // for floating point precision
+        let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+        let b = decimal;
+        do {
+            const a = Math.floor(b);
+            let aux = h1; h1 = a * h1 + h2; h2 = aux;
+            aux = k1; k1 = a * k1 + k2; k2 = aux;
+            b = 1 / (b - a);
+        } while (Math.abs(decimal - h1 / k1) > decimal * tolerance);
+
+        return k1 === 1 ? `${h1}` : `${h1}/${k1}`;
+    }
+
+
     return (
         <RgUserLayout>
 
             {/* Banner */}
             <div
                 className="w-full h-[200px] relative bg-fixed bg-center bg-cover"
-                style={{ backgroundImage: "url('/images/Recipe.jpeg')" }}
+                style={{ backgroundImage: `url(${course.course_img})` }}
             >
                 {/* Overlay */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[#000000]/40 to-[#000000]/0 z-10" />
@@ -20,7 +101,7 @@ const RgUserCourse = () => {
                 <div className="absolute top-0 left-0 w-full h-full z-20">
                     <div className="relative w-[1090px] h-full mx-auto flex items-center">
                         <div className="font-ibarra text-[48px] max-w-[500px] leading-tight font-bold text-white">
-                            Small-Batch Brownies
+                            {course.title}
                         </div>
 
                         <div className="font-inter absolute bottom-[54px] left-[4px] text-[10px] max-w-[500px] leading-tight font-[200] text-white flex items-center gap-[2px]">
@@ -29,7 +110,7 @@ const RgUserCourse = () => {
                             </button>
                             <IoIosArrowForward className="text-[#DA1A32] h-[18px]" />
                             <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                Cake
+                                {categories[course.category_id]}
                             </button>
                         </div>
                     </div>
@@ -60,13 +141,12 @@ const RgUserCourse = () => {
                             <div className="flex flex-col gap-[2px] justify-center translate-y-[-2px]">
                                 {/* Review */}
                                 <div className="font-inter text-[#484848] text-[14px] font-light">
-                                    3 reviews
+                                    {TotalReviews} reviews
                                 </div>
 
                                 <div className="flex gap-[4px]">
                                     {[...Array(5)].map((_, index) => {
-                                        // Fill in the ratings replace the 5
-                                        const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+                                        const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
 
                                         return (
                                             <div
@@ -74,12 +154,12 @@ const RgUserCourse = () => {
                                                 className="relative"
                                                 style={{ width: `14px`, height: `14px` }}
                                             >
-                                                {/* Gray star background */}
+
                                                 <FaStar
                                                     className="absolute top-0 left-0 text-gray-300"
                                                     size="14px"
                                                 />
-                                                {/* Red filled star */}
+
                                                 <div
                                                     className="absolute top-0 left-0 overflow-hidden"
                                                     style={{ width: `${fillPercentage}%`, height: "100%" }}
@@ -97,8 +177,8 @@ const RgUserCourse = () => {
                         </div>
 
                         {/* Description */}
-                        <p className="max-w-[435px] mt-[24px] text-[14px] font-light leading-tight text-justify line-clamp-8">
-                            Some occasions call for a big batch of brownies: a bake sale or a neighborhood cookout. But when you crave just one or two rich, fudgy brownies, this small-batch recipe is the answer. The brownies are made in one bowl and are ready in 30 minutes, which means there's minimal clean-up and you don't need to plan ahead. Best of all, because these invitingly thick small-batch brownies are baked in a loaf pan, you’re sure to get an edge piece no matter how you slice them (edge-lovers, rejoice!).
+                        <p className="max-w-[435px] mt-[24px] text-[14px] font-light leading-[1.5] text-justify line-clamp-8">
+                            {course.description}
                         </p>
 
 
@@ -108,10 +188,7 @@ const RgUserCourse = () => {
                                 <img src="/images/Time.png" alt="recipe" className="w-[19px] h-[19px] object-cover translate-y-[-1px]" />
                                 <div className="flex items-end">
                                     <div className="font-inter ml-[8px] text-[#484848] text-[16px] font-light">
-                                        30
-                                    </div>
-                                    <div className="font-inter ml-[1px] text-[#484848] text-[14px] font-light">
-                                        mins
+                                        {formatCookingTime(course.cooking_time_min)}
                                     </div>
                                 </div>
                             </div>
@@ -122,10 +199,7 @@ const RgUserCourse = () => {
                                 <img src="/images/Profile.png" alt="recipe" className="w-[18px] h-[18px] object-cover" />
                                 <div className="flex items-end">
                                     <div className="font-inter ml-[10px] text-[#484848] text-[16px] font-light">
-                                        8
-                                    </div>
-                                    <div className="font-inter ml-[1px] text-[#484848] text-[14px] font-light">
-                                        servings
+                                        {course.servings} servings
                                     </div>
                                 </div>
                             </div>
@@ -135,7 +209,7 @@ const RgUserCourse = () => {
                             <div className="flex items-center">
                                 <img src="/images/Level.png" alt="recipe" className="w-[20px] h-[20px] object-cover" />
                                 <div className="font-inter ml-[9px] text-[#484848] text-[16px] font-light">
-                                    Beginner
+                                    {levels[course.level_id]}
                                 </div>
                             </div>
                         </div>
@@ -143,60 +217,104 @@ const RgUserCourse = () => {
                         <div className="bg-black w-[435px] mt-[26px] h-[1.5px]" />
 
                         {/* Action Buttons */}
-                        <div className="flex flex-row gap-[10px] mt-[20px]">
-                            <button className="w-[265px] h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                                Start Now
-                                {/* Remove Course */}
-                            </button>
+                        {!RegisteredUser ? (
+                            <div className="flex flex-row gap-[10px] mt-[20px]">
+                                <button className="w-full h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                    Register now to start course
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-row gap-[10px] mt-[20px]">
+                                {!UserRegisteredCourse ? (
+                                    <button className="w-[265px] h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                        Start Now
+                                    </button>
+                                ) : (
+                                    <button className="w-[265px] h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                        Remove Course
+                                    </button>
+                                )}
 
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                                <div className="font-inter text-[16px] font-light">
-                                    Bookmark
+                                {!Saved ? (
+                                    <button className="w-[160px] flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                        <div className="font-inter text-[16px] font-light ml-[10px]">
+                                            Save
+                                        </div>
+                                        <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                                            <CiBookmark className="text-white w-[20px] h-[20px]" />
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <button className="w-[160px] flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                        <div className="font-inter text-[16px] font-light ml-[10px]">
+                                            Saved
+                                        </div>
+                                        <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                                            <IoBookmark className="text-white w-[20px] h-[20px]" />
+                                        </div>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {!UserRegisteredCourse ? (
+                        <img src={course.course_img} alt="recipe" className="w-[546px] h-[370px] object-cover" />
+                    ) : (
+                        <div className="w-[503px] flex flex-col gap-[16px]">
+                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
+                                <div className="font-ibarra text-[24px] font-bold text-black group-hover:text-[#DA1A32] transition-all duration-[600ms]">
+                                    Step-by-Step Guide
                                 </div>
-                                <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                                    <CiBookmark className="text-white w-[20px] h-[20px]" />
+                            </button>
+                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
+                                <div className="font-ibarra text-[24px] font-bold text-black flex-3 flex justify-start group-hover:text-[#DA1A32] transition-all duration-[600ms]">
+                                    Practice Quiz
+                                </div>
+                                <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] ml-24">
+                                    80%
+                                </div>
+                                <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] ml-20">
+                                    1:30
+                                    <span className="text-[16px]">min</span>
+                                </div>
+                            </button>
+                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
+                                <div className="font-ibarra text-[24px] font-bold text-black flex-2 flex justify-start group-hover:text-[#DA1A32] transition-all duration-[600ms]">
+                                    Download Recipe as PDF
                                 </div>
                             </button>
                         </div>
-                    </div>
-
-                    {/* <img src="/images/Recipe.jpeg" alt="recipe" className="w-[546px] h-[370px] object-cover" /> */}
-
-                    <div className="w-[503px] flex flex-col gap-[16px]">
-                        <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
-                            <div className="font-ibarra text-[24px] font-bold text-black group-hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                Step-by-Step Guide
-                            </div>
-                        </button>
-                        <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
-                            <div className="font-ibarra text-[24px] font-bold text-black flex-2 flex justify-start group-hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                Practice Quiz
-                            </div>
-                            <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] flex-1">
-                                80%
-                            </div>
-                            <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] flex-1">
-                                1:30
-                                <span className="text-[16px]">min</span>
-                            </div>
-                        </button>
-                        <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
-                            <div className="font-ibarra text-[24px] font-bold text-black flex-2 flex justify-start group-hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                Final Quiz
-                            </div>
-                            <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] flex-1">
-                                15/20
-                            </div>
-                            <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] flex-1">
-                                Completed
-                            </div>
-                        </button>
-                    </div>
+                    )}
                 </div>
+
+                {/* Popup Modal */}
+                {popupItem && (
+                    <div className="fixed inset-0 flex items-center justify-center z-50">
+                        <div className="absolute w-full h-full bg-black bg-opacity-50"
+                            onClick={() => setPopupItem(null)} />
+                        <div className="bg-white pt-2 px-2 rounded-2xl w-[300px] relative ">
+                            <button className="absolute top-3 right-3 text-white">
+                                <div className="rounded-full p-[2px] bg-black/50">
+                                    <RxCross2 size={20} onClick={() => setPopupItem(null)} className="cursor-pointer hover:text-[#eb5757] active:text-[#bf4b4b] transition-all duration-[400ms]" />
+                                </div>
+                            </button>
+                            <img
+                                src={popupItem.item_image}
+                                alt={popupItem.title}
+                                className="w-full h-[200px] object-cover rounded-xl mb-2"
+                            />
+                            <div className="px-[8px] pb-[24px]">
+                                <h3 className="font-ibarra mt-[18px] line-clamp-3 text-[20px] font-bold leading-tight mb-2">{popupItem.title}</h3>
+                                <p className="font-inter text-[12px] font-light text-justify">{popupItem.description}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Ingredient and Tools */}
                 <div className="mt-[88px] flex flex-row justify-between w-[1090px]">
-                    <div className="w-[435px] flex flex-col items-center">
+                    <div className="w-[480px] flex flex-col items-center">
                         <div className="font-ibarra text-[32px] font-bold flex flex-row items-center gap-[8px] text-black">
                             <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                             Ingredients
@@ -204,80 +322,41 @@ const RgUserCourse = () => {
                         </div>
 
                         <ul className="flex flex-col mt-[32px] gap-[16px] w-full">
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                            {coursePrepItems
+                                .filter(item => item.type === "ingredient")
+                                .map(item => {
+                                    // Convert small amounts <1 to fractions
+                                    const amountDisplay =
+                                        item.type === "ingredient" &&
+                                            typeof item.amount === "number" &&
+                                            item.amount < 1 &&
+                                            item.amount > 0
+                                            ? decimalToFraction(item.amount)
+                                            : item.amount;
 
-                                <div className="text-[14px] font-light txt-black">
-                                    Unsalted butter - 71g
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                                    return (
+                                        <li key={item.id} className="w-full justify-between items-center flex flex-row">
+                                            <div className="items-center flex flex-row gap-[12px] ">
+                                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                                                <div className="text-[14px] font-light text-black">
+                                                    {item.title} - {amountDisplay} {item.metric}
+                                                </div>
+                                            </div>
 
-                                <div className="text-[14px] font-light txt-black">
-                                    Granulated sugar - 149g
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Large egg - 1
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Vanilla extract - 1 teaspoon
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Unsweetened cocao - 6 tablespoon
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Expresso powder (optional) - 1/4 teaspoon
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    All purpose flour - 45g
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Table salt - 1/4 teaspoon
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Baking powder - 1/16 teaspoon
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Chocolate chips - 1/16 teaspoon
-                                </div>
-                            </li>
+                                            <button
+                                                className="text-[#DA1A32] underline text-[14px]"
+                                                onClick={() => setPopupItem(item)}
+                                            >
+                                                Learn More
+                                            </button>
+                                        </li>
+                                    );
+                                })
+                            }
                         </ul>
                     </div>
 
-                    <div className="w-[546px] flex flex-col items-center px-[40px]">
+                    <div className="w-[480px] flex flex-col items-center px-[40px]">
                         <div className="font-ibarra text-[32px] font-bold flex flex-row items-center gap-[8px] text-black">
                             <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                             Tools
@@ -286,55 +365,29 @@ const RgUserCourse = () => {
 
 
                         <ul className="flex flex-col mt-[32px] gap-[16px] w-full">
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                            {coursePrepItems
+                                .filter(item => item.type === "tool")
+                                .map(item => {
 
-                                <div className="text-[14px] font-light txt-black">
-                                    Baking Pan – 8 1/2" x 4 1/2" pan
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                                    return (
+                                        <li key={item.id} className="w-full justify-between items-center flex flex-row">
+                                            <div className="items-center flex flex-row gap-[12px] ">
+                                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                                                <div className="text-[14px] font-light text-black">
+                                                    {item.title}
+                                                </div>
+                                            </div>
 
-                                <div className="text-[14px] font-light txt-black">
-                                    Mixing Bowls
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Whisk or Hand Mixer
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Rubber Spatula
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Measuring Cups & Spoons
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Parchment Paper
-                                </div>
-                            </li>
-                            <li className="flex flex-row gap-[12px] items-center">
-                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-
-                                <div className="text-[14px] font-light txt-black">
-                                    Digital Scale
-                                </div>
-                            </li>
+                                            <button
+                                                className="text-[#DA1A32] underline text-[14px]"
+                                                onClick={() => setPopupItem(item)}
+                                            >
+                                                Learn More
+                                            </button>
+                                        </li>
+                                    );
+                                })
+                            }
                         </ul>
                     </div>
                 </div>
@@ -347,14 +400,16 @@ const RgUserCourse = () => {
                         <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                     </div>
 
-                    <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-0">
-                        <div className="font-inter text-[16px] font-light text-black">
-                            Post
-                        </div>
-                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                            <IoAdd className="text-white w-[32px] h-[32px]" />
-                        </div>
-                    </button>
+                    {UserRegisteredCourse && (
+                        <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-0">
+                            <div className="font-inter text-[16px] font-light text-black">
+                                Post
+                            </div>
+                            <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                                <IoAdd className="text-white w-[32px] h-[32px]" />
+                            </div>
+                        </button>
+                    )}
 
                     {/* Post Container */}
                     <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
@@ -568,15 +623,16 @@ const RgUserCourse = () => {
                         <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                     </div>
 
-
-                    <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-[34px] right-[223px]">
-                        <div className="font-inter text-[16px] font-light text-black">
-                            Review
-                        </div>
-                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                            <IoAdd className="text-white w-[32px] h-[32px]" />
-                        </div>
-                    </button>
+                    {UserRegisteredCourse && (
+                        <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-[34px] right-[223px]">
+                            <div className="font-inter text-[16px] font-light text-black">
+                                Review
+                            </div>
+                            <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                                <IoAdd className="text-white w-[32px] h-[32px]" />
+                            </div>
+                        </button>
+                    )}
 
                     {/* Review Container */}
                     <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
