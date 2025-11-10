@@ -24,6 +24,8 @@ public class QuestionsController : ControllerBase
     public async Task<ActionResult<Question>> CreateQuestion(Question question)
     {
         question.Deleted = false;
+        // Clear navigation property to avoid validation issues
+        question.Course = null!;
         _context.Questions.Add(question);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetQuestionsByCourse), new { courseId = question.CourseId }, question);

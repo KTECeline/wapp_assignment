@@ -24,6 +24,8 @@ public class CoursePrepItemsController : ControllerBase
     public async Task<ActionResult<CoursePrepItem>> CreatePrepItem(CoursePrepItem item)
     {
         item.Deleted = false;
+        // Clear navigation property to avoid validation issues
+        item.Course = null!;
         _context.CoursePrepItems.Add(item);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetPrepItemsByCourse), new { courseId = item.CourseId }, item);

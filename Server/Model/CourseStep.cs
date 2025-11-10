@@ -23,5 +23,5 @@ public class CourseStep
     [Column("course_id")]
     [ForeignKey("Course")]
     public int CourseId { get; set; }
-    public Course Course { get; set; } = null!;
+    public Course? Course { get; set; }
 }

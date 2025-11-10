@@ -20,6 +20,12 @@ export default function CoursesSwiper() {
       setError(null);
       const data = await getCourses();
       setCourses(data);
+        // Debug: log course image values so we can verify what the frontend received
+        try {
+          console.log('Courses fetched (courseImg values):', data.map(c => ({ id: c.courseId, courseImg: c.courseImg })));
+        } catch (e) {
+          console.log('Courses fetched');
+        }
       if (data.length === 0) {
         setError('No courses found. Create your first course!');
       }

@@ -53,10 +53,38 @@ public class CategoriesController : ControllerBase
         var category = await _context.Categories.FindAsync(id);
         if (category == null) return NotFound();
 
-        category.Title = update.Title;
-        category.Description = update.Description;
-        category.CatImg = update.CatImg;
-        category.CatBanner = update.CatBanner;
+        // Log incoming update for debugging
+        try
+        {
+            var title = update?.Title ?? "(null)";
+            var descLen = update?.Description?.Length ?? 0;
+            var catImg = update?.CatImg ?? "(null)";
+            var catBanner = update?.CatBanner ?? "(null)";
+            Console.WriteLine($"UpdateCategory called for id={id} with payload: Title='{title}', Description length={descLen}, CatImg='{catImg}', CatBanner='{catBanner}'");
+        }
+        catch { /* ignore logging errors */ }
+
+        // Model validation
+        if (!ModelState.IsValid)
+        {
+            Console.WriteLine("ModelState invalid while updating category:");
+            foreach (var key in ModelState.Keys)
+            {
+                var state = ModelState[key];
+                if (state?.Errors == null) continue;
+                foreach (var error in state.Errors)
+                {
+                    Console.WriteLine($" - {key}: {error.ErrorMessage}");
+                }
+            }
+            return BadRequest(ModelState);
+        }
+
+    // update is expected to be non-null because model binding succeeded
+    category.Title = update?.Title ?? category.Title;
+    category.Description = update?.Description ?? category.Description;
+    category.CatImg = update?.CatImg ?? category.CatImg;
+    category.CatBanner = update?.CatBanner ?? category.CatBanner;
 
         await _context.SaveChangesAsync();
         return Ok(category);

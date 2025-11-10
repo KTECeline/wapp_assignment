@@ -25,6 +25,8 @@ public class CourseStepsController : ControllerBase
     public async Task<ActionResult<CourseStep>> CreateStep(CourseStep step)
     {
         step.Deleted = false;
+        // Clear navigation property to avoid validation issues
+        step.Course = null!;
         _context.CourseSteps.Add(step);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetStepsByCourse), new { courseId = step.CourseId }, step);

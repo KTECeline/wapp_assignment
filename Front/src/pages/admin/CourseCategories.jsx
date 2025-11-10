@@ -94,11 +94,45 @@ export default function CourseCategories() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // If images are File or data URLs, upload them first and replace with server URL
+      const uploadMaybe = async (fileOrData) => {
+        if (!fileOrData) return '';
+        const form = new FormData();
+
+        if (fileOrData instanceof File) {
+          form.append('file', fileOrData, fileOrData.name);
+        } else if (typeof fileOrData === 'string') {
+          if (fileOrData.startsWith('/uploads/') || /^https?:\/\//.test(fileOrData)) {
+            return fileOrData; // already a path/url
+          }
+          // assume data URL -> convert to blob
+          const res = await fetch(fileOrData);
+          const blob = await res.blob();
+          form.append('file', blob, 'upload.jpg');
+        } else {
+          return '';
+        }
+
+        const r = await fetch('/api/Uploads', { method: 'POST', body: form });
+        if (!r.ok) {
+          const t = await r.text();
+          throw new Error(t || `Failed to upload file: ${r.status}`);
+        }
+        const json = await r.json();
+        return json.url || json.path || '';
+      };
+
+      // copy formData so we can mutate
+      const payload = { ...formData };
+      // upload images if necessary
+      payload.catImg = await uploadMaybe(formData.catImg);
+      payload.catBanner = await uploadMaybe(formData.catBanner);
+
       if (editingCategory) {
-        await categoriesAPI.update(editingCategory.categoryId, formData);
+        await categoriesAPI.update(editingCategory.categoryId, payload);
         add('Category updated successfully!');
       } else {
-        await categoriesAPI.create(formData);
+        await categoriesAPI.create(payload);
         add('Category created successfully!');
       }
       await fetchData();
@@ -228,7 +262,7 @@ export default function CourseCategories() {
                     {/* Category Icon/Image */}
                     <div className="w-full h-32 rounded-xl mb-4 flex items-center justify-center" style={{ backgroundColor: 'var(--surface)' }}>
                       {category.catImg ? (
-                        <img src={category.catImg} alt={category.title} className="w-full h-full object-cover rounded-xl" />
+                        <img src={resolveImage(category.catImg)} alt={category.title} className="w-full h-full object-cover rounded-xl" />
                       ) : (
                         <FolderTree className="w-12 h-12" style={{ color: 'var(--accent)' }} />
                       )}

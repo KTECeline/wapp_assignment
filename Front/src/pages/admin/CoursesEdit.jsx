@@ -6,7 +6,8 @@ import { motion } from 'framer-motion';
 import { Save, ChevronRight, ImagePlus, Video, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Trash2, Clock, Users as UsersIcon, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import DropUpload from '../../components/DropUpload';
-import { createCourse, updateCourse, getCategories, getLevels } from '../../api/client.js';
+import { createCourse, updateCourse, getCategories, getLevels, getCourseWithDetails } from '../../api/client.js';
+import { tipsAPI, prepItemsAPI, stepsAPI, questionsAPI } from '../../services/api';
 const seedQuestions = [
   { id: 1, title: 'What is gluten?', content: 'Explain how gluten forms and its role in bread structure.', type: 'mcq', options: ['Protein', 'Sugar', 'Fat', 'Water'], correctAnswer: 0 },
   { id: 2, title: 'Ideal dough temperature', content: 'What is the ideal dough temperature for sourdough bulk fermentation?', type: 'mcq', options: ['18°C', '22–24°C', '28°C', '35°C'], correctAnswer: 1 }
@@ -89,10 +90,15 @@ export default function CoursesEdit() {
   ]);
   const [selectedStep, setSelectedStep] = useState(null);
   const [stepForm, setStepForm] = useState({ step: '', description: '', stepImg: undefined });
-  // Questions
-  const [questions, setQuestions] = useState(() => (mode === 'create' ? [] : seedQuestions));
-  const [selectedQuestion, setSelectedQuestion] = useState(() => (mode === 'create' ? null : (seedQuestions[0]?.id ?? null)));
-  const [questionForm, setQuestionForm] = useState({ title: '', content: '', type: 'mcq', options: [], correctAnswer: 0 });
+  // Questions (Drag & Drop only). Each option may include text and/or an optional image.
+  const [questions, setQuestions] = useState(() => (mode === 'create' ? [] : seedQuestions.map(q => ({
+    ...q,
+    type: 'dragdrop',
+    questionImg: q.questionImg || undefined,
+    options: (q.options || []).map((opt, idx) => ({ id: `${q.id}-opt-${idx}`, text: opt, image: undefined }))
+  }))));
+  const [selectedQuestion, setSelectedQuestion] = useState(() => (mode === 'create' ? null : (questions[0]?.id ?? null)));
+  const [questionForm, setQuestionForm] = useState({ title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [] });
   const selectedQuestionObj = useMemo(() => questions.find(q => q.id === selectedQuestion) || null, [questions, selectedQuestion]);
   // Collapsed sections state
   const [collapsedSections, setCollapsedSections] = useState({
@@ -101,6 +107,11 @@ export default function CoursesEdit() {
     steps: false,
     questions: false
   });
+  // Keep original server-side IDs so we can detect deletes on update
+  const [originalTipIds, setOriginalTipIds] = useState([]);
+  const [originalPrepItemIds, setOriginalPrepItemIds] = useState([]);
+  const [originalStepIds, setOriginalStepIds] = useState([]);
+  const [originalQuestionIds, setOriginalQuestionIds] = useState([]);
   const toggleSection = (section) => {
     setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
@@ -108,11 +119,96 @@ export default function CoursesEdit() {
     if (selectedQuestionObj) setQuestionForm({
       title: selectedQuestionObj.title,
       content: selectedQuestionObj.content,
-      type: selectedQuestionObj.type,
-      options: selectedQuestionObj.options || [],
-      correctAnswer: selectedQuestionObj.correctAnswer || 0
+      type: 'dragdrop',
+      questionImg: selectedQuestionObj.questionImg || undefined,
+      options: (selectedQuestionObj.options || []).map((opt, idx) => (
+        typeof opt === 'string' ? { id: `${selectedQuestionObj.id}-opt-${idx}`, text: opt, image: undefined } : { id: opt.id ?? `${selectedQuestionObj.id}-opt-${idx}`, text: opt.text ?? opt.optionText ?? '', image: opt.image ?? opt.optionImg ?? undefined }
+      ))
     });
   }, [selectedQuestionObj]);
+
+  // If we're editing an existing course, fetch full details (tips, prep items, steps, questions)
+  useEffect(() => {
+    const loadCourseDetails = async () => {
+      if (mode !== 'edit') return;
+      const id = courseFromState?.courseId || courseFromState?.course_id;
+      if (!id) return;
+      try {
+        const details = await getCourseWithDetails(id);
+        console.log('Loaded course details:', details);
+        const course = details.course || details.course;
+        if (course) {
+          setCourseMeta(prev => ({
+            ...prev,
+            title: course.title || prev.title,
+            description: course.description || prev.description,
+            categoryId: course.categoryId ?? prev.categoryId,
+            levelId: course.levelId ?? prev.levelId,
+            cookingTime: course.cookingTimeMin ?? prev.cookingTime,
+            servings: course.servings ?? prev.servings,
+            courseType: course.courseType ?? prev.courseType,
+            video: course.video ?? prev.video,
+            courseImage: course.courseImg || prev.courseImage,
+            badgeImage: course.badgeImg || prev.badgeImage,
+            quizBadgeImage: course.quizBadgeImg || prev.quizBadgeImage
+          }));
+        }
+
+        // Normalize children arrays - map DB fields to UI fields with proper IDs
+        const serverTips = details.tips || [];
+        console.log('Server tips raw:', serverTips);
+        setTips(serverTips.map(t => ({
+          ...t,
+          id: t.courseTipId ?? t.course_tip_id,
+          description: t.description
+        })));
+        setOriginalTipIds(serverTips.map(t => t.courseTipId ?? t.course_tip_id).filter(Boolean));
+
+        const serverPrep = details.prepItems || [];
+        setPrepItems(serverPrep.map(p => ({
+          ...p,
+          id: p.coursePrepItemId ?? p.course_prep_item_id,
+          title: p.title,
+          description: p.description,
+          amount: p.amount,
+          metric: p.metric,
+          type: p.type,
+          itemImg: p.itemImg ?? p.item_img ?? ''
+        })));
+        setOriginalPrepItemIds(serverPrep.map(p => p.coursePrepItemId ?? p.course_prep_item_id).filter(Boolean));
+
+        const serverSteps = details.steps || [];
+        setSteps(serverSteps.map(s => ({
+          ...s,
+          id: s.courseStepId ?? s.course_step_id,
+          step: s.step,
+          description: s.description,
+          stepImg: s.courseStepImg ?? s.course_step_img ?? ''
+        })));
+        setOriginalStepIds(serverSteps.map(s => s.courseStepId ?? s.course_step_id).filter(Boolean));
+
+        const serverQuestions = details.questions || [];
+        setQuestions(serverQuestions.map(q => ({
+          ...q,
+          id: q.questionId ?? q.question_id,
+          title: q.questionText ?? q.question_text ?? q.title ?? '',
+          content: q.questionText ?? q.question_text ?? q.content ?? '',
+          type: 'dragdrop',
+          questionImg: q.questionImg ?? q.question_img ?? undefined,
+          options: (q.options || q.optionsList || []).map((opt, idx) => ({
+            id: opt.optionId ?? opt.option_id ?? `${q.questionId ?? q.question_id}-opt-${idx}`,
+            text: opt.optionText ?? opt.option_text ?? opt.text ?? '',
+            image: opt.optionImg ?? opt.option_img ?? opt.image ?? undefined
+          }))
+        })));
+        setOriginalQuestionIds(serverQuestions.map(q => q.questionId ?? q.question_id).filter(Boolean));
+      } catch (err) {
+        console.error('Failed to load course details:', err);
+        add('Failed to load full course details', 'error');
+      }
+    };
+    loadCourseDetails();
+  }, [mode, courseFromState, add]);
   useEffect(() => {
     if (selectedTip) setTipForm({ description: selectedTip.description });
   }, [selectedTip]);
@@ -123,14 +219,14 @@ export default function CoursesEdit() {
       amount: selectedPrepItem.amount,
       metric: selectedPrepItem.metric,
       type: selectedPrepItem.type,
-      itemImg: undefined
+      itemImg: selectedPrepItem.itemImg || undefined
     });
   }, [selectedPrepItem]);
   useEffect(() => {
     if (selectedStep) setStepForm({
       step: selectedStep.step,
       description: selectedStep.description,
-      stepImg: undefined
+      stepImg: selectedStep.stepImg || undefined
     });
   }, [selectedStep]);
   const onChangeCourseMeta = (e) => {
@@ -197,17 +293,222 @@ export default function CoursesEdit() {
       if (mode === 'create') {
         const newCourse = await createCourse(courseData);
         add('Course created successfully!', 'success');
-        // TODO: Save tips, prepItems, steps, and questions with the new course ID
         console.log('Created course:', newCourse);
-        console.log('Tips to save:', tips);
-        console.log('Prep items to save:', prepItems);
-        console.log('Steps to save:', steps);
-        console.log('Questions to save:', questions);
+
+        // Persist child entities (tips, prep items, steps, questions)
+  const courseId = newCourse?.courseId ?? newCourse?.course_id ?? newCourse?.id ?? (newCourse?.course?.courseId) ?? (newCourse?.course_id);
+  console.log('Derived courseId after create:', courseId, 'raw response:', newCourse);
+        try {
+          // Tips
+          await Promise.all(tips.map(async (t) => {
+            if (!t || !t.description) return;
+            await tipsAPI.create({ Description: t.description, CourseId: courseId });
+          }));
+
+          // Prep items (upload images if present)
+          await Promise.all(prepItems.map(async (p) => {
+            if (!p) return;
+            const itemImgUrl = await uploadMaybe(p.itemImg);
+            // amount/metric are numbers in backend; coerce safely
+            const amount = parseFloat(p.amount) || 0;
+            // metric in DB is numeric (migration), set to 0 when unit string is used
+            const metric = parseFloat(p.metric) || 0;
+            await prepItemsAPI.create({ Title: p.title || '', Description: p.description || '', ItemImg: itemImgUrl, Type: p.type || '', Amount: amount, Metric: metric, CourseId: courseId });
+          }));
+
+          // Steps
+          await Promise.all(steps.map(async (s, idx) => {
+            if (!s) return;
+            const stepImgUrl = await uploadMaybe(s.stepImg);
+            const stepNumber = s.step || (idx + 1);
+            await stepsAPI.create({ Description: s.description || '', Step: stepNumber, CourseStepImg: stepImgUrl, CourseId: courseId });
+          }));
+
+          // Questions (create). Upload question and option images and include them in payload.
+          await Promise.all(questions.map(async (q) => {
+            if (!q) return;
+            try {
+              const questionImgUrl = await uploadMaybe(q.questionImg);
+              const optionsPayload = await Promise.all((q.options || []).map(async (opt) => {
+                const optImg = await uploadMaybe(opt.image);
+                return { OptionText: opt.text || '', OptionImg: optImg || '' };
+              }));
+              const payload = {
+                QuestionText: q.content || q.title || '',
+                QuestionType: 'dragdrop',
+                QuestionImg: questionImgUrl || '',
+                Options: optionsPayload,
+                CourseId: courseId
+              };
+              await questionsAPI.create(payload);
+            } catch (err) {
+              console.error('Failed to create question:', q, err);
+              // don't block other creations
+            }
+          }));
+        } catch (childErr) {
+          console.error('Error saving child entities:', childErr);
+          add('Course created but some child items failed to save', 'warning');
+        }
+
         navigate('/admin/courses');
       } else {
         await updateCourse(courseFromState.courseId, courseData);
         add('Course updated successfully!', 'success');
-        // TODO: Update tips, prepItems, steps, and questions
+
+        // Persist child entities: perform create/update/delete based on presence of server IDs
+  const courseId = courseFromState?.courseId ?? courseFromState?.course_id ?? courseFromState?.id;
+  console.log('Using courseId for update child sync:', courseId, 'from state:', courseFromState);
+        try {
+          // Helper to extract server id from various naming conventions
+          const extractId = (obj, keys) => {
+            if (!obj) return undefined;
+            // First check server-specific id keys (snake_case from DB)
+            const serverKeys = keys.filter(k => k !== 'id');
+            for (const k of serverKeys) {
+              if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') {
+                const n = Number(obj[k]);
+                if (Number.isInteger(n) && n > 0 && n <= 2147483647) return n;
+              }
+            }
+            // Fallback to generic 'id' only if it's a small integer (not a timestamp like Date.now())
+            const maybeId = obj['id'];
+            if (maybeId !== undefined && maybeId !== null) {
+              const n = Number(maybeId);
+              // Timestamps from Date.now() are 13+ digits; real DB IDs are typically < 10 digits
+              if (Number.isInteger(n) && n > 0 && n <= 2147483647) return n;
+            }
+            return undefined;
+          };
+
+          // Tips
+          const currentTipIds = tips.map(t => extractId(t, ['courseTipId', 'course_tip_id', 'id'])).filter(Boolean);
+          console.log('Processing tips:', { tips, currentTipIds, originalTipIds });
+          // create or update
+          await Promise.all(tips.map(async (t) => {
+            const id = extractId(t, ['courseTipId', 'course_tip_id', 'id']);
+            try {
+              if (id) {
+                console.log('Updating tip:', id, { Description: t.description, CourseId: courseId });
+                await tipsAPI.update(id, { Description: t.description, CourseId: courseId });
+              } else if (t.description) {
+                console.log('Creating tip:', { Description: t.description, CourseId: courseId });
+                await tipsAPI.create({ Description: t.description, CourseId: courseId });
+              }
+            } catch (err) {
+              console.error('Failed to save tip:', t, err);
+              throw err;
+            }
+          }));
+          // deletes
+          await Promise.all((originalTipIds || []).map(async (origId) => {
+            if (!currentTipIds.includes(origId)) {
+              try {
+                console.log('Deleting tip:', origId);
+                await tipsAPI.delete(origId);
+              } catch (e) {
+                console.warn('Failed to delete tip', origId, e);
+              }
+            }
+          }));
+
+          // Prep items
+          const currentPrepIds = prepItems.map(p => extractId(p, ['coursePrepItemId', 'course_prep_item_id', 'id'])).filter(Boolean);
+          console.log('Processing prep items:', { prepItems, currentPrepIds, originalPrepItemIds });
+          await Promise.all(prepItems.map(async (p) => {
+            const id = extractId(p, ['coursePrepItemId', 'course_prep_item_id', 'id']);
+            try {
+              // Upload image if it's a new file/data URL, otherwise keep existing URL
+              const itemImgUrl = await uploadMaybe(p.itemImg);
+              const amount = parseFloat(p.amount) || 0;
+              const metric = parseFloat(p.metric) || 0;
+              // Use uploaded URL if available, otherwise use existing itemImg value
+              const finalItemImg = itemImgUrl || p.itemImg || '';
+              const payload = { Title: p.title || '', Description: p.description || '', ItemImg: finalItemImg, Type: p.type || '', Amount: amount, Metric: metric, CourseId: courseId };
+              if (id) {
+                console.log('Updating prep item:', id, payload);
+                await prepItemsAPI.update(id, payload);
+              } else {
+                console.log('Creating prep item:', payload);
+                await prepItemsAPI.create(payload);
+              }
+            } catch (err) {
+              console.error('Failed to save prep item:', p, err);
+              throw err;
+            }
+          }));
+          await Promise.all((originalPrepItemIds || []).map(async (origId) => {
+            if (!currentPrepIds.includes(origId)) {
+              try { await prepItemsAPI.delete(origId); } catch (e) { console.warn('Failed to delete prep item', origId, e); }
+            }
+          }));
+
+          // Steps
+          const currentStepIds = steps.map(s => extractId(s, ['courseStepId', 'course_step_id', 'id'])).filter(Boolean);
+          console.log('Processing steps:', { steps, currentStepIds, originalStepIds });
+          await Promise.all(steps.map(async (s, idx) => {
+            const id = extractId(s, ['courseStepId', 'course_step_id', 'id']);
+            try {
+              // Upload image if it's a new file/data URL, otherwise keep existing URL
+              const stepImgUrl = await uploadMaybe(s.stepImg);
+              const stepNumber = s.step || (idx + 1);
+              // Use uploaded URL if available, otherwise use existing stepImg value
+              const finalStepImg = stepImgUrl || s.stepImg || '';
+              const payload = { Description: s.description || '', Step: stepNumber, CourseStepImg: finalStepImg, CourseId: courseId };
+              if (id) {
+                console.log('Updating step:', id, payload);
+                await stepsAPI.update(id, payload);
+              } else {
+                console.log('Creating step:', payload);
+                await stepsAPI.create(payload);
+              }
+            } catch (err) {
+              console.error('Failed to save step:', s, err);
+              throw err;
+            }
+          }));
+          await Promise.all((originalStepIds || []).map(async (origId) => {
+            if (!currentStepIds.includes(origId)) {
+              try { await stepsAPI.delete(origId); } catch (e) { console.warn('Failed to delete step', origId, e); }
+            }
+          }));
+
+          // Questions
+          const currentQuestionIds = questions.map(q => extractId(q, ['questionId', 'question_id', 'id'])).filter(Boolean);
+          console.log('Processing questions:', { questions, currentQuestionIds, originalQuestionIds });
+          await Promise.all(questions.map(async (q) => {
+            const id = extractId(q, ['questionId', 'question_id', 'id']);
+            try {
+              // Upload question image and option images where provided
+              const questionImgUrl = await uploadMaybe(q.questionImg);
+              const optionsPayload = await Promise.all((q.options || []).map(async (opt) => {
+                const optImg = await uploadMaybe(opt.image);
+                return { OptionText: opt.text || '', OptionImg: optImg || '' };
+              }));
+              const payload = { QuestionText: q.content || q.title || '', QuestionType: 'dragdrop', QuestionImg: questionImgUrl || '', Options: optionsPayload, CourseId: courseId };
+              if (id) {
+                console.log('Updating question:', id, payload);
+                await questionsAPI.update(id, payload);
+              } else {
+                console.log('Creating question:', payload);
+                await questionsAPI.create(payload);
+              }
+            } catch (err) {
+              console.error('Failed to save question:', q, err);
+              throw err;
+            }
+          }));
+          await Promise.all((originalQuestionIds || []).map(async (origId) => {
+            if (!currentQuestionIds.includes(origId)) {
+              try { await questionsAPI.delete(origId); } catch (e) { console.warn('Failed to delete question', origId, e); }
+            }
+          }));
+
+        } catch (childErr) {
+          console.error('Error saving child entities (update):', childErr);
+          add('Course updated but some child items failed to save', 'warning');
+        }
+
         navigate('/admin/courses');
       }
     } catch (err) {
@@ -243,7 +544,13 @@ export default function CoursesEdit() {
   };
   const onSavePrepItem = () => {
     if (!selectedPrepItem) return;
-    setPrepItems(prev => prev.map(p => p.id === selectedPrepItem.id ? { ...p, ...prepItemForm } : p));
+    // Merge the form data with the selected item, preserving the itemImg if changed
+    setPrepItems(prev => prev.map(p => p.id === selectedPrepItem.id ? {
+      ...p,
+      ...prepItemForm,
+      // If itemImg is undefined in form but exists in selected item, keep the original
+      itemImg: prepItemForm.itemImg !== undefined ? prepItemForm.itemImg : p.itemImg
+    } : p));
     add('Ingredient saved');
   };
   const onDeletePrepItem = (id) => {
@@ -261,7 +568,13 @@ export default function CoursesEdit() {
   };
   const onSaveStep = () => {
     if (!selectedStep) return;
-    setSteps(prev => prev.map(s => s.id === selectedStep.id ? { ...s, ...stepForm } : s));
+    // Merge the form data with the selected step, preserving the stepImg if changed
+    setSteps(prev => prev.map(s => s.id === selectedStep.id ? {
+      ...s,
+      ...stepForm,
+      // If stepImg is undefined in form but exists in selected step, keep the original
+      stepImg: stepForm.stepImg !== undefined ? stepForm.stepImg : s.stepImg
+    } : s));
     add('Step saved');
   };
   const onDeleteStep = (id) => {
@@ -272,10 +585,13 @@ export default function CoursesEdit() {
   // Questions handlers
   const onAddQuestion = () => {
     const newId = Date.now();
-    const newQ = { id: newId, title: '', content: '', type: 'mcq', options: [], correctAnswer: 0 };
+    const newQ = { id: newId, title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [
+      { id: `${newId}-opt-0`, text: '', image: undefined },
+      { id: `${newId}-opt-1`, text: '', image: undefined }
+    ] };
     setQuestions(prev => [...prev, newQ]);
     setSelectedQuestion(newId);
-    setQuestionForm({ title: '', content: '', type: 'mcq', options: [], correctAnswer: 0 });
+    setQuestionForm({ title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [{ id: `${newId}-opt-0`, text: '', image: undefined }, { id: `${newId}-opt-1`, text: '', image: undefined }] });
   };
   const onSaveQuestion = () => {
     if (!selectedQuestionObj) return;
@@ -696,6 +1012,18 @@ export default function CoursesEdit() {
                       </select>
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                      <ImagePlus className="w-4 h-4" />
+                      Ingredient Image
+                    </label>
+                    <DropUpload
+                      value={prepItemForm.itemImg}
+                      onChange={(fileOrDataUrl) => setPrepItemForm(prev => ({ ...prev, itemImg: fileOrDataUrl }))}
+                      description="Upload ingredient image"
+                      className="bg-white h-40"
+                    />
+                  </div>
                   <div className="flex justify-between">
                     <button onClick={() => onDeletePrepItem(selectedPrepItem.id)} className="btn btn-danger">
                       <Trash2 className="w-4 h-4" /> Delete
@@ -784,12 +1112,15 @@ export default function CoursesEdit() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Step Image</label>
+                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                      <ImagePlus className="w-4 h-4" />
+                      Step Image
+                    </label>
                     <DropUpload
                       value={stepForm.stepImg}
                       onChange={(file) => setStepForm(prev => ({ ...prev, stepImg: file }))}
                       description="Upload step image"
-                      className="bg-white"
+                      className="bg-white h-40"
                     />
                   </div>
                   <div className="flex justify-between">
@@ -841,9 +1172,7 @@ export default function CoursesEdit() {
                         <div className="font-medium truncate" style={{ color: active ? 'var(--accent-dark)' : 'inherit' }}>
                           {q.title || 'Untitled question'}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {q.type === 'mcq' ? 'Multiple Choice' : 'Drag & Drop'}
-                        </div>
+                        <div className="text-xs text-gray-500 mt-1">Drag &amp; Drop</div>
                       </motion.div>
                     );
                   })
@@ -877,62 +1206,59 @@ export default function CoursesEdit() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Question Type</label>
-                    <select
-                      value={questionForm.type}
-                      onChange={(e) => setQuestionForm(prev => ({ ...prev, type: e.target.value }))}
-                      className="w-full rounded-xl border px-4 py-3 focus:ring-2 focus:ring-[var(--accent)] outline-none"
-                      style={{ borderColor: 'var(--border)' }}
-                    >
-                      <option value="mcq">Multiple Choice</option>
-                      <option value="dragdrop">Drag & Drop</option>
-                    </select>
+                    <label className="block text-sm font-medium mb-2">Question Image (optional)</label>
+                    <DropUpload
+                      value={questionForm.questionImg}
+                      onChange={(fileOrDataUrl) => setQuestionForm(prev => ({ ...prev, questionImg: fileOrDataUrl }))}
+                      description="Upload optional image for the question"
+                      className="bg-white h-40"
+                    />
                   </div>
-                  {questionForm.type === 'mcq' && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-medium">Answer Options</label>
-                        <button
-                          onClick={() => setQuestionForm(prev => ({ ...prev, options: [...prev.options, ''] }))}
-                          className="btn btn-outline btn-sm"
-                        >
-                          <Plus className="w-4 h-4" /> Add Option
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {questionForm.options.map((opt, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium">Answer Options</label>
+                      <button
+                        onClick={() => {
+                          const newOpt = { id: `opt-${Date.now()}`, text: '', image: undefined };
+                          setQuestionForm(prev => ({ ...prev, options: [...(prev.options || []), newOpt] }));
+                        }}
+                        className="btn btn-outline btn-sm"
+                      >
+                        <Plus className="w-4 h-4" /> Add Option
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {(questionForm.options || []).map((opt, idx) => (
+                        <div key={opt.id || idx} className="space-y-2 border rounded-xl p-3" style={{ borderColor: 'var(--border)' }}>
+                          <div className="flex items-center gap-2">
                             <input
-                              type="radio"
-                              name="correctAnswer"
-                              checked={questionForm.correctAnswer === idx}
-                              onChange={() => setQuestionForm(prev => ({ ...prev, correctAnswer: idx }))}
-                              className="w-4 h-4"
-                            />
-                            <input
-                              value={opt}
-                              onChange={(e) => setQuestionForm(prev => ({
-                                ...prev,
-                                options: prev.options.map((o, i) => i === idx ? e.target.value : o)
-                              }))}
+                              value={opt.text}
+                              onChange={(e) => setQuestionForm(prev => ({ ...prev, options: prev.options.map((o) => o.id === opt.id ? { ...o, text: e.target.value } : o) }))}
                               className="flex-1 rounded-xl border px-3 py-2 focus:ring-2 focus:ring-[var(--accent)] outline-none"
                               style={{ borderColor: 'var(--border)' }}
-                              placeholder={`Option ${idx + 1}`}
+                              placeholder={`Option ${idx + 1} (text optional)`}
                             />
                             <button
-                              onClick={() => setQuestionForm(prev => ({
-                                ...prev,
-                                options: prev.options.filter((_, i) => i !== idx)
-                              }))}
+                              onClick={() => setQuestionForm(prev => ({ ...prev, options: prev.options.filter(o => o.id !== opt.id) }))}
                               className="btn btn-danger btn-sm"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                        ))}
-                      </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Option Image (optional)</label>
+                            <DropUpload
+                              value={opt.image}
+                              onChange={(fileOrDataUrl) => setQuestionForm(prev => ({ ...prev, options: prev.options.map(o => o.id === opt.id ? { ...o, image: fileOrDataUrl } : o) }))}
+                              description="Upload optional image for this option"
+                              className="bg-white h-32"
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
                   <div className="flex justify-between">
                     <button onClick={() => onDeleteQuestion(selectedQuestionObj.id)} className="btn btn-danger">
                       <Trash2 className="w-4 h-4" /> Delete

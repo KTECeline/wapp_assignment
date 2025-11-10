@@ -24,6 +24,8 @@ public class CourseTipsController : ControllerBase
     public async Task<ActionResult<CourseTip>> CreateTip(CourseTip tip)
     {
         tip.Deleted = false;
+        // Clear navigation property to avoid validation issues
+        tip.Course = null!;
         _context.CourseTips.Add(tip);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetTipsByCourse), new { courseId = tip.CourseId }, tip);
