@@ -37,7 +37,7 @@ function App() {
         <Route path="/RgUserHome" element={<RgUserHome />} />
         <Route path="/RgUserLearn" element={<RgUserLearn />} />
         <Route path="/RgUserCat/:id" element={<RgUserCat />} />
-        <Route path="/RgUserCourse" element={<RgUserCourse />} />
+        <Route path="/RgUserCourse/:id" element={<RgUserCourse />} />
         <Route path="/RgUserCoursePost" element={<RgUserCoursePost />} />
         <Route path="/RgUserCourseReview" element={<RgUserCourseReview />} />
         <Route path="/RgUserCourseStep" element={<RgUserCourseStep />} />

@@ -4,44 +4,66 @@ import VisitorLayout from "../components/VisitorLayout.tsx";
 import { CiBookmark } from "react-icons/ci";
 import { FaStar } from "react-icons/fa";
 import { IoAdd, IoBookmark } from "react-icons/io5";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
+import { useNavigate, useParams } from "react-router-dom";
+
+interface Course {
+    courseId: number;
+    title: string;
+    description: string;
+    courseImg: string;
+    rating: number;
+    reviews: number;
+    cookingTimeMin: number;
+    servings: number;
+    levelId: number;
+    level: Level;
+    categoryId: number;
+    category: Category;
+}
+
+interface Level {
+    levelId: number;
+    title: string;
+}
+
+interface Category {
+    categoryId: number;
+    title: string;
+    catImg: string;
+    catBanner: string;
+    description: string;
+    deleted: boolean;
+}
 
 const RgUserCourse = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     const Layout = user?.userId ? RgUserLayout : VisitorLayout;
 
+    const { id } = useParams<{ id: string }>(); // get courseId from URL
+    const [course, setCourse] = useState<Course | null>(null);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/courses/${id}`) // fetch from your ASP.NET backend
+            .then(res => {
+                if (!res.ok) throw new Error("Network response was not ok");
+                return res.json();
+            })
+            .then(data => setCourse(data))
+            .catch(err => console.error("Error fetching course:", err));
+    }, [id]);
+
+    // Placeholder first
     const UserRegisteredCourse = false;
     const Saved = false;
 
-    const course = {
-        course_id: 1,
-        title: "Small-Batch Brownies",
-        description:
-            "Some occasions call for a big batch of brownies: a bake sale or a neighborhood cookout. But when you crave just one or two rich, fudgy brownies, this small-batch recipe is the answer. The brownies are made in one bowl and are ready in 30 minutes, which means there's minimal clean-up and you don't need to plan ahead. Best of all, because these invitingly thick small-batch brownies are baked in a loaf pan, you’re sure to get an edge piece no matter how you slice them (edge-lovers, rejoice!).",
-        rating: 4.6,
-        course_img: "/images/Recipe.jpeg",
-        cooking_time_min: 30,
-        servings: 8,
-        level_id: 1,
-        category_id: 3
-    };
-
     const TotalReviews = 3;
-
-    const levels: Record<number, string> = {
-        1: "Beginner",
-        2: "Intermediate",
-        3: "Advanced"
-    };
-
-    const categories: Record<number, string> = {
-        1: "Bread",
-        2: "Pastry",
-        3: "Cake",
-        4: "Asian Dessert"
-    };
 
     function formatCookingTime(minutes: number) {
         if (minutes < 60) return `${minutes} mins`;
@@ -89,6 +111,15 @@ const RgUserCourse = () => {
         return k1 === 1 ? `${h1}` : `${h1}/${k1}`;
     }
 
+    if (!course) {
+        return (
+            <Layout>
+                <div className="flex justify-center items-center h-[400px]">
+                    Loading course...
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>
@@ -96,7 +127,7 @@ const RgUserCourse = () => {
             {/* Banner */}
             <div
                 className="w-full h-[200px] relative bg-fixed bg-center bg-cover"
-                style={{ backgroundImage: `url(${course.course_img})` }}
+                style={{ backgroundImage: `url(${course.courseImg})` }}
             >
                 {/* Overlay */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[#000000]/40 to-[#000000]/0 z-10" />
@@ -104,17 +135,19 @@ const RgUserCourse = () => {
                 {/* Content */}
                 <div className="absolute top-0 left-0 w-full h-full z-20">
                     <div className="relative w-[1090px] h-full mx-auto flex items-center">
-                        <div className="font-ibarra text-[48px] max-w-[500px] leading-tight font-bold text-white">
+                        <div className="font-ibarra text-[48px] max-w-[1000px] line-clamp-1 leading-tight font-bold text-white">
                             {course.title}
                         </div>
 
                         <div className="font-inter absolute bottom-[54px] left-[4px] text-[10px] max-w-[500px] leading-tight font-[200] text-white flex items-center gap-[2px]">
-                            <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]">
+                            <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]"
+                                onClick={() => navigate(`/RgUserLearn`)}>
                                 Learn
                             </button>
                             <IoIosArrowForward className="text-[#DA1A32] h-[18px]" />
-                            <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                {categories[course.category_id]}
+                            <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]"
+                                onClick={() => navigate(`/RgUserCat/${course.categoryId}`)}>
+                                {course.category?.title}
                             </button>
                         </div>
                     </div>
@@ -150,7 +183,7 @@ const RgUserCourse = () => {
 
                                 <div className="flex gap-[4px]">
                                     {[...Array(5)].map((_, index) => {
-                                        const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
+                                        const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
 
                                         return (
                                             <div
@@ -192,7 +225,7 @@ const RgUserCourse = () => {
                                 <img src="/images/Time.png" alt="recipe" className="w-[19px] h-[19px] object-cover translate-y-[-1px]" />
                                 <div className="flex items-end">
                                     <div className="font-inter ml-[8px] text-[#484848] text-[16px] font-light">
-                                        {formatCookingTime(course.cooking_time_min)}
+                                        {formatCookingTime(course.cookingTimeMin)}
                                     </div>
                                 </div>
                             </div>
@@ -213,7 +246,7 @@ const RgUserCourse = () => {
                             <div className="flex items-center">
                                 <img src="/images/Level.png" alt="recipe" className="w-[20px] h-[20px] object-cover" />
                                 <div className="font-inter ml-[9px] text-[#484848] text-[16px] font-light">
-                                    {levels[course.level_id]}
+                                    {course.level?.title}
                                 </div>
                             </div>
                         </div>
@@ -263,7 +296,7 @@ const RgUserCourse = () => {
                     </div>
 
                     {!UserRegisteredCourse ? (
-                        <img src={course.course_img} alt="recipe" className="w-[546px] h-[370px] object-cover" />
+                        <img src={course.courseImg} alt="recipe" className="w-[546px] h-[370px] object-cover" />
                     ) : (
                         <div className="w-[503px] flex flex-col gap-[16px]">
                             <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">

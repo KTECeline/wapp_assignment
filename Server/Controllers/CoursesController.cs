@@ -89,20 +89,20 @@ public class CoursesController : ControllerBase
         }
 
         course.Deleted = false;
-        
+
         // Clear navigation properties to avoid validation issues
         course.Level = null!;
         course.Category = null!;
-        
+
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
-        
+
         // Reload with navigation properties
         var createdCourse = await _context.Courses
             .Include(c => c.Level)
             .Include(c => c.Category)
             .FirstOrDefaultAsync(c => c.CourseId == course.CourseId);
-        
+
         return CreatedAtAction(nameof(GetCourse), new { id = course.CourseId }, createdCourse);
     }
 
@@ -138,4 +138,5 @@ public class CoursesController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
 }

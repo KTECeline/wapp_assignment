@@ -76,13 +76,13 @@ export default function CoursesEdit() {
   ]);
   const [selectedTip, setSelectedTip] = useState(null);
   const [tipForm, setTipForm] = useState({ description: '' });
-  // Prep Items (Ingredients)
+  // Prep Items (Ingredients/Tools)
   const [prepItems, setPrepItems] = useState(mode === 'create' ? [] : [
-    { id: 1, title: 'All-Purpose Flour', description: 'Sifted', amount: 2, metric: 'cups', type: 'Dry', itemImg: '' },
-    { id: 2, title: 'Sugar', description: 'Granulated', amount: 1, metric: 'cup', type: 'Dry', itemImg: '' }
+    { id: 1, title: 'All-Purpose Flour', description: 'Sifted', amount: 2, metric: 'cups', type: 'ingredients', itemImg: '' },
+    { id: 2, title: 'Sugar', description: 'Granulated', amount: 1, metric: 'cup', type: 'ingredients', itemImg: '' }
   ]);
   const [selectedPrepItem, setSelectedPrepItem] = useState(null);
-  const [prepItemForm, setPrepItemForm] = useState({ title: '', description: '', amount: '', metric: '', type: 'Dry', itemImg: undefined });
+  const [prepItemForm, setPrepItemForm] = useState({ title: '', description: '', amount: '', metric: '', type: 'ingredients', itemImg: undefined });
   // Course Steps
   const [steps, setSteps] = useState(mode === 'create' ? [] : [
     { id: 1, step: 1, description: 'Preheat the oven to 350°F (175°C).', stepImg: '' },
@@ -537,10 +537,10 @@ export default function CoursesEdit() {
   // Prep Items handlers
   const onAddPrepItem = () => {
     const newId = Date.now();
-    const newItem = { id: newId, title: '', description: '', amount: '', metric: '', type: 'Dry', itemImg: '' };
+    const newItem = { id: newId, title: '', description: '', amount: '', metric: '', type: 'ingredients', itemImg: '' };
     setPrepItems(prev => [...prev, newItem]);
     setSelectedPrepItem(newItem);
-    setPrepItemForm({ title: '', description: '', amount: '', metric: '', type: 'Dry', itemImg: undefined });
+    setPrepItemForm({ title: '', description: '', amount: '', metric: '', type: 'ingredients', itemImg: undefined });
   };
   const onSavePrepItem = () => {
     if (!selectedPrepItem) return;
@@ -551,12 +551,12 @@ export default function CoursesEdit() {
       // If itemImg is undefined in form but exists in selected item, keep the original
       itemImg: prepItemForm.itemImg !== undefined ? prepItemForm.itemImg : p.itemImg
     } : p));
-    add('Ingredient saved');
+    add('Prep Items saved');
   };
   const onDeletePrepItem = (id) => {
     setPrepItems(prev => prev.filter(p => p.id !== id));
     if (selectedPrepItem?.id === id) setSelectedPrepItem(null);
-    add('Ingredient deleted');
+    add('Prep Items deleted');
   };
   // Steps handlers
   const onAddStep = () => {
@@ -606,7 +606,7 @@ export default function CoursesEdit() {
   const sections = [
     { id: 'basic', label: 'Basic Info', icon: ImagePlus },
     { id: 'tips', label: 'Tips', icon: Lightbulb, count: tips.length },
-    { id: 'ingredients', label: 'Ingredients', icon: UtensilsCrossed, count: prepItems.length },
+    { id: 'prep_items', label: 'Prep Items', icon: UtensilsCrossed, count: prepItems.length },
     { id: 'steps', label: 'Steps', icon: ListOrdered, count: steps.length },
     { id: 'quiz', label: 'Quiz', icon: HelpCircle, count: questions.length }
   ];
@@ -909,14 +909,14 @@ export default function CoursesEdit() {
             </Card>
           </div>
         )}
-        {/* Ingredients Section */}
-        {activeSection === 'ingredients' && (
+        {/* Prep Itemss Section */}
+        {activeSection === 'prep_items' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <Card className="lg:col-span-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <UtensilsCrossed className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                  <h2 className="text-lg font-semibold">Ingredients</h2>
+                  <h2 className="text-lg font-semibold">Prep Items</h2>
                 </div>
                 <button onClick={onAddPrepItem} className="btn btn-outline btn-sm">
                   <Plus className="w-4 h-4" /> Add
@@ -925,7 +925,7 @@ export default function CoursesEdit() {
               <div className="max-h-[60vh] overflow-auto pr-1 space-y-2">
                 {prepItems.length === 0 ? (
                   <div className="text-sm text-gray-500 bg-[var(--surface)] border rounded-xl p-4" style={{ borderColor: 'var(--border)' }}>
-                    No ingredients yet.
+                    No items yet.
                   </div>
                 ) : (
                   prepItems.map((item) => {
@@ -939,7 +939,7 @@ export default function CoursesEdit() {
                         style={{ borderColor: 'var(--border)' }}
                       >
                         <div className="font-medium" style={{ color: active ? 'var(--accent-dark)' : 'inherit' }}>
-                          {item.title || 'Untitled ingredient'}
+                          {item.title || 'Untitled items'}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
                           {item.amount} {item.metric}
@@ -952,18 +952,18 @@ export default function CoursesEdit() {
             </Card>
             <Card className="lg:col-span-8">
               <h2 className="text-lg font-bold mb-4">
-                {selectedPrepItem ? 'Edit Ingredient' : 'Select or Create an Ingredient'}
+                {selectedPrepItem ? 'Edit Prep Item' : 'Select or Create an Prep Item'}
               </h2>
               {selectedPrepItem ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Ingredient Name *</label>
+                    <label className="block text-sm font-medium mb-2">Prep Item Name *</label>
                     <input
                       value={prepItemForm.title}
                       onChange={(e) => setPrepItemForm(prev => ({ ...prev, title: e.target.value }))}
                       className="w-full rounded-xl border px-4 py-3 focus:ring-2 focus:ring-[var(--accent)] outline-none"
                       style={{ borderColor: 'var(--border)' }}
-                      placeholder="e.g., All-Purpose Flour"
+                      placeholder="e.g., All-Purpose Flour, Whisk"
                     />
                   </div>
                   <div>
@@ -1006,21 +1006,20 @@ export default function CoursesEdit() {
                         className="w-full rounded-xl border px-4 py-3 focus:ring-2 focus:ring-[var(--accent)] outline-none"
                         style={{ borderColor: 'var(--border)' }}
                       >
-                        <option value="Dry">Dry</option>
-                        <option value="Wet">Wet</option>
-                        <option value="Fresh">Fresh</option>
+                        <option value="ingredients">Ingredients</option>
+                        <option value="tools">Tools</option>
                       </select>
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2 flex items-center gap-2">
                       <ImagePlus className="w-4 h-4" />
-                      Ingredient Image
+                      Prep Item Image
                     </label>
                     <DropUpload
                       value={prepItemForm.itemImg}
                       onChange={(fileOrDataUrl) => setPrepItemForm(prev => ({ ...prev, itemImg: fileOrDataUrl }))}
-                      description="Upload ingredient image"
+                      description="Upload Prep Item image"
                       className="bg-white h-40"
                     />
                   </div>
@@ -1029,13 +1028,13 @@ export default function CoursesEdit() {
                       <Trash2 className="w-4 h-4" /> Delete
                     </button>
                     <button onClick={onSavePrepItem} className="btn btn-primary">
-                      <Save className="w-4 h-4" /> Save Ingredient
+                      <Save className="w-4 h-4" /> Save Prep Item
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 bg-[var(--surface)] border rounded-xl p-6 text-center" style={{ borderColor: 'var(--border)' }}>
-                  Select an ingredient or click "Add" to create one.
+                  Select a Prep Item or click "Add" to create one.
                 </div>
               )}
             </Card>
