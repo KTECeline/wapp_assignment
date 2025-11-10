@@ -40,7 +40,7 @@ function App() {
         <Route path="/RgUserCourse/:id" element={<RgUserCourse />} />
         <Route path="/RgUserCoursePost" element={<RgUserCoursePost />} />
         <Route path="/RgUserCourseReview" element={<RgUserCourseReview />} />
-        <Route path="/RgUserCourseStep" element={<RgUserCourseStep />} />
+        <Route path="/RgUserCourseStep/:id" element={<RgUserCourseStep />} />
         <Route path="/RgUserMCQ" element={<RgUserMCQ />} />
         <Route path="/RgUserDD" element={<RgUserDD />} />
         <Route path="/RgUserQuizCp" element={<RgUserQuizCp />} />

@@ -37,6 +37,17 @@ interface Category {
     deleted: boolean;
 }
 
+interface CoursePrepItem {
+    coursePrepItemId: number;
+    title: string;
+    description: string;
+    itemImg: string;
+    type: string;
+    amount?: number;
+    metric?: string;
+    courseId: number;
+}
+
 const RgUserCourse = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -59,8 +70,27 @@ const RgUserCourse = () => {
             .catch(err => console.error("Error fetching course:", err));
     }, [id]);
 
+    const [coursePrepItems, setCoursePrepItems] = useState<CoursePrepItem[]>([]);
+    const [ingredients, setIngredients] = useState<CoursePrepItem[]>([]);
+    const [tools, setTools] = useState<CoursePrepItem[]>([]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/courseprepitems/course/${id}`)
+            .then(res => res.json())
+            .then((data: CoursePrepItem[]) => {
+                console.log("Fetched prep items:", data);  // <-- Add this
+                setCoursePrepItems(data);
+                setIngredients(data.filter(item => item.type.toLowerCase() === "ingredients"));
+                setTools(data.filter(item => item.type.toLowerCase() === "tools"));
+            })
+            .catch(err => console.error("Error fetching prep items:", err));
+    }, [id]);
+
+
     // Placeholder first
-    const UserRegisteredCourse = false;
+    const UserRegisteredCourse = true;
     const Saved = false;
 
     const TotalReviews = 3;
@@ -71,29 +101,6 @@ const RgUserCourse = () => {
         const m = minutes % 60;
         return m === 0 ? `${h}h` : `${h}h ${m}m`;
     }
-
-    const coursePrepItems = [
-        { id: 1, type: "ingredient", title: "Unsalted butter", amount: 71, metric: "g", item_image: "/images/Recipe.jpeg", description: "Unsalted butter is butter that has no salt added to it. This product is solid at room temperature but melts at higher temperatures." },
-        { id: 2, type: "ingredient", title: "Granulated sugar", amount: 149, metric: "g", item_image: "/images/Recipe.jpeg", description: "Sweet stuff that makes brownies sweet." },
-        { id: 3, type: "ingredient", title: "Large egg", amount: 1, metric: "", item_image: "/images/Recipe.jpeg", description: "Binds ingredients together so brownies hold shape." },
-        { id: 4, type: "ingredient", title: "Vanilla extract", amount: 1, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Gives a nice vanilla smell and taste." },
-        { id: 5, type: "ingredient", title: "Unsweetened cocoa", amount: 6, metric: "tablespoon", item_image: "/images/Recipe.jpeg", description: "Makes brownies chocolatey." },
-        { id: 6, type: "ingredient", title: "Espresso powder (optional)", amount: 0.25, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Optional tiny coffee taste to make chocolate stronger." },
-        { id: 7, type: "ingredient", title: "All purpose flour", amount: 45, metric: "g", item_image: "/images/Recipe.jpeg", description: "Powder that gives structure to brownies." },
-        { id: 8, type: "ingredient", title: "Table salt", amount: 0.25, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Tiny bit of salt to make sweetness taste better." },
-        { id: 9, type: "ingredient", title: "Baking powder", amount: 0.0625, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Makes brownies puff up a little." },
-        { id: 10, type: "ingredient", title: "Chocolate chips", amount: 0.0625, metric: "teaspoon", item_image: "/images/Recipe.jpeg", description: "Tiny chocolate pieces for extra chocolate in bites." },
-        { id: 11, type: "tool", title: "Baking Pan (8.5 x 4.5) inch", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "The pan used to bake the brownies. This size helps them cook evenly." },
-        { id: 12, type: "tool", title: "Mixing Bowls", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Used to hold and mix all the ingredients." },
-        { id: 13, type: "tool", title: "Whisk or Hand Mixer", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Helps blend ingredients smoothly with no lumps." },
-        { id: 14, type: "tool", title: "Rubber Spatula", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Used to scrape batter from the bowl so nothing is wasted." },
-        { id: 15, type: "tool", title: "Measuring Cups & Spoons", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Tools for measuring each ingredient accurately." },
-        { id: 16, type: "tool", title: "Parchment Paper", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Prevents sticking and makes it easy to lift brownies from the pan." },
-        { id: 17, type: "tool", title: "Digital Scale", amount: null, metric: null, item_image: "/images/Recipe.jpeg", description: "Measures ingredients by weight for more accurate baking." },
-
-    ];
-
-
 
     const [popupItem, setPopupItem] = useState(null as null | typeof coursePrepItems[0]);
 
@@ -299,7 +306,8 @@ const RgUserCourse = () => {
                         <img src={course.courseImg} alt="recipe" className="w-[546px] h-[370px] object-cover" />
                     ) : (
                         <div className="w-[503px] flex flex-col gap-[16px]">
-                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
+                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group"
+                            onClick={() => navigate(`/RgUserCourseStep/${course.courseId}`)} >
                                 <div className="font-ibarra text-[24px] font-bold text-black group-hover:text-[#DA1A32] transition-all duration-[600ms]">
                                     Step-by-Step Guide
                                 </div>
@@ -337,7 +345,7 @@ const RgUserCourse = () => {
                                 </div>
                             </button>
                             <img
-                                src={popupItem.item_image}
+                                src={popupItem.itemImg}
                                 alt={popupItem.title}
                                 className="w-full h-[200px] object-cover rounded-xl mb-2"
                             />
@@ -359,36 +367,34 @@ const RgUserCourse = () => {
                         </div>
 
                         <ul className="flex flex-col mt-[32px] gap-[16px] w-full">
-                            {coursePrepItems
-                                .filter(item => item.type === "ingredient")
-                                .map(item => {
-                                    // Convert small amounts <1 to fractions
-                                    const amountDisplay =
-                                        item.type === "ingredient" &&
-                                            typeof item.amount === "number" &&
-                                            item.amount < 1 &&
-                                            item.amount > 0
-                                            ? decimalToFraction(item.amount)
-                                            : item.amount;
+                            {ingredients.map(item => {
+                                // Convert small amounts <1 to fractions
+                                const amountDisplay =
+                                    item.type === "ingredient" &&
+                                        typeof item.amount === "number" &&
+                                        item.amount < 1 &&
+                                        item.amount > 0
+                                        ? decimalToFraction(item.amount)
+                                        : item.amount;
 
-                                    return (
-                                        <li key={item.id} className="w-full justify-between items-center flex flex-row">
-                                            <div className="items-center flex flex-row gap-[12px] ">
-                                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-                                                <div className="text-[14px] font-light text-black">
-                                                    {item.title} - {amountDisplay} {item.metric}
-                                                </div>
+                                return (
+                                    <li key={item.coursePrepItemId} className="w-full justify-between items-center flex flex-row">
+                                        <div className="items-center flex flex-row gap-[12px] ">
+                                            <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                                            <div className="text-[14px] font-light text-black">
+                                                {item.title} - {amountDisplay} {item.metric}
                                             </div>
+                                        </div>
 
-                                            <button
-                                                className="text-[#DA1A32] underline text-[14px]"
-                                                onClick={() => setPopupItem(item)}
-                                            >
-                                                Learn More
-                                            </button>
-                                        </li>
-                                    );
-                                })
+                                        <button
+                                            className="text-[#DA1A32] underline text-[14px]"
+                                            onClick={() => setPopupItem(item)}
+                                        >
+                                            Learn More
+                                        </button>
+                                    </li>
+                                );
+                            })
                             }
                         </ul>
                     </div>
@@ -402,28 +408,26 @@ const RgUserCourse = () => {
 
 
                         <ul className="flex flex-col mt-[32px] gap-[16px] w-full">
-                            {coursePrepItems
-                                .filter(item => item.type === "tool")
-                                .map(item => {
+                            {tools.map(item => {
 
-                                    return (
-                                        <li key={item.id} className="w-full justify-between items-center flex flex-row">
-                                            <div className="items-center flex flex-row gap-[12px] ">
-                                                <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
-                                                <div className="text-[14px] font-light text-black">
-                                                    {item.title}
-                                                </div>
+                                return (
+                                    <li key={item.coursePrepItemId} className="w-full justify-between items-center flex flex-row">
+                                        <div className="items-center flex flex-row gap-[12px] ">
+                                            <div className="w-[12px] h-[1.5px] bg-[#DA1A32]" />
+                                            <div className="text-[14px] font-light text-black">
+                                                {item.title}
                                             </div>
+                                        </div>
 
-                                            <button
-                                                className="text-[#DA1A32] underline text-[14px]"
-                                                onClick={() => setPopupItem(item)}
-                                            >
-                                                Learn More
-                                            </button>
-                                        </li>
-                                    );
-                                })
+                                        <button
+                                            className="text-[#DA1A32] underline text-[14px]"
+                                            onClick={() => setPopupItem(item)}
+                                        >
+                                            Learn More
+                                        </button>
+                                    </li>
+                                );
+                            })
                             }
                         </ul>
                     </div>
