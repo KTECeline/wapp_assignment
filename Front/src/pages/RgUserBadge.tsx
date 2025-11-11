@@ -1,7 +1,56 @@
 import { IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
+import { useState, useEffect } from "react";
+import { getBadges } from "../api/client.js";
 
-const RgUserLearn = () => {
+interface Badge {
+    badgeId: number;
+    title: string;
+    description: string;
+    badgeImg: string;
+    type: string;
+    requirement: number;
+    entityId: number;
+}
+
+const RgUserBadge = () => {
+    const [badges, setBadges] = useState<Badge[]>([]);
+    const [filteredBadges, setFilteredBadges] = useState<Badge[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    useEffect(() => {
+        const fetchBadges = async () => {
+            try {
+                setLoading(true);
+                const data = await getBadges();
+                setBadges(data);
+                setFilteredBadges(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to fetch badges");
+                console.error("Error fetching badges:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBadges();
+    }, []);
+
+    const handleSearch = (value: string) => {
+        setSearchTerm(value);
+        if (value.trim() === "") {
+            setFilteredBadges(badges);
+        } else {
+            const filtered = badges.filter(badge =>
+                badge.title.toLowerCase().includes(value.toLowerCase()) ||
+                badge.description.toLowerCase().includes(value.toLowerCase())
+            );
+            setFilteredBadges(filtered);
+        }
+    };
+
     return (
         <RgUserLayout>
             <div className="max-w-screen overflow-x-hidden">
@@ -14,6 +63,8 @@ const RgUserLearn = () => {
                         <input
                             type="text"
                             placeholder="Search..."
+                            value={searchTerm}
+                            onChange={(e) => handleSearch(e.target.value)}
                             className="font-inter flex-1 bg-transparent outline-none text-black text-[16px] font-light"
                         />
                         <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
@@ -34,154 +85,68 @@ const RgUserLearn = () => {
                     `}
                     </style>
 
+                    {/* Loading and Error States */}
+                    {loading && (
+                        <div className="mt-[50px] text-center">
+                            <p className="text-black text-[18px] font-light">Loading badges...</p>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="mt-[50px] text-center">
+                            <p className="text-red-500 text-[18px] font-light">Error: {error}</p>
+                        </div>
+                    )}
+
+                    {/* No Results State */}
+                    {!loading && !error && filteredBadges.length === 0 && (
+                        <div className="mt-[50px] text-center">
+                            <p className="text-black text-[18px] font-light">No badges found</p>
+                        </div>
+                    )}
+
                     {/* Badges Container */}
+                    {!loading && !error && filteredBadges.length > 0 && (
                     <div className="mt-[22px] pt-[22px] w-screen h-[526px] pb-[64px] overflow-y-scroll no-scrollbar">
                         <div className="grid grid-cols-4 gap-x-[14px] gap-y-[30px] w-[1090px] mx-auto">
-                            {/* Badges Card */}
-                            <div className="h-[315px] w-[262px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] text-black items-center px-[18px]">
-                                <img src="/images/Badge.png" alt="recipe" className="w-[148px] h-[169px] object-cover" />
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Beginner Baker
-                                </div>
-
-                                {/* Description */}
-                                <div className="flex gap-[14px] mt-[14px] text-[10px] w-full font-light h-[28px]">
-                                    Complete 5 beginner lessons successfully
-                                </div>
-
-                                {/* Progress */}
-                                <div className="mt-[14px] w-full bg-gray-200 rounded-full h-[9px] overflow-hidden">
-                                    <div
-                                        className="bg-[#DA1A32] h-[9px] transition-all duration-500"
-                                        style={{ width: `100%` }}
+                            {filteredBadges.map((badge) => (
+                                <div key={badge.badgeId} className="h-[315px] w-[262px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] text-black items-center px-[18px]">
+                                    <img 
+                                        src={badge.badgeImg || "/images/Badge.png"} 
+                                        alt={badge.title} 
+                                        className="w-[148px] h-[169px] object-cover" 
                                     />
+
+                                    {/* Title */}
+                                    <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
+                                        {badge.title}
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="flex gap-[14px] mt-[14px] text-[10px] w-full font-light h-[28px] overflow-hidden">
+                                        {badge.description}
+                                    </div>
+
+                                    {/* Progress */}
+                                    <div className="mt-[14px] w-full bg-gray-200 rounded-full h-[9px] overflow-hidden">
+                                        <div
+                                            className="bg-[#DA1A32] h-[9px] transition-all duration-500"
+                                            style={{ width: `100%` }}
+                                        />
+                                    </div>
+
+                                    <div className="text-[10px] text-black mt-[10px]">
+                                        {badge.requirement}/{badge.requirement}
+                                    </div>
                                 </div>
-
-                                <div className="text-[10px] text-black mt-[10px]">
-                                    5/5
-                                </div>
-
-                            </div>
-
-                            {/* Badges Card */}
-                            <div className="h-[315px] w-[262px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] text-black items-center px-[18px]">
-                                <img src="/images/Badge.png" alt="recipe" className="w-[148px] h-[169px] object-cover" />
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Beginner Baker
-                                </div>
-
-                                {/* Description */}
-                                <div className="flex gap-[14px] mt-[14px] text-[10px] w-full font-light h-[28px]">
-                                    Complete 5 beginner lessons successfully
-                                </div>
-
-                                {/* Progress */}
-                                <div className="mt-[14px] w-full bg-gray-200 rounded-full h-[9px] overflow-hidden">
-                                    <div
-                                        className="bg-[#DA1A32] h-[9px] transition-all duration-500"
-                                        style={{ width: `100%` }}
-                                    />
-                                </div>
-
-                                <div className="text-[10px] text-black mt-[10px]">
-                                    5/5
-                                </div>
-
-                            </div>
-
-                            {/* Badges Card */}
-                            <div className="h-[315px] w-[262px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] text-black items-center px-[18px]">
-                                <img src="/images/Badge.png" alt="recipe" className="w-[148px] h-[169px] object-cover" />
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Beginner Baker
-                                </div>
-
-                                {/* Description */}
-                                <div className="flex gap-[14px] mt-[14px] text-[10px] w-full font-light h-[28px]">
-                                    Complete 5 beginner lessons successfully
-                                </div>
-
-                                {/* Progress */}
-                                <div className="mt-[14px] w-full bg-gray-200 rounded-full h-[9px] overflow-hidden">
-                                    <div
-                                        className="bg-[#DA1A32] h-[9px] transition-all duration-500"
-                                        style={{ width: `100%` }}
-                                    />
-                                </div>
-
-                                <div className="text-[10px] text-black mt-[10px]">
-                                    5/5
-                                </div>
-
-                            </div>
-
-                            {/* Badges Card */}
-                            <div className="h-[315px] w-[262px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] text-black items-center px-[18px]">
-                                <img src="/images/Badge.png" alt="recipe" className="w-[148px] h-[169px] object-cover" />
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Beginner Baker
-                                </div>
-
-                                {/* Description */}
-                                <div className="flex gap-[14px] mt-[14px] text-[10px] w-full font-light h-[28px]">
-                                    Complete 5 beginner lessons successfully
-                                </div>
-
-                                {/* Progress */}
-                                <div className="mt-[14px] w-full bg-gray-200 rounded-full h-[9px] overflow-hidden">
-                                    <div
-                                        className="bg-[#DA1A32] h-[9px] transition-all duration-500"
-                                        style={{ width: `100%` }}
-                                    />
-                                </div>
-
-                                <div className="text-[10px] text-black mt-[10px]">
-                                    5/5
-                                </div>
-
-                            </div>
-
-                            {/* Badges Card */}
-                            <div className="h-[315px] w-[262px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] text-black items-center px-[18px]">
-                                <img src="/images/Badge.png" alt="recipe" className="w-[148px] h-[169px] object-cover" />
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Beginner Baker
-                                </div>
-
-                                {/* Description */}
-                                <div className="flex gap-[14px] mt-[14px] text-[10px] w-full font-light h-[28px]">
-                                    Complete 5 beginner lessons successfully
-                                </div>
-
-                                {/* Progress */}
-                                <div className="mt-[14px] w-full bg-gray-200 rounded-full h-[9px] overflow-hidden">
-                                    <div
-                                        className="bg-[#DA1A32] h-[9px] transition-all duration-500"
-                                        style={{ width: `100%` }}
-                                    />
-                                </div>
-
-                                <div className="text-[10px] text-black mt-[10px]">
-                                    5/5
-                                </div>
-
-                            </div>
+                            ))}
                         </div>
                     </div>
+                    )}
                 </div>
             </div>
         </RgUserLayout>
     );
 };
 
-export default RgUserLearn;
+export default RgUserBadge;

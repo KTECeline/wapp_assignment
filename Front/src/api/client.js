@@ -455,3 +455,46 @@ export async function createUserPost(postData) {
   }
   return res.json();
 }
+
+// Badges API
+export async function getBadges() {
+  const res = await fetch('/api/Badges');
+  if (!res.ok) throw new Error(`Failed to fetch badges: ${res.status}`);
+  return res.json();
+}
+
+export async function getBadge(id) {
+  const res = await fetch(`/api/Badges/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch badge: ${res.status}`);
+  return res.json();
+}
+
+export async function createBadge(badgeData) {
+  const res = await fetch('/api/Badges', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(badgeData),
+  });
+  if (!res.ok) throw new Error(`Failed to create badge: ${res.status}`);
+  return res.json();
+}
+
+export async function updateBadge(id, badgeData) {
+  const res = await fetch(`/api/Badges/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(badgeData),
+  });
+  if (!res.ok) throw new Error(`Failed to update badge: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteBadge(id) {
+  const res = await fetch(`/api/Badges/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Failed to delete badge: ${res.status}`);
+  return true;
+}
