@@ -4,6 +4,12 @@ export async function getUsers() {
   return res.json();
 }
 
+export async function getUser(id) {
+  const res = await fetch(`/api/Users/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch user: ${res.status}`);
+  return res.json();
+}
+
 export async function getCategories() {
   const res = await fetch('/api/Categories');
   if (!res.ok) throw new Error(`Failed to fetch categories: ${res.status}`);

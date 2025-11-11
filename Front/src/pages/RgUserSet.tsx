@@ -3,13 +3,14 @@ import RgUserLayout from "../components/RgUserLayout.tsx";
 import { CiEdit, CiFilter } from "react-icons/ci";
 import { TbArrowsSort } from "react-icons/tb";
 import { FaEye, FaEyeSlash, FaStar } from "react-icons/fa";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import IconLoading from "../components/IconLoading.tsx";
 import * as Yup from "yup";
 import ProfileForm from "../components/EditProfileForm.tsx";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../services/authService.ts";
+import { getUser } from "../api/client.js";
 
 type Profile = {
     id: string;
@@ -27,7 +28,9 @@ type Profile = {
 
 const RgUserCat = () => {
     const navigate = useNavigate();
-    const [userId] = useState(1); // 🔹 Placeholder user ID
+    const [userData, setUserData] = useState<Profile | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [active, setActive] = useState("My Profile");
 
     const tabs = ["My Profile", "Change Password", "About Us", "Contact Us", "Terms and Conditions", "FAQ", "Get Help"];
@@ -37,6 +40,49 @@ const RgUserCat = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [showProfileForm, setShowProfileForm] = useState(false);
+
+    // Fetch user data from localStorage and database
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                setLoading(true);
+                const storedUser = localStorage.getItem('user');
+                if (!storedUser) {
+                    setError('User not logged in');
+                    navigate('/Login');
+                    return;
+                }
+
+                const userInfo = JSON.parse(storedUser);
+                const userId = userInfo.userId;
+
+                // Fetch full user data from backend
+                const user = await getUser(userId);
+                
+                setUserData({
+                    id: user.userId?.toString() || userId?.toString(),
+                    fname: user.firstName || '',
+                    lname: user.lastName || '',
+                    gender: user.gender || '',
+                    DOB: user.dob || '',
+                    profileimage: null,
+                    plevel: user.level || 'Not set',
+                    pcat: user.category || 'Not set',
+                    username: user.username || '',
+                    email: user.email || '',
+                    userId: user.userId || userId
+                });
+                setError(null);
+            } catch (err: any) {
+                console.error('Failed to fetch user data:', err);
+                setError(err.message || 'Failed to fetch user data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, [navigate]);
 
     const handleOpenProfileModal = () => {
         setShowProfileForm(true);
@@ -73,7 +119,7 @@ const RgUserCat = () => {
                         onClose={handleCloseProfileModal}
                         onSave={handleProfileSave}
                         isEdit={true}
-                        userId={userId}
+                        userId={userData?.userId || 1}
                     />
                 </div>
             )}
@@ -102,20 +148,28 @@ const RgUserCat = () => {
 
             <div className="mt-[36px] text-black flex flex-row justify-between w-[1090px] mx-auto">
                 <div className="w-[554px] pb-[64px]">
-                    {active === "My Profile" && (
+                    {loading ? (
+                        <div className="flex justify-center items-center h-[300px]">
+                            <IconLoading className="text-[#DA1A32] w-8 h-8 animate-spin" />
+                        </div>
+                    ) : error ? (
+                        <div className="flex justify-center items-center h-[300px]">
+                            <div className="text-red-500">Error: {error}</div>
+                        </div>
+                    ) : userData && active === "My Profile" ? (
                         <div className="flex flex-col">
                             <div className="flex flex-row justify-between">
                                 <div className="flex flex-row gap-[28px] h-full">
                                     <div className="w-[112px] h-[112px] rounded-full bg-[#DA1A32] text-[54px] font-inter text-white flex justify-center items-center ">
-                                        A
+                                        {userData.fname?.charAt(0).toUpperCase() || 'A'}
                                     </div>
 
                                     <div className="flex flex-col my-auto gap-[6px] pb-4">
                                         <div className="font-ibarra font-bold text-[32px]">
-                                            Amy Wong
+                                            {userData.fname} {userData.lname}
                                         </div>
                                         <div className="font-inter font-light text-[16px] underline">
-                                            amy123@email.com
+                                            {userData.email}
                                         </div>
                                     </div>
                                 </div>
@@ -138,7 +192,7 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        Amy
+                                        {userData.fname}
                                     </div>
                                 </div>
 
@@ -148,7 +202,7 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        Wong
+                                        {userData.lname}
                                     </div>
                                 </div>
 
@@ -158,7 +212,7 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        Female
+                                        {userData.gender}
                                     </div>
                                 </div>
 
@@ -168,7 +222,7 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        23 June 2001
+                                        {userData.DOB}
                                     </div>
                                 </div>
 
@@ -178,7 +232,7 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        Pastry
+                                        {userData.pcat}
                                     </div>
                                 </div>
 
@@ -188,13 +242,13 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        Beginner
+                                        {userData.plevel}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    )}
-
+                    ) : null}
+                    
                     {active === "Change Password" && (
                         <div className="flex flex-col min-h-[518px]">
                             <p className="font-ibarra font-bold text-black text-[36px]">
