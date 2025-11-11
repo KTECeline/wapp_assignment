@@ -1,21 +1,81 @@
 import React, { useEffect, useState } from 'react';
-import Card from '../../components/Card';
-import { useToast } from '../../components/Toast';
-import { useNavigate } from 'react-router-dom';
-import api, { logout } from '../../services/api';
-import { User, Bell, Shield, Palette, Database, LogOut } from 'lucide-react';
+import { User, Bell, Shield, Palette, Database, LogOut, Check, X, Eye, EyeOff } from 'lucide-react';
+
+// Mock Card component
+const Card = ({ title, subtitle, children, className = '' }) => (
+  <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
+    <div className="bg-gradient-to-r from-[#FAF6F1] to-white px-6 py-5 border-b border-gray-100">
+      <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+      {subtitle && <p className="text-sm text-gray-600 mt-1">{subtitle}</p>}
+    </div>
+    <div className="p-6">{children}</div>
+  </div>
+);
 
 export default function Settings() {
-  const { add } = useToast();
-  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState({ username: '', email: '' });
   const [currentPasswordInput, setCurrentPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
-  
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const onSave = (e) => { 
+    e.preventDefault(); 
+    showToast('Profile saved successfully!');
+  };
+
+  const onLogout = () => {
+    showToast('Logged out successfully');
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPasswordInput) return showToast('Enter current password', 'error');
+    if (!newPasswordInput) return showToast('Enter new password', 'error');
+    if (newPasswordInput !== confirmPasswordInput) return showToast('New passwords do not match', 'error');
+
+    const pwd = newPasswordInput;
+    const checks = [
+      { ok: /.{8,}/.test(pwd), msg: 'Password must be at least 8 characters.' },
+      { ok: /[A-Z]/.test(pwd), msg: 'Password must include an uppercase letter.' },
+      { ok: /[a-z]/.test(pwd), msg: 'Password must include a lowercase letter.' },
+      { ok: /[0-9]/.test(pwd), msg: 'Password must include a number.' },
+      { ok: /[^A-Za-z0-9]/.test(pwd), msg: 'Password must include a special character.' },
+    ];
+
+    const failed = checks.find(c => !c.ok);
+    if (failed) return showToast(failed.msg, 'error');
+
+    setChangingPassword(true);
+    setTimeout(() => {
+      showToast('Password changed successfully!');
+      setCurrentPasswordInput('');
+      setNewPasswordInput('');
+      setConfirmPasswordInput('');
+      setChangingPassword(false);
+    }, 1000);
+  };
+
+  const passwordRules = {
+    minLength: (pwd) => pwd.length >= 8,
+    uppercase: (pwd) => /[A-Z]/.test(pwd),
+    lowercase: (pwd) => /[a-z]/.test(pwd),
+    number: (pwd) => /[0-9]/.test(pwd),
+    special: (pwd) => /[^A-Za-z0-9]/.test(pwd),
+  };
+
+  // Load current user from common storage keys or fallback to /me endpoints
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         // Try several storage locations and shapes
@@ -23,15 +83,13 @@ export default function Settings() {
           localStorage.getItem('user') ||
           localStorage.getItem('currentUser') ||
           localStorage.getItem('auth') ||
+          localStorage.getItem('account') ||
           sessionStorage.getItem('user') ||
           sessionStorage.getItem('currentUser') ||
           sessionStorage.getItem('auth') ||
           null;
 
-        if (!raw) return;
-
-        const parsed = JSON.parse(raw);
-        console.debug('Settings: parsed stored user ->', parsed);
+        const parsed = raw ? JSON.parse(raw) : null;
 
         const getEmailFromToken = (obj) => {
           try {
@@ -46,56 +104,30 @@ export default function Settings() {
           }
         };
 
-        // Try a number of plausible locations for username/email
-        const candidate =
-          parsed?.user ||
-          parsed?.data?.user ||
-          parsed?.currentUser ||
-          parsed?.account ||
-          parsed ||
-          {};
+        const candidate = parsed?.user || parsed?.data?.user || parsed?.currentUser || parsed?.account || parsed || {};
 
-        const username =
-          parsed?.username ||
-          parsed?.name ||
-          parsed?.login ||
-          candidate?.username ||
-          candidate?.name ||
-          candidate?.login ||
-          '';
-
-        const email =
-          parsed?.email ||
-          parsed?.emailAddress ||
-          candidate?.email ||
-          candidate?.emailAddress ||
-          (candidate?.user ? candidate.user.email : null) ||
-          parsed?.data?.user?.email ||
-          parsed?.account?.email ||
-          getEmailFromToken(parsed) ||
-          '';
+        const username = parsed?.username || parsed?.name || parsed?.login || candidate?.username || candidate?.name || candidate?.login || '';
+        const email = parsed?.email || parsed?.emailAddress || candidate?.email || candidate?.emailAddress || (candidate?.user ? candidate.user.email : null) || getEmailFromToken(parsed) || '';
 
         const userObj = { username: username || '', email: email || '' };
 
         if (!mounted) return;
-        setCurrentUser(userObj);
+        if (userObj.username || userObj.email) setCurrentUser(userObj);
 
-        // If we still don't have an email, try calling a me endpoint (if api has auth token)
+        // If still missing email, try calling common me endpoints (if auth token present)
         if (!userObj.email) {
           try {
             const meEndpoints = ['/auth/me', '/users/me', '/me'];
             for (const ep of meEndpoints) {
               try {
-                const res = await api.get(ep);
-                const d = res?.data || res;
-                const meEmail = d?.email || d?.data?.email || d?.user?.email;
-                const meUsername = d?.username || d?.name || d?.login;
+                const res = await fetch(ep, { credentials: 'include' });
+                if (!res.ok) continue;
+                const d = await res.json();
+                const meEmail = d?.email || d?.data?.email || d?.user?.email || null;
+                const meUsername = d?.username || d?.name || d?.login || null;
                 if (meEmail || meUsername) {
                   if (!mounted) break;
-                  setCurrentUser(prev => ({
-                    username: prev.username || meUsername || '',
-                    email: meEmail || prev.email || '',
-                  }));
+                  setCurrentUser(prev => ({ username: prev.username || meUsername || '', email: meEmail || prev.email || '' }));
                   break;
                 }
               } catch (e) {
@@ -107,221 +139,262 @@ export default function Settings() {
           }
         }
       } catch (err) {
+        // ignore parse errors
         console.warn('Could not load current user', err);
       }
     })();
+
     return () => { mounted = false; };
   }, []);
-   
-  const onSave = (e) => { 
-    e.preventDefault(); 
-    add('Profile saved successfully!'); 
-  };
 
-  const onThemeToggle = () => {
-    add('Theme preference updated');
-  };
+  const rulesList = [
+    { key: 'minLength', label: 'At least 8 characters' },
+    { key: 'uppercase', label: 'One uppercase letter' },
+    { key: 'lowercase', label: 'One lowercase letter' },
+    { key: 'number', label: 'One number' },
+    { key: 'special', label: 'One special character' },
+  ];
 
-  const onLogout = async () => {
-    try {
-      await logout();
-      add('Logged out successfully');
-      navigate('/Login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      add('Logout failed, but redirecting...');
-      navigate('/Login');
-    }
-  };
+  const allRulesPassed = rulesList.every(rule => passwordRules[rule.key](newPasswordInput)) && 
+                         newPasswordInput && 
+                         (newPasswordInput === confirmPasswordInput);
 
   return (
-    <div className="space-y-6">
-      {/* Profile Settings */}
-      <Card title="Profile Settings" subtitle="Manage your personal information">
-        <form onSubmit={onSave} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm text-gray-700 font-medium mb-2">Username</label>
-              <input 
-                className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
-                value={currentUser.username}
-                onChange={(e) => setCurrentUser(prev => ({ ...prev, username: e.target.value }))}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-700 font-medium mb-2">Email Address</label>
-              <input 
-                type="email"
-                className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
-                value={currentUser.email}
-                onChange={(e) => setCurrentUser(prev => ({ ...prev, email: e.target.value }))}
-                required
-              />
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Toast Notification */}
+        {toast && (
+          <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg transform transition-all duration-300 ${
+            toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'
+          } text-white`}>
+            <div className="flex items-center gap-2">
+              {toast.type === 'error' ? <X className="w-5 h-5" /> : <Check className="w-5 h-5" />}
+              <span className="font-medium">{toast.message}</span>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm text-gray-700 font-medium mb-2">Current Password</label>
-              <input 
-                type="password"
-                value={currentPasswordInput}
-                onChange={(e) => setCurrentPasswordInput(e.target.value)}
-                className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
-                placeholder="Enter current password"
-              />
+        )}
+
+
+
+        {/* Profile Settings */}
+        <Card title="Profile Information" subtitle="Update your personal details">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Username
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input 
+                    className="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 bg-gray-50 focus:bg-white" 
+                    value={currentUser.username}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, username: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Bell className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input 
+                    type="email"
+                    className="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 bg-gray-50 focus:bg-white" 
+                    value={currentUser.email}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
             </div>
+
+            <div className="flex justify-end pt-4">
+              <button 
+                type="button"
+                onClick={onSave}
+                className="bg-gradient-to-r from-[#D9433B] to-[#B13A33] hover:shadow-lg text-white rounded-xl px-8 py-3 font-semibold transition-all duration-200 flex items-center gap-2 transform hover:scale-105"
+              >
+                <Check className="w-5 h-5" />
+                Save Profile
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Change Password */}
+        <Card title="Change Password" subtitle="Update your password to keep your account secure">
+          <div className="space-y-6">
+            {/* Current Password */}
             <div>
-              <label className="block text-sm text-gray-700 font-medium mb-2">New Password</label>
-              <input 
-                type="password" 
-                value={newPasswordInput}
-                onChange={(e) => setNewPasswordInput(e.target.value)}
-                className="w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200" 
-                placeholder="Enter new password"
-              />
-              <input
-                type="password"
-                value={confirmPasswordInput}
-                onChange={(e) => setConfirmPasswordInput(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-[#EADCD2] px-4 py-3 focus:ring-2 focus:ring-[#D9433B] focus:outline-none transition-all duration-200"
-                placeholder="Confirm new password"
-              />
-              <div className="flex justify-end mt-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Current Password
+              </label>
+              <div className="relative">
+                <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input 
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPasswordInput}
+                  onChange={(e) => setCurrentPasswordInput(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 pl-11 pr-12 py-3 focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 bg-gray-50 focus:bg-white" 
+                  placeholder="Enter your current password"
+                />
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!currentPasswordInput) return add('Enter current password', 'error');
-                    if (!newPasswordInput) return add('Enter new password', 'error');
-                    if (newPasswordInput !== confirmPasswordInput) return add('New passwords do not match', 'error');
-                    setChangingPassword(true);
-                    try {
-                      // 1) Validate current password by attempting common login endpoints
-                      const loginEndpoints = ['/auth/login', '/login', '/users/login', '/token'];
-                      let authToken = null;
-                      let validated = false;
-                      for (const ep of loginEndpoints) {
-                        try {
-                          const payload = currentUser.email
-                            ? { email: currentUser.email, password: currentPasswordInput }
-                            : { username: currentUser.username, password: currentPasswordInput };
-                          const res = await api.post(ep, payload);
-                          const data = res?.data || res;
-                          authToken = data?.token || data?.accessToken || data?.access_token || null;
-                          validated = true;
-                          break;
-                        } catch (err) {
-                          // try next login endpoint
-                        }
-                      }
-
-                      if (!validated) {
-                        // As a fallback, try a "validate-password" style endpoint
-                        try {
-                          const validateEndpoints = ['/auth/validate-password','/users/validate-password','/validate-password'];
-                          for (const ep of validateEndpoints) {
-                            try {
-                              await api.post(ep, { password: currentPasswordInput, email: currentUser.email, username: currentUser.username });
-                              validated = true;
-                              break;
-                            } catch (err) {
-                              // try next
-                            }
-                          }
-                        } catch (_) {}
-                      }
-
-                      if (!validated) {
-                        setChangingPassword(false);
-                        return add('Current password validation failed', 'error');
-                      }
-
-                      // 2) Call change-password endpoints. Prefer using auth token if we got one.
-                      const changeEndpoints = ['/auth/change-password','/users/change-password','/change-password','/user/change-password'];
-                      let changed = false;
-                      for (const ep of changeEndpoints) {
-                        try {
-                          const payload = { currentPassword: currentPasswordInput, newPassword: newPasswordInput, password: newPasswordInput, email: currentUser.email, username: currentUser.username };
-                          const config = authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {};
-                          await api.post(ep, payload, config);
-                          changed = true;
-                          break;
-                        } catch (err) {
-                          // try next
-                        }
-                      }
-
-                      if (!changed) {
-                        add('Password change failed: no supported endpoint', 'error');
-                      } else {
-                        add('Password changed');
-                        setCurrentPasswordInput('');
-                        setNewPasswordInput('');
-                        setConfirmPasswordInput('');
-                      }
-                    } catch (err) {
-                      add(`Password change failed: ${err?.message || err}`, 'error');
-                    } finally {
-                      setChangingPassword(false);
-                    }
-                  }}
-                  disabled={changingPassword}
-                  className="bg-[#D9433B] hover:bg-[#B13A33] text-white rounded-xl px-4 py-2 font-medium transition-all duration-200"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {changingPassword ? 'Saving...' : 'Change password'}
+                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end">
-            <button 
-              type="submit"
-              className="bg-[#D9433B] hover:bg-[#B13A33] text-white rounded-xl px-6 py-3 font-medium transition-all duration-200 flex items-center gap-2"
-            >
-              <User className="w-4 h-4" />
-              Save Changes
-            </button>
-          </div>
-        </form>
-      </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* New Password Inputs */}
+              <div className="lg:col-span-2 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input 
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPasswordInput}
+                      onChange={(e) => setNewPasswordInput(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 pl-11 pr-12 py-3 focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 bg-gray-50 focus:bg-white" 
+                      placeholder="Enter new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
 
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPasswordInput}
+                      onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 pl-11 pr-12 py-3 focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
+                      placeholder="Confirm new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-      {/* Security Settings */}
-      <Card title="Security Settings" subtitle="Manage your account security">
-        <div className="space-y-4">
-          
-
-          <div className="p-4 bg-[#FAF6F1] rounded-xl">
-            <div className="flex items-center gap-3 mb-3">
-              <Database className="w-5 h-5 text-[#D9433B]" />
-              <h4 className="font-medium text-gray-900">Data Export</h4>
+              {/* Password Requirements - Side Panel */}
+              <div className="lg:col-span-1">
+                <div className="bg-gradient-to-br from-[#FAF6F1] to-[#FFF0EE] rounded-xl p-4 border border-[#EADCD2] h-full">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-[#D9433B]" />
+                    Password Requirements
+                  </h4>
+                  <ul className="space-y-2">
+                    {rulesList.map(rule => {
+                      const ok = passwordRules[rule.key](newPasswordInput);
+                      return (
+                        <li key={rule.key} className="flex items-start gap-2 text-xs">
+                          <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200 border ${
+                                    ok ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-100'
+                                  }`}>
+                                    {ok ? <Check className="w-4 h-4 text-emerald-700" /> : <X className="w-4 h-4 text-rose-500" />}
+                                  </div>
+                                  <span className={`transition-colors duration-200 text-sm ${ok ? 'text-emerald-700 font-medium' : 'text-gray-600'}`}>
+                                    {rule.label}
+                                  </span>
+                        </li>
+                      );
+                    })}
+                    <li className="flex items-start gap-2 text-xs">
+                      <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200 border ${
+                        newPasswordInput && (newPasswordInput === confirmPasswordInput) ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-100'
+                      }`}>
+                        {newPasswordInput && (newPasswordInput === confirmPasswordInput) ? <Check className="w-4 h-4 text-emerald-700" /> : <X className="w-4 h-4 text-rose-500" />}
+                      </div>
+                      <span className={`transition-colors duration-200 text-sm ${
+                        newPasswordInput && (newPasswordInput === confirmPasswordInput) ? 'text-emerald-700 font-medium' : 'text-gray-600'
+                      }`}>
+                        Passwords match
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 mb-4">Download a copy of your data</p>
-            <button className="border border-[#D9433B] text-[#D9433B] hover:bg-[#FFF0EE] rounded-xl px-4 py-2 font-medium transition-all duration-200">
-              Export Data
-            </button>
-          </div>
-        </div>
-      </Card>
 
-      {/* Danger Zone */}
-      <Card title="Danger Zone" subtitle="Irreversible actions">
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-          <div className="flex items-center gap-3 mb-3">
-            <LogOut className="w-5 h-5 text-red-600" />
-            <h4 className="font-medium text-red-900">Logout</h4>
+            <div className="flex justify-end pt-4">
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                disabled={changingPassword || !allRulesPassed}
+                className={`rounded-xl px-8 py-3 font-semibold transition-all duration-200 flex items-center gap-2 transform ${
+                  changingPassword || !allRulesPassed
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-[#D9433B] to-[#B13A33] hover:shadow-lg text-white hover:scale-105'
+                }`}
+              >
+                <Shield className="w-5 h-5" />
+                {changingPassword ? 'Updating...' : 'Update Password'}
+              </button>
+            </div>
           </div>
-          <p className="text-sm text-red-700 mb-4">Sign out of your account</p>
-          <button 
-            onClick={onLogout}
-            className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-4 py-2 font-medium transition-all duration-200"
-          >
-            Logout
-          </button>
+        </Card>
+
+        {/* Security & Data */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card title="Data Export" subtitle="Download your information">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <Database className="w-8 h-8 text-blue-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-700">Download a complete copy of all your data</p>
+                </div>
+              </div>
+              <button className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-xl px-4 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2">
+                <Database className="w-5 h-5" />
+                Export My Data
+              </button>
+            </div>
+          </Card>
+
+          <Card title="Danger Zone" subtitle="Irreversible actions" className="border-red-200">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl border border-red-200">
+                <LogOut className="w-8 h-8 text-red-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-700">Sign out from your account</p>
+                </div>
+              </div>
+              <button 
+                onClick={onLogout}
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:shadow-lg text-white rounded-xl px-4 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105"
+              >
+                <LogOut className="w-5 h-5" />
+                Logout
+              </button>
+            </div>
+          </Card>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

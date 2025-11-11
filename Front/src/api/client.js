@@ -85,6 +85,23 @@ export async function updateUser(id, user) {
   return res.json();
 }
 
+export async function changePassword(id, currentPassword, newPassword) {
+  const form = new FormData();
+  form.append('currentPassword', currentPassword || '');
+  form.append('newPassword', newPassword || '');
+
+  const res = await fetch(`/api/Users/${id}/change-password`, {
+    method: 'POST',
+    body: form,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to change password: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function deleteUser(id) {
   const res = await fetch(`/api/Users/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(`Failed to delete user: ${res.status}`);

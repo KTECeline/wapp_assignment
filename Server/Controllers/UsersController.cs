@@ -354,4 +354,35 @@ public class UsersController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    // Allow a user to change their own password by providing the current password
+    [HttpPost("{id}/change-password")]
+    public async Task<IActionResult> ChangePassword(int id, [FromForm] string currentPassword, [FromForm] string newPassword)
+    {
+        try
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound("User not found.");
+
+            if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
+                return BadRequest("Current and new passwords are required.");
+
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.Password))
+            {
+                return BadRequest("Current password is incorrect.");
+            }
+
+            // Hash and set new password
+            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Password changed" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing password for user {UserId}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
