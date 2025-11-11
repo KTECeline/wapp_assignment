@@ -154,7 +154,13 @@ export async function createMessage(message) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(message)
   });
-  if (!res.ok) throw new Error(`Failed to create message: ${res.status}`);
+
+  if (!res.ok) {
+    // Try to read server-provided error details
+    let text = '';
+    try { text = await res.text(); } catch { /* ignore */ }
+    throw new Error(text || `Failed to create message: ${res.status}`);
+  }
   return res.json();
 }
 

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+namespace Server.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
 public class UserPostsController : ControllerBase
@@ -22,7 +24,6 @@ public class UserPostsController : ControllerBase
                 .ThenInclude(c => c.Category)
             .Where(p => p.DeletedAt == null && p.ApproveStatus == "Approved");
 
-        // Filter by user if userId is provided
         if (userId.HasValue)
         {
             query = query.Where(p => p.UserId == userId.Value);
@@ -32,7 +33,6 @@ public class UserPostsController : ControllerBase
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
 
-        // Get like counts for each post
         var postIds = posts.Select(p => p.PostId).ToList();
         var likeCounts = await _context.PostLikes
             .Where(pl => postIds.Contains(pl.PostId))
@@ -40,7 +40,6 @@ public class UserPostsController : ControllerBase
             .Select(g => new { PostId = g.Key, Count = g.Count() })
             .ToListAsync();
 
-        // Check if current user has liked each post (if userId provided)
         var userLikes = new HashSet<int>();
         if (userId.HasValue)
         {
@@ -130,23 +129,17 @@ public class UserPostsController : ControllerBase
             .Where(p => p.PostId == id && p.DeletedAt == null)
             .FirstOrDefaultAsync();
 
-        if (post == null)
-        {
-            return NotFound();
-        }
+        if (post == null) return NotFound();
 
-        var likeCount = await _context.PostLikes
-            .Where(pl => pl.PostId == id)
-            .CountAsync();
+        var likeCount = await _context.PostLikes.CountAsync(pl => pl.PostId == id);
 
         var isLiked = false;
         if (userId.HasValue)
         {
-            isLiked = await _context.PostLikes
-                .AnyAsync(pl => pl.PostId == id && pl.UserId == userId.Value);
+            isLiked = await _context.PostLikes.AnyAsync(pl => pl.PostId == id && pl.UserId == userId.Value);
         }
 
-        var result = new
+        return Ok(new
         {
             postId = post.PostId,
             userId = post.UserId,
@@ -163,12 +156,10 @@ public class UserPostsController : ControllerBase
             createdAt = post.CreatedAt,
             likeCount = likeCount,
             isLiked = isLiked
-        };
-
-        return Ok(result);
+        });
     }
 
-    // POST: api/UserPosts/{postId}/like
+    // POST toggle like
     [HttpPost("{postId}/like")]
     public async Task<ActionResult> ToggleLike(int postId, [FromBody] LikeRequest request)
     {
@@ -177,31 +168,26 @@ public class UserPostsController : ControllerBase
 
         if (existingLike != null)
         {
-            // Unlike
             _context.PostLikes.Remove(existingLike);
         }
         else
         {
-            // Like
-            var newLike = new PostLike
+            _context.PostLikes.Add(new PostLike
             {
                 PostId = postId,
                 UserId = request.UserId,
                 CreatedAt = DateTime.UtcNow
-            };
-            _context.PostLikes.Add(newLike);
+            });
         }
 
         await _context.SaveChangesAsync();
 
-        var likeCount = await _context.PostLikes
-            .Where(pl => pl.PostId == postId)
-            .CountAsync();
+        var likeCount = await _context.PostLikes.CountAsync(pl => pl.PostId == postId);
 
         return Ok(new { likeCount = likeCount, isLiked = existingLike == null });
     }
 
-    // POST: api/UserPosts
+    // POST create
     [HttpPost]
     public async Task<ActionResult<UserPost>> CreateUserPost([FromBody] CreateUserPostRequest request)
     {
@@ -221,6 +207,48 @@ public class UserPostsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetUserPost), new { id = userPost.PostId }, userPost);
+    }
+
+    // ADMIN: Approve
+    [HttpPost("{id}/approve")]
+    public async Task<IActionResult> ApprovePost(int id)
+    {
+        var post = await _context.UserPosts.FindAsync(id);
+        if (post == null) return NotFound();
+
+        post.ApproveStatus = "Approved";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true });
+    }
+
+    // ADMIN: Reject
+    [HttpPost("{id}/reject")]
+    public async Task<IActionResult> RejectPost(int id)
+    {
+        var post = await _context.UserPosts.FindAsync(id);
+        if (post == null) return NotFound();
+
+        post.ApproveStatus = "Rejected";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true });
+    }
+
+    // DELETE Post
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePost(int id)
+    {
+        var post = await _context.UserPosts.FindAsync(id);
+        if (post == null) return NotFound();
+
+        var likes = _context.PostLikes.Where(pl => pl.PostId == id);
+        _context.PostLikes.RemoveRange(likes);
+
+        _context.UserPosts.Remove(post);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }
 

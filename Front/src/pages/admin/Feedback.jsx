@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MessageSquare, CheckCircle, Clock, Star, TrendingUp, AlertCircle, Eye, Archive, Send, Sparkles, ChevronDown } from 'lucide-react';
-import { getUserFeedbacks, updateUserFeedback, deleteUserFeedback } from '../../api/client';
+import { Search, Filter, MessageSquare, Star, TrendingUp, ChevronDown, X, BookOpen, Eye } from 'lucide-react';
+import { getUserFeedbacks } from '../../api/client';
 
 function Card({ children, className = '' }) {
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
+    // Reduced padding to make cards more compact and align with global compact theme
+    <div className={`bg-white rounded-2xl shadow-sm border p-4 transform transition-all duration-200 ${className}`} style={{ borderColor: 'var(--border)' }}>
       {children}
     </div>
   );
@@ -14,11 +15,13 @@ export default function FeedbackV2() {
   const [rows, setRows] = useState([]);
   const [filteredRows, setFilteredRows] = useState([]);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [priorityFilter, setPriorityFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  
+  const [courseFilter, setCourseFilter] = useState('All');
+  const [ratingFilter, setRatingFilter] = useState('All');
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableCourses, setAvailableCourses] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
 
   // Filter functionality
@@ -28,25 +31,32 @@ export default function FeedbackV2() {
     if (searchTerm) {
       filtered = filtered.filter(f => 
         f.user?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         f.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        f.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (f.courseTitle || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    if (statusFilter !== 'All') {
-      filtered = filtered.filter(f => f.status === statusFilter);
-    }
-
-    if (priorityFilter !== 'All') {
-      filtered = filtered.filter(f => f.priority === priorityFilter);
     }
 
     if (categoryFilter !== 'All') {
       filtered = filtered.filter(f => f.category === categoryFilter);
     }
 
+    if (courseFilter !== 'All') {
+      // courseFilter comes from a select so its value is a string; coerce to number
+      const courseId = typeof courseFilter === 'string' ? parseInt(courseFilter, 10) : courseFilter;
+      if (!Number.isNaN(courseId)) {
+        filtered = filtered.filter(f => f.courseId === courseId);
+      }
+    }
+
+    if (ratingFilter !== 'All') {
+      const rating = parseInt(ratingFilter);
+      filtered = filtered.filter(f => f.rating === rating);
+    }
+
     setFilteredRows(filtered);
-  }, [rows, searchTerm, statusFilter, priorityFilter, categoryFilter]);
+  }, [rows, searchTerm, categoryFilter, courseFilter, ratingFilter]);
 
   // Load feedbacks from backend
   useEffect(() => {
@@ -55,21 +65,44 @@ export default function FeedbackV2() {
       try {
         const data = await getUserFeedbacks();
         if (!mounted) return;
-        // Map backend data to UI shape
+        
+        const normalizeType = (t) => {
+          if (!t) return 'Website';
+          const s = String(t).toLowerCase();
+          if (s.includes('course') || s.includes('lesson') || s.includes('content') || s.includes('class')) return 'Course';
+          return 'Website';
+        };
+
         const mapped = data.map(f => ({
           id: f.id,
           user: f.userName || 'Unknown',
           email: f.userEmail || '',
+          title: f.title || '',
           message: f.description || '',
-          status: ['Pending','In Progress','Resolved'].includes((f.type || '').toString()) ? f.type : 'Pending',
           rating: f.rating || 0,
           date: f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '',
-          category: (['Pending','In Progress','Resolved'].includes((f.type || '').toString()) ? 'General' : (f.type || 'General')),
-          priority: f.rating <= 2 ? 'high' : (f.rating === 3 ? 'medium' : 'low'),
-          avatar: (f.userName || 'U').split(' ').map(x=>x[0]).slice(0,2).join('') || 'U'
+          category: normalizeType(f.type),
+          avatar: (f.userName || 'U').split(' ').map(x=>x[0]).slice(0,2).join('') || 'U',
+          courseId: f.courseId || null,
+          courseTitle: f.courseTitle || null
         }));
+
         setRows(mapped);
         setFilteredRows(mapped);
+        const allowed = ['Course', 'Website'];
+        setAvailableCategories(allowed);
+        
+        // Get unique courses
+        const courses = mapped
+          .filter(f => f.courseId && f.courseTitle)
+          .reduce((acc, f) => {
+            if (!acc.find(c => c.id === f.courseId)) {
+              acc.push({ id: f.courseId, title: f.courseTitle });
+            }
+            return acc;
+          }, [])
+          .sort((a, b) => a.title.localeCompare(b.title));
+        setAvailableCourses(courses);
       } catch (err) {
         console.error('Failed to load feedbacks', err);
       }
@@ -77,41 +110,30 @@ export default function FeedbackV2() {
     return () => { mounted = false; };
   }, []);
 
+  const uniqueCourses = Array.from(new Set(rows.map(r => r.courseId).filter(Boolean))).length;
+  const categoryCounts = rows.reduce((acc, r) => { acc[r.category] = (acc[r.category] || 0) + 1; return acc; }, {});
+  const topCategory = Object.entries(categoryCounts).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
   const stats = {
     total: rows.length,
-    pending: rows.filter(r => r.status === 'Pending').length,
-    resolved: rows.filter(r => r.status === 'Resolved').length,
-    avgRating: (rows.reduce((acc, r) => acc + r.rating, 0) / rows.length).toFixed(1),
+    avgRating: rows.length ? (rows.reduce((acc, r) => acc + r.rating, 0) / rows.length).toFixed(1) : '0.0',
+    uniqueCourses,
+    topCategory,
     trend: '+12%'
-  };
-
-  const getStatusColor = () => {
-    // Single-accent theme: use subtle surface + accent text for all statuses
-    return 'bg-[var(--surface)] text-[var(--accent-dark)] border-[var(--border)]';
-  };
-
-  const getPriorityColor = () => {
-    return 'bg-[var(--surface)] text-[var(--accent-dark)]';
   };
 
   const renderStars = (rating) => {
     return (
       <div className="flex gap-0.5">
         {[...Array(5)].map((_, i) => (
-          <Star key={i} className={`w-3.5 h-3.5 ${i < rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+          // Larger stars to improve visibility in the compact layout
+          <Star key={i} className={`w-5 h-5 ${i < rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
         ))}
       </div>
     );
   };
 
-  const handleStatusChange = (feedback, newStatus) => {
-    // Update local UI and persist to backend by setting `type` to the status value
-    setRows(prev => prev.map(r => r.id === feedback.id ? { ...r, status: newStatus } : r));
-    updateUserFeedback(feedback.id, { type: newStatus }).catch(err => console.error('Failed to persist status', err));
-  };
-
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen py-8 px-4 md:px-6">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header */}
@@ -120,76 +142,73 @@ export default function FeedbackV2() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Feedback</h1>
             <p className="text-gray-600">Monitor and respond to customer insights</p>
           </div>
-          <div className="flex items-center gap-3">
-            
-            <button className="px-4 py-2 bg-[#D9433B] hover:bg-[#B13A33] text-white rounded-xl hover:shadow-md transition-all duration-200 flex items-center gap-2 text-sm font-medium">
-              <Sparkles className="w-4 h-4" />
-              Archive
-            </button>
-          </div>
         </div>
 
-        {/* Enhanced Stats Cards */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <Card className="relative overflow-hidden hover:shadow-md">
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
-                  <MessageSquare className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-[#D9433B] flex items-center justify-center shadow-sm flex-shrink-0">
+                  <MessageSquare className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-gray-600">Total Feedback</h3>
+                  <p className="text-lg font-bold text-gray-900">{stats.total}</p>
                 </div>
                 <span className="text-xs font-semibold px-2 py-1 rounded-full border" style={{ color: 'var(--accent-dark)', backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>{stats.trend}</span>
               </div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Total Feedback</h3>
-              <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-              <p className="text-xs text-gray-500 mt-2">All time submissions</p>
+              <p className="text-xs text-gray-500">All time submissions</p>
             </div>
           </Card>
           
-          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <Card className="relative overflow-hidden hover:shadow-md">
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
-                  <Clock className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-[#D9433B] flex items-center justify-center shadow-sm flex-shrink-0">
+                  <BookOpen className="w-5 h-5 text-white" />
                 </div>
-                <AlertCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-gray-600">Unique Courses</h3>
+                  <p className="text-lg font-bold text-gray-900">{stats.uniqueCourses}</p>
+                </div>
               </div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Pending</h3>
-              <p className="text-3xl font-bold text-gray-900">{stats.pending}</p>
-              <p className="text-xs text-gray-500 mt-2">Requires attention</p>
+              <p className="text-xs text-gray-500">Courses with feedback</p>
             </div>
           </Card>
 
-          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <Card className="relative overflow-hidden hover:shadow-md">
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
-                  <CheckCircle className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-[#D9433B] flex items-center justify-center shadow-sm flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-white" />
                 </div>
-                <TrendingUp className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-gray-600">Top Category</h3>
+                  <p className="text-lg font-bold text-gray-900">{stats.topCategory}</p>
+                </div>
               </div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Resolved</h3>
-              <p className="text-3xl font-bold text-gray-900">{stats.resolved}</p>
-              <p className="text-xs text-gray-500 mt-2">Successfully handled</p>
+              <p className="text-xs text-gray-500">Most common feedback type</p>
             </div>
           </Card>
 
-          <Card className="relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <Card className="relative overflow-hidden hover:shadow-md">
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16" style={{ backgroundColor: 'var(--surface)' }} />
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#D9433B] flex items-center justify-center shadow-sm">
-                  <Star className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-[#D9433B] flex items-center justify-center shadow-sm flex-shrink-0">
+                  <Star className="w-5 h-5 text-white" />
                 </div>
-              </div>
-              <h3 className="text-sm font-medium text-gray-600 mb-1">Avg Rating</h3>
-              <div className="flex items-end gap-2">
-                <p className="text-3xl font-bold text-gray-900">{stats.avgRating}</p>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-gray-600">Avg Rating</h3>
+                  <p className="text-lg font-bold text-gray-900">{stats.avgRating}</p>
+                </div>
                 <div className="mb-1">{renderStars(Math.round(stats.avgRating))}</div>
               </div>
-              <p className="text-xs text-gray-500 mt-2">Customer satisfaction</p>
+              <p className="text-xs text-gray-500">Customer satisfaction</p>
             </div>
           </Card>
         </div>
@@ -197,19 +216,20 @@ export default function FeedbackV2() {
         {/* Search and Filters */}
         <Card>
           <div className="space-y-4">
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Search by name, email, or message..."
+                  placeholder="Search by name, email, course, or message..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
+                  className="w-full pl-12 pr-4 py-3 bg-white border rounded-full focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
                   style={{ borderColor: 'var(--border)' }}
                 />
               </div>
               
+              <div className="flex gap-2">
               <button 
                 onClick={() => setShowFilters(!showFilters)}
                 className="px-4 py-3 bg-white border rounded-xl hover:bg-[var(--surface)] transition-all duration-200 flex items-center gap-2 text-sm font-medium"
@@ -219,40 +239,12 @@ export default function FeedbackV2() {
                 Filters
                 <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
               </button>
+              <button onClick={() => { setSearchTerm(''); setCategoryFilter('All'); setCourseFilter('All'); setRatingFilter('All'); }} className="px-3 py-2 bg-transparent text-sm text-gray-600 hover:text-gray-800 rounded-md">Clear</button>
+              </div>
             </div>
 
             {showFilters && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-4 py-2 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
-                    <option value="All">All Status</option>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">Priority</label>
-                  <select
-                    value={priorityFilter}
-                    onChange={(e) => setPriorityFilter(e.target.value)}
-                    className="w-full px-4 py-2 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
-                    <option value="All">All Priorities</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
-
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">Category</label>
                   <select
@@ -262,10 +254,41 @@ export default function FeedbackV2() {
                     style={{ borderColor: 'var(--border)' }}
                   >
                     <option value="All">All Categories</option>
-                    <option value="Bug">Bug</option>
-                    <option value="Feature">Feature</option>
-                    <option value="UX">UX</option>
-                    <option value="Support">Support</option>
+                    {availableCategories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Course</label>
+                  <select
+                    value={courseFilter}
+                    onChange={(e) => setCourseFilter(e.target.value)}
+                    className="w-full px-4 py-2 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <option value="All">All Courses</option>
+                    {availableCourses.map((c) => (
+                      <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Rating</label>
+                  <select
+                    value={ratingFilter}
+                    onChange={(e) => setRatingFilter(e.target.value)}
+                    className="w-full px-4 py-2 bg-white border rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <option value="All">All Ratings</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
                   </select>
                 </div>
               </div>
@@ -275,13 +298,13 @@ export default function FeedbackV2() {
               <span className="text-sm text-gray-600">
                 Showing <span className="font-semibold text-gray-900">{filteredRows.length}</span> of <span className="font-semibold text-gray-900">{rows.length}</span> items
               </span>
-              {(searchTerm || statusFilter !== 'All' || priorityFilter !== 'All' || categoryFilter !== 'All') && (
+              {(searchTerm || categoryFilter !== 'All' || courseFilter !== 'All' || ratingFilter !== 'All') && (
                 <button 
                   onClick={() => {
                     setSearchTerm('');
-                    setStatusFilter('All');
-                    setPriorityFilter('All');
                     setCategoryFilter('All');
+                    setCourseFilter('All');
+                    setRatingFilter('All');
                   }}
                   className="text-sm text-[#D9433B] hover:text-[#B13A33] font-medium transition-colors"
                 >
@@ -292,168 +315,175 @@ export default function FeedbackV2() {
           </div>
         </Card>
 
-        {/* Feedback Grid */}
-        <div className="grid grid-cols-1 gap-4">
-          {filteredRows.map((feedback) => (
-            <Card key={feedback.id} className="hover:shadow-md transition-all duration-300 cursor-pointer group">
-              <div className="flex items-start gap-4">
-                {/* Avatar */}
-                <div className="w-12 h-12 rounded-xl bg-[#D9433B] flex items-center justify-center text-white font-semibold flex-shrink-0">
-                  {feedback.avatar}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{feedback.user}</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium border ${getStatusColor(feedback.status)}`}>
-                          {feedback.status}
-                        </span>
-                        <span className={`text-xs px-2 py-1 rounded-lg font-medium ${getPriorityColor(feedback.priority)}`}>
-                          {feedback.priority}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600">{feedback.email}</p>
+  {/* Feedback Grid */}
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredRows.length === 0 ? (
+            <Card className="text-center py-12">
+              <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No feedback found</h3>
+              <p className="text-gray-600">Try adjusting your filters or search terms</p>
+            </Card>
+          ) : (
+            filteredRows.map((feedback) => (
+              <Card key={feedback.id} className="hover:shadow-lg transform hover:-translate-y-1 cursor-pointer group border-l-4" style={{ borderLeftColor: feedback.rating >= 4 ? '#10b981' : feedback.rating >= 3 ? '#f59e0b' : '#ef4444' }} onClick={() => setExpandedId(expandedId === feedback.id ? null : feedback.id)}>
+                <div className="flex items-start gap-4">
+                  {/* Avatar + Eye (eye sits under avatar, beside description) */}
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#D9433B] to-[#B13A33] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                      {feedback.avatar}
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="mb-1">{renderStars(feedback.rating)}</div>
-                      <p className="text-xs text-gray-500">{feedback.date}</p>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setSelectedFeedback(feedback); }}
+                      className="mt-2 p-1 rounded hover:bg-gray-100"
+                      aria-label={`View details for ${feedback.user}`}
+                    >
+                      <Eye className="w-4 h-4 text-gray-600" />
+                    </button>
                   </div>
 
-                  <p className="text-gray-700 mb-3 leading-relaxed">{feedback.message}</p>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base text-gray-900 mb-0.5 truncate">{feedback.user}</h3>
+                        <p className="text-xs text-gray-500 truncate">{feedback.email}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 ml-3">
+                        {renderStars(feedback.rating)}
+                        <span className="text-[11px] text-gray-400">{feedback.date}</span>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs px-3 py-1 rounded-full font-medium border" style={{ backgroundColor: 'var(--surface)', color: 'var(--accent-dark)', borderColor: 'var(--border)' }}>
-                      {feedback.category}
-                    </span>
+                    {/* Course Info - More Prominent */}
+                    {feedback.courseTitle && (
+                      <div className="mb-2 inline-flex items-center gap-2 px-2 py-1 rounded-md bg-gradient-to-r from-[#D9433B]/8 to-[#B13A33]/8 border border-[#D9433B]/10">
+                        <BookOpen className="w-4 h-4 text-[#D9433B]" />
+                        <span className="text-sm font-semibold text-[#D9433B] truncate">{feedback.courseTitle}</span>
+                      </div>
+                    )}
 
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <button 
-                        onClick={() => setSelectedFeedback(feedback)}
-                        className="p-2 border rounded-lg transition-all duration-200 text-sm flex items-center gap-1.5 hover:bg-[var(--surface)]"
-                        style={{ color: 'var(--accent-dark)', borderColor: 'var(--border)' }}
-                        title="View details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => setSelectedFeedback(feedback)}
-                        className="p-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] rounded-lg transition-all duration-200 text-sm flex items-center gap-1.5"
-                        title="Reply"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                      </button>
-                      {feedback.status !== 'Resolved' && (
-                        <button 
-                          onClick={() => handleStatusChange(feedback, 'Resolved')}
-                          className="p-2 border rounded-lg transition-all duration-200 text-sm flex items-center gap-1.5 hover:bg-[var(--surface)]"
-                          style={{ color: 'var(--accent-dark)', borderColor: 'var(--border)' }}
-                          title="Mark as resolved"
+                    {/* Title */}
+                    {feedback.title && (
+                      <h4 className="font-medium text-gray-900 mb-1 text-sm truncate">{feedback.title}</h4>
+                    )}
+                    
+                    {/* Message Preview with inline Website badge and inline expand */}
+                    <div className="mb-2">
+                        <div className="flex items-start justify-between">
+                        <p
+                          className={`flex-1 text-gray-600 text-sm transition-all duration-200 ${expandedId === feedback.id ? 'max-h-[400px]' : 'max-h-6 overflow-hidden'}`}
                         >
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
+                          {feedback.message}
+                        </p>
+
+                        <div className="ml-3 flex items-start gap-2">
+                          {feedback.category === 'Website' ? (
+                            <span className="inline-flex items-center text-xs px-2 py-1 rounded-full font-medium flex-shrink-0" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                              Website
+                            </span>
+                          ) : null}
+
+                          {feedback.message && feedback.message.length > 140 && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setExpandedId(expandedId === feedback.id ? null : feedback.id); }}
+                              aria-expanded={expandedId === feedback.id}
+                              className="text-sm text-[#D9433B] hover:underline px-2 py-1"
+                            >
+                              {expandedId === feedback.id ? 'Hide' : 'Read more'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer: only show Course pill here (keeps Course badge at bottom-right) */}
+                    <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                      
+                      {feedback.category !== 'Website' && (
+                        <span className="inline-flex items-center text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                          {feedback.category}
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
 
         {/* Detail Modal */}
         {selectedFeedback && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setSelectedFeedback(null)}>
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <div className="p-6 border-b sticky top-0 bg-white" style={{ borderColor: 'var(--border)' }}>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-[#D9433B] flex items-center justify-center text-white font-semibold text-lg">
-                      {selectedFeedback.avatar}
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedFeedback.user}</h2>
-                      <p className="text-sm text-gray-600">{selectedFeedback.email}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        {renderStars(selectedFeedback.rating)}
-                        <span className="text-xs text-gray-500">{selectedFeedback.date}</span>
-                      </div>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn" onClick={() => setSelectedFeedback(null)}>
+            <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="p-6 border-b sticky top-0 bg-white z-10 rounded-t-3xl" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#D9433B] to-[#B13A33] flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
+                    {selectedFeedback.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-1">{selectedFeedback.user}</h2>
+                    <p className="text-xs text-gray-600 mb-2">{selectedFeedback.email}</p>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {renderStars(selectedFeedback.rating)}
+                      <span className="text-xs text-gray-500">{selectedFeedback.date}</span>
                     </div>
                   </div>
                   <button 
                     onClick={() => setSelectedFeedback(null)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    className="text-gray-400 hover:text-gray-600 transition-colors ml-4 flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg"
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Feedback Details</h3>
-                  <div className="rounded-xl p-4 space-y-3 border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Status</span>
-                      <select
-                        value={selectedFeedback.status}
-                        onChange={(e) => handleStatusChange(selectedFeedback, e.target.value)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedFeedback.status)}`}
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Resolved">Resolved</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Category</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedFeedback.category}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Priority</span>
-                      <span className={`text-xs px-2 py-1 rounded-lg font-medium ${getPriorityColor(selectedFeedback.priority)}`}>
-                        {selectedFeedback.priority}
-                      </span>
+              {/* Content */}
+              <div className="p-8 space-y-6">
+                {/* Course Info */}
+                {selectedFeedback.courseTitle && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-[#D9433B]/10 to-[#B13A33]/10 border-2 border-[#D9433B]/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#D9433B] flex items-center justify-center flex-shrink-0">
+                        <BookOpen className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-[#D9433B] mb-1">COURSE FEEDBACK</p>
+                        <p className="text-base font-bold text-gray-900">{selectedFeedback.courseTitle}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Message</h3>
-                  <div className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-                    <p className="text-gray-700 leading-relaxed">{selectedFeedback.message}</p>
+                {/* Subject */}
+                {selectedFeedback.title && (
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Subject</h3>
+                    <div className="rounded-2xl p-5 bg-gray-50 border-2" style={{ borderColor: 'var(--border)' }}>
+                      <p className="text-lg font-semibold text-gray-900">{selectedFeedback.title}</p>
+                    </div>
                   </div>
-                </div>
+                )}
 
+                {/* Message */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Response</h3>
-                  <textarea 
-                    className="w-full min-h-32 rounded-xl border p-4 focus:ring-2 focus:ring-[#D9433B] focus:outline-none focus:border-transparent transition-all duration-200 resize-none" 
-                    style={{ borderColor: 'var(--border)' }}
-                    placeholder="Type your response here..."
-                  />
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Feedback Message</h3>
+                  <div className="rounded-2xl p-6 bg-gray-50 border-2" style={{ borderColor: 'var(--border)' }}>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-base">{selectedFeedback.message}</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-6 border-t flex justify-end gap-3 sticky bottom-0 bg-white" style={{ borderColor: 'var(--border)' }}>
+              {/* Footer */}
+              <div className="p-6 border-t flex justify-end sticky bottom-0 bg-white rounded-b-3xl" style={{ borderColor: 'var(--border)' }}>
                 <button 
                   onClick={() => setSelectedFeedback(null)}
-                  className="px-6 py-2.5 border text-gray-700 hover:bg-[var(--surface)] rounded-xl font-medium transition-all duration-200"
-                  style={{ borderColor: 'var(--border)' }}
+                  className="px-8 py-3 bg-gradient-to-r from-[#D9433B] to-[#B13A33] hover:from-[#B13A33] hover:to-[#8f2e28] text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => setSelectedFeedback(null)}
-                  className="px-6 py-2.5 bg-[#D9433B] hover:bg-[#B13A33] text-white hover:shadow-md rounded-xl font-medium transition-all duration-200 flex items-center gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  Send Response
+                  Close
                 </button>
               </div>
             </div>
