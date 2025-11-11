@@ -113,9 +113,9 @@ const DropUpload: FC<Props> = ({
     >
       <div className="space-y-1 text-center px-6 pt-5 pb-6 flex flex-col items-center justify-center">
         {previewURL ? (
-          <div className="relative">
+          <div className="relative w-full flex justify-center">
             <img src={previewURL} alt="Preview"
-              className="mx-auto w-40 h-40 object-contain max-w-full mb-4"
+              className="mx-auto max-w-full max-h-48 object-contain mb-4"
               draggable={false}
             />
             {value ? (

@@ -161,6 +161,8 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
         userId: userId,
     });
 
+    const [profileImageUrl, setProfileImageUrl] = useState<string>("");
+
     useEffect(() => {
         async function loadUserData() {
             if (isEdit && userId) {
@@ -182,6 +184,11 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                         email: userData.email || "",
                         userId: userData.userId
                     });
+
+                    // Set existing profile image URL if available
+                    if (userData.profileImg) {
+                        setProfileImageUrl(userData.profileImg);
+                    }
                 } catch (error) {
                     console.error('Error loading user data:', error);
                     alert('Failed to load user data. Please try again.');
@@ -465,6 +472,7 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                                             value={values.profileimage as unknown as globalThis.File}
                                             description="PNG, JPG, GIF, WEBP up to 32MB"
                                             disabled={isSubmitting}
+                                            defaultValue={profileImageUrl}
                                         />
                                     </div>
                                     <ErrorMessage name="profileimage" component="div" className="text-red-500 text-xs mt-1 absolute -bottom-5 left-[2px]" />
