@@ -10,7 +10,7 @@ import * as Yup from "yup";
 import ProfileForm from "../components/EditProfileForm.tsx";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../services/authService.ts";
-import { getUser } from "../api/client.js";
+import { getUser, changePassword } from "../api/client.js";
 
 type Profile = {
     id: string;
@@ -278,36 +278,18 @@ const RgUserCat = () => {
                                     ,
                                 })}
 
-                                onSubmit={async (values, { setSubmitting }) => {
-                                    // try {
-                                    //     console.log("Logging in with:", values.loginId);
-
-                                    //     // Decide whether it's an email or username
-                                    //     const isEmail = values.loginId.includes("@");
-
-                                    //     const { data, error } = await supabase
-                                    //         .from("user")
-                                    //         .select("*")
-                                    //         .eq(isEmail ? "email" : "username", values.loginId.trim().toLowerCase())
-                                    //         .maybeSingle();
-
-                                    //     if (error || !data) {
-                                    //         throw new Error("Invalid login credentials.");
-                                    //     }
-
-                                    //     const match = await bcrypt.compare(values.password, data.password);
-                                    //     if (!match) {
-                                    //         throw new Error("Incorrect password.");
-                                    //     }
-
-                                    //     alert("Login successful!");
-                                    //     router.push("/dashboard");
-                                    // } catch (err: any) {
-                                    //     console.error("Login error:", err);
-                                    //     alert(err.message || "Login failed.");
-                                    // } finally {
-                                    //     setSubmitting(false);
-                                    // }
+                                onSubmit={async (values, { setSubmitting, resetForm }) => {
+                                    try {
+                                        await changePassword(userData?.userId || 1, values.password, values.newPassword);
+                                        alert("Password changed successfully!");
+                                        // Reset form after success
+                                        resetForm();
+                                    } catch (err: any) {
+                                        console.error("Password change error:", err);
+                                        alert(err.message || "Failed to change password.");
+                                    } finally {
+                                        setSubmitting(false);
+                                    }
                                 }}
                             >
                                 {({ isSubmitting, values, setFieldValue, touched, errors, resetForm, isValid, validateForm, setTouched }) => {
