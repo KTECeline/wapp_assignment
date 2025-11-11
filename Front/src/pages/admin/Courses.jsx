@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, BookOpen, Users, BarChart3 } from 'lucide-react';
-import { getCourses, deleteCourse } from '../../api/client';
+import { deleteCourse, getCategories } from '../../api/client';
 import { useToast } from '../../components/Toast';
 
 // Note: All accents on this page use red; neutral grays are reserved for text only.
@@ -9,6 +9,8 @@ import { useToast } from '../../components/Toast';
 export default function CoursesSwiper() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -18,8 +20,14 @@ export default function CoursesSwiper() {
     try {
       setLoading(true);
       setError(null);
-      const data = await getCourses();
-      setCourses(data);
+      // Use endpoint that provides total enrollments per course
+      const res = await fetch('/api/Courses/withstats');
+      const data = await res.json();
+      // data is [{ course, totalEnrollments }, ...]
+  const mapped = data.map(item => ({ ...item.course, totalEnrollments: item.totalEnrollments }));
+  setCourses(mapped);
+  // reset current index when refetching
+  setCurrentIndex(0);
         // Debug: log course image values so we can verify what the frontend received
         try {
           console.log('Courses fetched (courseImg values):', data.map(c => ({ id: c.courseId, courseImg: c.courseImg })));
@@ -38,6 +46,20 @@ export default function CoursesSwiper() {
     }
   }, [add]);
 
+  // Fetch categories for filter
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const cats = await getCategories();
+        if (mounted) setCategories(cats || []);
+      } catch (e) {
+        console.warn('Failed to load categories for admin filter', e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   // Resolve image paths: prefer absolute backend URL in dev when given a relative '/uploads/...' path
   const resolveImage = (path) => {
     if (!path) return null;
@@ -54,12 +76,19 @@ export default function CoursesSwiper() {
     fetchCourses();
   }, [fetchCourses]);
 
+  // Compute filtered list by selected category
+  const filteredCourses = selectedCategoryId
+    ? courses.filter(c => c.categoryId === Number(selectedCategoryId))
+    : courses;
+
   const nextCourse = () => {
-    setCurrentIndex((prev) => (prev + 1) % courses.length);
+    if (filteredCourses.length === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % filteredCourses.length);
   };
 
   const prevCourse = () => {
-    setCurrentIndex((prev) => (prev - 1 + courses.length) % courses.length);
+    if (filteredCourses.length === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + filteredCourses.length) % filteredCourses.length);
   };
 
   const goToIndex = (index) => {
@@ -67,17 +96,18 @@ export default function CoursesSwiper() {
   };
 
   const handleDelete = async () => {
-    if (!courses[currentIndex]) return;
+    const current = filteredCourses[currentIndex];
+    if (!current) return;
     
-    const confirmDelete = window.confirm(`Are you sure you want to delete "${courses[currentIndex].title}"?`);
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${current.title}"?`);
     if (!confirmDelete) return;
 
     try {
-      await deleteCourse(courses[currentIndex].courseId);
+      await deleteCourse(current.courseId);
       add('Course deleted successfully', 'success');
       await fetchCourses();
       // Adjust index if we deleted the last item
-      if (currentIndex >= courses.length - 1 && currentIndex > 0) {
+      if (currentIndex >= filteredCourses.length - 1 && currentIndex > 0) {
         setCurrentIndex(currentIndex - 1);
       }
     } catch (err) {
@@ -87,8 +117,8 @@ export default function CoursesSwiper() {
   };
 
   const handleEdit = () => {
-    if (!courses[currentIndex]) return;
-    const course = courses[currentIndex];
+    const course = filteredCourses[currentIndex];
+    if (!course) return;
     navigate('/admin/courses/edit', { state: { course, mode: 'edit' } });
   };
 
@@ -105,13 +135,27 @@ export default function CoursesSwiper() {
             <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Course Management</h1>
             <p className="text-gray-600 text-sm md:text-base">Swipe through your course catalog</p>
           </div>
-          <button
-            onClick={handleAddCourse}
-            className="flex items-center gap-2 bg-[#D9433B] hover:bg-[#B13A33] text-white px-4 py-2 rounded-xl shadow-sm transition-all active:scale-95 text-sm font-medium"
-          >
-            <Plus size={20} />
-            Add Course
-          </button>
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedCategoryId ?? ''}
+              onChange={(e) => { setSelectedCategoryId(e.target.value === '' ? null : Number(e.target.value)); setCurrentIndex(0); }}
+              className="border rounded-xl px-3 py-2 text-sm bg-white"
+              aria-label="Filter by category"
+            >
+              <option value="">All categories</option>
+              {categories.map(cat => (
+                <option key={cat.categoryId} value={cat.categoryId}>{cat.title}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={handleAddCourse}
+              className="flex items-center gap-2 bg-[#D9433B] hover:bg-[#B13A33] text-white px-4 py-2 rounded-xl shadow-sm transition-all active:scale-95 text-sm font-medium"
+            >
+              <Plus size={20} />
+              Add Course
+            </button>
+          </div>
         </div>
       </div>
 
@@ -146,95 +190,126 @@ export default function CoursesSwiper() {
           <div className="relative">{/* Main Card Container */}
           {/* Large Course Card */}
           <div className="relative overflow-hidden">
-            <div
-              className="bg-white rounded-2xl shadow-md p-6 md:p-8 border min-h-[420px] flex flex-col justify-between"
-              style={{ borderColor: '#F2E6E0' }}
-              key={currentIndex}
-            >
-              {/* Course Number Badge */}
-              <div className="absolute top-5 right-5 bg-[#D9433B] text-white px-3 py-1.5 rounded-full font-medium text-xs shadow-sm">
-                {currentIndex + 1} / {courses.length}
-              </div>
-
-              {/* Content */}
-              {/* Banner Image */}
-              {courses[currentIndex].courseImg && (
-                <div className="w-full h-48 mb-4 overflow-hidden rounded-xl">
-                  <img src={resolveImage(courses[currentIndex].courseImg)} alt={courses[currentIndex].title} className="w-full h-full object-cover" />
-                </div>
-              )}
-
-              <div className="space-y-6">
-                {/* Category Badge */}
-                <div className="inline-block">
-                  <span className="bg-[#FFF8F2] text-[#B13A33] px-3 py-1 rounded-full text-xs font-medium border" style={{ borderColor: '#F2E6E0' }}>
-                    {courses[currentIndex].category?.title || 'Uncategorized'}
-                  </span>
-                </div>
-
-                {/* Title */}
-                <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-snug">
-                  {courses[currentIndex].title}
-                </h2>
-
-                {/* Description */}
-                {courses[currentIndex].description && (
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {courses[currentIndex].description}
-                  </p>
-                )}
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                  <div className="flex items-center gap-3 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
-                    <div className="bg-[#D9433B] p-2.5 rounded-lg">
-                      <BarChart3 className="text-white" size={24} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium">Difficulty</p>
-                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].level?.title || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
-                    <div className="bg-[#D9433B] p-2.5 rounded-lg">
-                      <Users className="text-white" size={24} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium">Servings</p>
-                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].servings || 0}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
-                    <div className="bg-[#D9433B] p-2.5 rounded-lg">
-                      <BookOpen className="text-white" size={24} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-medium">Cook Time</p>
-                      <p className="text-base font-semibold text-gray-900">{courses[currentIndex].cookingTimeMin || 0} min</p>
-                    </div>
-                  </div>
+            {/* If the selected category yields no courses, show a friendly message */}
+            {filteredCourses.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-md p-6 md:p-8 border min-h-[200px] flex flex-col justify-center items-center text-center" style={{ borderColor: '#F2E6E0' }}>
+                <p className="text-gray-700 font-medium mb-4">No courses found for the selected category.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setSelectedCategoryId(null); setCurrentIndex(0); }}
+                    className="bg-[#D9433B] text-white px-4 py-2 rounded-xl"
+                  >
+                    Clear filter
+                  </button>
                 </div>
               </div>
+            ) : (
+              (() => {
+                const current = filteredCourses[currentIndex] ?? filteredCourses[0];
+                return (
+                  <div
+                    className="bg-white rounded-2xl shadow-md p-6 md:p-8 border min-h-[420px] flex flex-col justify-between"
+                    style={{ borderColor: '#F2E6E0' }}
+                    key={current.courseId}
+                  >
+                    {/* Course Number Badge */}
+                    <div className="absolute top-5 right-5 bg-[#D9433B] text-white px-3 py-1.5 rounded-full font-medium text-xs shadow-sm">
+                      {currentIndex + 1} / {filteredCourses.length}
+                    </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleEdit}
-                  className="flex-1 flex items-center justify-center gap-2 border text-[#D9433B] hover:bg-[#FFF8F2] text-sm font-medium rounded-xl py-2.5 transition-all active:scale-95"
-                  style={{ borderColor: '#D9433B' }}
-                >
-                  <Edit size={20} /> Edit Course
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#D9433B] hover:bg-[#B13A33] text-white text-sm font-medium rounded-xl py-2.5 transition-all active:scale-95 shadow-sm"
-                >
-                  <Trash2 size={20} /> Delete
-                </button>
-              </div>
-            </div>
+                    {/* Content */}
+                    {/* Banner Image */}
+                    {current.courseImg && (
+                      <div className="w-full h-48 mb-4 overflow-hidden rounded-xl">
+                        <img src={resolveImage(current.courseImg)} alt={current.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    <div className="space-y-6">
+                      {/* Category Badge */}
+                      <div className="inline-block">
+                        <span className="bg-[#FFF8F2] text-[#B13A33] px-3 py-1 rounded-full text-xs font-medium border" style={{ borderColor: '#F2E6E0' }}>
+                          {current.category?.title || 'Uncategorized'}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-snug">
+                        {current.title}
+                      </h2>
+
+                      {/* Description */}
+                      {current.description && (
+                        <p className="text-gray-600 text-sm line-clamp-2">
+                          {current.description}
+                        </p>
+                      )}
+
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                          <div className="bg-[#D9433B] p-2.5 rounded-lg">
+                            <BarChart3 className="text-white" size={24} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 font-medium">Difficulty</p>
+                            <p className="text-base font-semibold text-gray-900">{current.level?.title || 'N/A'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                          <div className="bg-[#D9433B] p-2.5 rounded-lg">
+                            <Users className="text-white" size={24} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 font-medium">Servings</p>
+                            <p className="text-base font-semibold text-gray-900">{current.servings || 0}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                          <div className="bg-[#D9433B] p-2.5 rounded-lg">
+                            <BookOpen className="text-white" size={24} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 font-medium">Cook Time</p>
+                            <p className="text-base font-semibold text-gray-900">{current?.cookingTimeMin ?? 0} min</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                          <div className="bg-[#D9433B] p-2.5 rounded-lg">
+                            <Users className="text-white" size={24} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600 font-medium">Total Enrollments</p>
+                            <p className="text-base font-semibold text-gray-900">{current?.totalEnrollments ?? 0}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 mt-6">
+                      <button
+                        onClick={handleEdit}
+                        className="flex-1 flex items-center justify-center gap-2 border text-[#D9433B] hover:bg-[#FFF8F2] text-sm font-medium rounded-xl py-2.5 transition-all active:scale-95"
+                        style={{ borderColor: '#D9433B' }}
+                      >
+                        <Edit size={20} /> Edit Course
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="flex-1 flex items-center justify-center gap-2 bg-[#D9433B] hover:bg-[#B13A33] text-white text-sm font-medium rounded-xl py-2.5 transition-all active:scale-95 shadow-sm"
+                      >
+                        <Trash2 size={20} /> Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
 
           {/* Navigation Arrows */}
@@ -258,7 +333,7 @@ export default function CoursesSwiper() {
 
         {/* Dots Navigation */}
         <div className="flex justify-center gap-2 mt-8">
-          {courses.map((_, index) => (
+          {filteredCourses.map((_, index) => (
             <button
               key={index}
               onClick={() => goToIndex(index)}
@@ -276,7 +351,7 @@ export default function CoursesSwiper() {
         <div className="mt-10 bg-white rounded-2xl p-5 shadow-md border" style={{ borderColor: '#F2E6E0' }}>
           <h3 className="text-lg font-semibold text-gray-900 mb-3">All Courses</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {courses.map((course, index) => (
+            {filteredCourses.map((course, index) => (
               <button
                 key={index}
                 onClick={() => goToIndex(index)}

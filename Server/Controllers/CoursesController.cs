@@ -22,6 +22,28 @@ public class CoursesController : ControllerBase
             .ToListAsync();
     }
 
+    // GET: /api/Courses/withstats
+    // Returns courses with an added totalEnrollments property (0 when missing)
+    [HttpGet("withstats")]
+    public async Task<ActionResult<IEnumerable<object>>> GetCoursesWithStats()
+    {
+        var courses = await _context.Courses
+            .Include(c => c.Level)
+            .Include(c => c.Category)
+            .Where(c => !c.Deleted)
+            .ToListAsync();
+
+        var stats = await _context.CourseStats.ToListAsync();
+
+        var result = courses.Select(c => new
+        {
+            course = c,
+            totalEnrollments = stats.FirstOrDefault(s => s.CourseId == c.CourseId)?.TotalEnrollments ?? 0
+        });
+
+        return Ok(result);
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<object>> GetCourse(int id, [FromQuery] int? userId = null)
     {
