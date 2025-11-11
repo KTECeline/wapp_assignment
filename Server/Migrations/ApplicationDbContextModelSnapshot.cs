@@ -202,12 +202,6 @@ namespace Server.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("course_img");
 
-                    b.Property<string>("CourseType")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("course_type");
-
                     b.Property<bool>("Deleted")
                         .HasColumnType("INTEGER")
                         .HasColumnName("deleted");
@@ -285,8 +279,10 @@ namespace Server.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("item_img");
 
-                    b.Property<float>("Metric")
-                        .HasColumnType("REAL")
+                    b.Property<string>("Metric")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT")
                         .HasColumnName("metric");
 
                     b.Property<string>("Title")
@@ -449,6 +445,10 @@ namespace Server.Migrations
                     b.Property<TimeSpan?>("QuizTotalTime")
                         .HasColumnType("TEXT")
                         .HasColumnName("quiz_total_time");
+
+                    b.Property<bool>("Registered")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("registered");
 
                     b.Property<int>("UserId")
                         .HasColumnType("INTEGER")

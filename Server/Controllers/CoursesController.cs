@@ -23,7 +23,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Course>> GetCourse(int id)
+    public async Task<ActionResult<object>> GetCourse(int id, [FromQuery] int? userId = null)
     {
         var course = await _context.Courses
             .Include(c => c.Level)
@@ -31,11 +31,20 @@ public class CoursesController : ControllerBase
             .FirstOrDefaultAsync(c => c.CourseId == id && !c.Deleted);
 
         if (course == null) return NotFound();
-        return course;
+
+        if (userId.HasValue)
+        {
+            var activity = await _context.CourseUserActivities
+                .FirstOrDefaultAsync(a => a.CourseId == id && a.UserId == userId.Value);
+            var registered = activity != null && activity.Registered;
+            return Ok(new { course, registered });
+        }
+
+        return Ok(new { course, registered = false });
     }
 
     [HttpGet("{id}/full")]
-    public async Task<ActionResult<object>> GetCourseWithDetails(int id)
+    public async Task<ActionResult<object>> GetCourseWithDetails(int id, [FromQuery] int? userId = null)
     {
         var course = await _context.Courses
             .Include(c => c.Level)
@@ -61,13 +70,22 @@ public class CoursesController : ControllerBase
             .Where(q => q.CourseId == id && !q.Deleted)
             .ToListAsync();
 
+        var registered = false;
+        if (userId.HasValue)
+        {
+            var activity = await _context.CourseUserActivities
+                .FirstOrDefaultAsync(a => a.CourseId == id && a.UserId == userId.Value);
+            registered = activity != null && activity.Registered;
+        }
+
         return Ok(new
         {
             course,
             tips,
             prepItems,
             steps,
-            questions
+            questions,
+            registered
         });
     }
 
@@ -118,7 +136,6 @@ public class CoursesController : ControllerBase
         course.CookingTimeMin = update.CookingTimeMin;
         course.Servings = update.Servings;
         course.Video = update.Video;
-        course.CourseType = update.CourseType;
         course.BadgeImg = update.BadgeImg;
         course.QuizBadgeImg = update.QuizBadgeImg;
         course.LevelId = update.LevelId;

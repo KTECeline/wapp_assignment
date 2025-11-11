@@ -61,7 +61,8 @@ export default function CourseManagement() {
       path: '/admin/courses',
       color: 'var(--accent)',
       bgColor: 'var(--surface)',
-      stats: `${courses.length} courses`
+      // show an explicit call-to-action instead of count so it's clear this goes to the courses list
+      stats: 'View all courses'
     },
     {
       title: 'Course Categories',
@@ -71,15 +72,6 @@ export default function CourseManagement() {
       color: 'var(--accent)',
       bgColor: 'var(--surface)',
       stats: `${categories.length} categories`
-    },
-    {
-      title: 'Difficulty Levels',
-      description: 'Define difficulty levels for courses (Beginner, Intermediate, Advanced).',
-      icon: BarChart3,
-      path: '/admin/course-levels',
-      color: 'var(--accent)',
-      bgColor: 'var(--surface)',
-      stats: `${levels.length} levels`
     }
   ];
 
@@ -202,7 +194,7 @@ export default function CourseManagement() {
                 <Settings className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 Core Management
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {managementCards.map((card, index) => (
                   <Card
                     key={index}
@@ -219,9 +211,13 @@ export default function CourseManagement() {
                     <p className="text-sm text-gray-600 mb-4 leading-relaxed">{card.description}</p>
                     <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
                       <span className="text-xs font-semibold" style={{ color: 'var(--accent-dark)' }}>{card.stats}</span>
-                      <span className="text-xs font-medium text-gray-400 group-hover:text-[var(--accent)] transition-colors">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(card.path); }}
+                        className="text-xs font-medium text-gray-400 group-hover:text-[var(--accent)] transition-colors focus:outline-none"
+                        aria-label={`Manage ${card.title}`}
+                      >
                         Manage →
-                      </span>
+                      </button>
                     </div>
                   </Card>
                 ))}
@@ -260,55 +256,6 @@ export default function CourseManagement() {
                 ))}
               </div>
             </div>
-
-            {/* Quick Actions */}
-            <Card>
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Quick Actions</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">Common course management tasks</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {quickActions.map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={action.action}
-                    className={`px-5 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
-                      action.primary
-                        ? 'bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white shadow-sm hover:shadow-md'
-                        : 'bg-white border hover:bg-[var(--surface)] text-gray-700'
-                    }`}
-                    style={!action.primary ? { borderColor: 'var(--border)' } : {}}
-                  >
-                    <action.icon className="w-5 h-5" />
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-            </Card>
-
-            {/* Help Card */}
-            <Card className="border-2" style={{ borderColor: 'var(--accent)', backgroundColor: 'var(--surface)' }}>
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-white rounded-xl shadow-sm">
-                  <HelpCircle className="w-6 h-6" style={{ color: 'var(--accent)' }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">Need Help?</h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    To manage course tips, ingredients, steps, and quizzes, create or edit a course first. These components are managed within the Course Editor.
-                  </p>
-                  <button
-                    onClick={() => navigate('/admin/courses')}
-                    className="text-sm font-medium px-4 py-2 rounded-lg border bg-white hover:bg-gray-50 transition-colors"
-                    style={{ borderColor: 'var(--accent)', color: 'var(--accent-dark)' }}
-                  >
-                    Go to Courses
-                  </button>
-                </div>
-              </div>
-            </Card>
           </>
         )}
       </div>

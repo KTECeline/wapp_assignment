@@ -12,3 +12,8 @@ obj/
 
 # Mac
 .DS_Store
+
+# Ignore SQLite database files
+Server/app.db
+Server/app.db-shm
+Server/app.db-wal

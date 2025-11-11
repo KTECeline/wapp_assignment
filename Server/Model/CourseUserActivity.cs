@@ -37,4 +37,7 @@ public class CourseUserActivity
 
     [Column("bookmark")]
     public bool Bookmark { get; set; }
+
+    [Column("registered")]
+    public bool Registered { get; set; } = false;
 }

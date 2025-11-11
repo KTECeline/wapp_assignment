@@ -35,10 +35,6 @@ public class Course
     [Column("deleted")]
     public bool Deleted { get; set; }
 
-    [Column("course_type")]
-    [StringLength(255)]
-    public string CourseType { get; set; } = string.Empty;
-
     [Column("badge_img")]
     public string BadgeImg { get; set; } = string.Empty;
 
