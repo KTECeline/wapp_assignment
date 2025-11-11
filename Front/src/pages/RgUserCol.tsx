@@ -3,13 +3,87 @@ import RgUserLayout from "../components/RgUserLayout.tsx";
 import { CiFilter } from "react-icons/ci";
 import { TbArrowsSort } from "react-icons/tb";
 import { FaStar } from "react-icons/fa";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getUserCourses } from "../api/client.js";
+
+interface Course {
+    courseId: number;
+    title: string;
+    description: string;
+    rating: number;
+    courseImg: string;
+    cookingTimeMin: number;
+    servings: number;
+    video: string;
+    levelId: number;
+    levelName: string;
+    bookmark: boolean;
+    quizStatus: string;
+    quizProgress: number;
+}
 
 const RgUserCol = () => {
-
     const [active, setActive] = useState("Progressing");
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const tabs = ["Progressing", "Completed", "Bookmarked"];
+
+    // Fetch courses based on active tab
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                setLoading(true);
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                
+                if (!user?.userId) {
+                    setError("User not logged in");
+                    setLoading(false);
+                    return;
+                }
+
+                let statusFilter: string | null = active.toLowerCase();
+                if (statusFilter === "progressing") {
+                    statusFilter = "progressing";
+                } else if (statusFilter === "completed") {
+                    statusFilter = "completed";
+                } else if (statusFilter === "bookmarked") {
+                    statusFilter = "bookmarked";
+                }
+
+                const data = await getUserCourses(user.userId, statusFilter || undefined);
+                setCourses(data);
+                setFilteredCourses(data);
+                setError(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to fetch courses");
+                console.error("Error fetching courses:", err);
+                setCourses([]);
+                setFilteredCourses([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCourses();
+    }, [active]);
+
+    // Handle search
+    const handleSearch = (value: string) => {
+        setSearchTerm(value);
+        if (value.trim() === "") {
+            setFilteredCourses(courses);
+        } else {
+            const filtered = courses.filter(course =>
+                course.title.toLowerCase().includes(value.toLowerCase()) ||
+                course.description.toLowerCase().includes(value.toLowerCase())
+            );
+            setFilteredCourses(filtered);
+        }
+    };
 
     return (
         <RgUserLayout>
@@ -63,6 +137,8 @@ const RgUserCol = () => {
                             <input
                                 type="text"
                                 placeholder="Search..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 className="font-inter w-[160px] bg-transparent outline-none text-black text-[16px] font-light"
                             />
                             <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
@@ -91,508 +167,116 @@ const RgUserCol = () => {
                         </div>
                     </div>
 
+                    {/* Loading State */}
+                    {loading && (
+                        <div className="mt-[50px] text-center">
+                            <p className="text-black text-[18px] font-light">Loading courses...</p>
+                        </div>
+                    )}
+
+                    {/* Error State */}
+                    {error && (
+                        <div className="mt-[50px] text-center">
+                            <p className="text-red-500 text-[18px] font-light">Error: {error}</p>
+                        </div>
+                    )}
+
+                    {/* No Results State */}
+                    {!loading && !error && filteredCourses.length === 0 && (
+                        <div className="mt-[50px] text-center">
+                            <p className="text-black text-[18px] font-light">No courses found</p>
+                        </div>
+                    )}
+
                     {/* Courses Container */}
+                    {!loading && !error && filteredCourses.length > 0 && (
                     <div className="mt-[32px] w-screen max-h-[512px] overflow-y-scroll no-scrollbar pb-[64px]">
                         <div className="grid grid-cols-4 gap-x-[14px] gap-y-[48px] w-[1090px] mx-auto">
-                            {/* Recipe Card */}
-                            <div className="max-h-[297px] w-[262px] group cursor-pointer">
-                                <img src="/images/Recipe.jpeg" alt="recipe" className="w-full h-[177px] object-cover" />
+                            {filteredCourses.map((course) => (
+                                <div key={course.courseId} className="max-h-[297px] w-[262px] group cursor-pointer">
+                                    <img src={course.courseImg || "/images/Recipe.jpeg"} alt={course.title} className="w-full h-[177px] object-cover" />
 
-                                {/* Review */}
-                                <div className="flex flex-row mt-[16px] items-center">
-                                    <div className="flex gap-[4px]">
-                                        {[...Array(5)].map((_, index) => {
-                                            // Fill in the ratings replace the 5
-                                            const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+                                    {/* Review */}
+                                    <div className="flex flex-row mt-[16px] items-center">
+                                        <div className="flex gap-[4px]">
+                                            {[...Array(5)].map((_, index) => {
+                                                const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
 
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className="relative"
-                                                    style={{ width: `18px`, height: `18px` }}
-                                                >
-                                                    {/* Gray star background */}
-                                                    <FaStar
-                                                        className="absolute top-0 left-0 text-gray-300"
-                                                        size="18px"
-                                                    />
-                                                    {/* Red filled star */}
+                                                return (
                                                     <div
-                                                        className="absolute top-0 left-0 overflow-hidden"
-                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                        key={index}
+                                                        className="relative"
+                                                        style={{ width: `18px`, height: `18px` }}
                                                     >
+                                                        {/* Gray star background */}
                                                         <FaStar
-                                                            className="text-[#DA1A32]"
+                                                            className="absolute top-0 left-0 text-gray-300"
                                                             size="18px"
                                                         />
+                                                        {/* Red filled star */}
+                                                        <div
+                                                            className="absolute top-0 left-0 overflow-hidden"
+                                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                        >
+                                                            <FaStar
+                                                                className="text-[#DA1A32]"
+                                                                size="18px"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
+                                            {Math.round(course.rating)} reviews
+                                        </div>
                                     </div>
 
-                                    <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                        3 reviews
+                                    {/* Title */}
+                                    <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
+                                        {course.title}
                                     </div>
+
+                                    {/* Details */}
+                                    <div className="flex gap-[14px] mt-[14px]">
+                                        <div className="flex items-center">
+                                            <img src="/images/Time.png" alt="time" className="w-[12px] h-[12px] object-cover" />
+                                            <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                                {course.cookingTimeMin}
+                                            </div>
+                                            <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
+                                                min
+                                            </div>
+                                        </div>
+
+                                        <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                        <div className="flex items-center">
+                                            <img src="/images/Profile.png" alt="servings" className="w-[11px] h-[11px] object-cover" />
+                                            <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                                {course.servings}
+                                            </div>
+                                            <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
+                                                servings
+                                            </div>
+                                        </div>
+
+                                        <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                        <div className="flex items-center">
+                                            <img src="/images/Level.png" alt="level" className="w-[14px] h-[14px] object-cover" />
+                                            <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
+                                                {course.levelName}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Small-Batch Brownies Small-Batch Brownies
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex gap-[14px] mt-[14px]">
-                                    <div className="flex items-center">
-                                        <img src="/images/Time.png" alt="recipe" className="w-[12px] h-[12px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            30
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            min
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Profile.png" alt="recipe" className="w-[11px] h-[11px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            8
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            servings
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Level.png" alt="recipe" className="w-[14px] h-[14px] object-cover" />
-                                        <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                            Beginner
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* Recipe Card */}
-                            <div className="max-h-[297px] w-[262px] group cursor-pointer">
-                                <img src="/images/Recipe.jpeg" alt="recipe" className="w-full h-[177px] object-cover" />
-
-                                {/* Review */}
-                                <div className="flex flex-row mt-[16px] items-center">
-                                    <div className="flex gap-[4px]">
-                                        {[...Array(5)].map((_, index) => {
-                                            // Fill in the ratings replace the 5
-                                            const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className="relative"
-                                                    style={{ width: `18px`, height: `18px` }}
-                                                >
-                                                    {/* Gray star background */}
-                                                    <FaStar
-                                                        className="absolute top-0 left-0 text-gray-300"
-                                                        size="18px"
-                                                    />
-                                                    {/* Red filled star */}
-                                                    <div
-                                                        className="absolute top-0 left-0 overflow-hidden"
-                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                                    >
-                                                        <FaStar
-                                                            className="text-[#DA1A32]"
-                                                            size="18px"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                        3 reviews
-                                    </div>
-                                </div>
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Small-Batch Brownies
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex gap-[14px] mt-[14px]">
-                                    <div className="flex items-center">
-                                        <img src="/images/Time.png" alt="recipe" className="w-[12px] h-[12px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            30
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            min
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Profile.png" alt="recipe" className="w-[11px] h-[11px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            8
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            servings
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Level.png" alt="recipe" className="w-[14px] h-[14px] object-cover" />
-                                        <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                            Beginner
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* Recipe Card */}
-                            <div className="max-h-[297px] w-[262px] group cursor-pointer">
-                                <img src="/images/Recipe.jpeg" alt="recipe" className="w-full h-[177px] object-cover" />
-
-                                {/* Review */}
-                                <div className="flex flex-row mt-[16px] items-center">
-                                    <div className="flex gap-[4px]">
-                                        {[...Array(5)].map((_, index) => {
-                                            // Fill in the ratings replace the 5
-                                            const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className="relative"
-                                                    style={{ width: `18px`, height: `18px` }}
-                                                >
-                                                    {/* Gray star background */}
-                                                    <FaStar
-                                                        className="absolute top-0 left-0 text-gray-300"
-                                                        size="18px"
-                                                    />
-                                                    {/* Red filled star */}
-                                                    <div
-                                                        className="absolute top-0 left-0 overflow-hidden"
-                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                                    >
-                                                        <FaStar
-                                                            className="text-[#DA1A32]"
-                                                            size="18px"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                        3 reviews
-                                    </div>
-                                </div>
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Small-Batch Brownies
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex gap-[14px] mt-[14px]">
-                                    <div className="flex items-center">
-                                        <img src="/images/Time.png" alt="recipe" className="w-[12px] h-[12px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            30
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            min
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Profile.png" alt="recipe" className="w-[11px] h-[11px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            8
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            servings
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Level.png" alt="recipe" className="w-[14px] h-[14px] object-cover" />
-                                        <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                            Beginner
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* Recipe Card */}
-                            <div className="max-h-[297px] w-[262px] group cursor-pointer">
-                                <img src="/images/Recipe.jpeg" alt="recipe" className="w-full h-[177px] object-cover" />
-
-                                {/* Review */}
-                                <div className="flex flex-row mt-[16px] items-center">
-                                    <div className="flex gap-[4px]">
-                                        {[...Array(5)].map((_, index) => {
-                                            // Fill in the ratings replace the 5
-                                            const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className="relative"
-                                                    style={{ width: `18px`, height: `18px` }}
-                                                >
-                                                    {/* Gray star background */}
-                                                    <FaStar
-                                                        className="absolute top-0 left-0 text-gray-300"
-                                                        size="18px"
-                                                    />
-                                                    {/* Red filled star */}
-                                                    <div
-                                                        className="absolute top-0 left-0 overflow-hidden"
-                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                                    >
-                                                        <FaStar
-                                                            className="text-[#DA1A32]"
-                                                            size="18px"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                        3 reviews
-                                    </div>
-                                </div>
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Small-Batch Brownies
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex gap-[14px] mt-[14px]">
-                                    <div className="flex items-center">
-                                        <img src="/images/Time.png" alt="recipe" className="w-[12px] h-[12px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            30
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            min
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Profile.png" alt="recipe" className="w-[11px] h-[11px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            8
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            servings
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Level.png" alt="recipe" className="w-[14px] h-[14px] object-cover" />
-                                        <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                            Beginner
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* Recipe Card */}
-                            <div className="max-h-[297px] w-[262px] group cursor-pointer">
-                                <img src="/images/Recipe.jpeg" alt="recipe" className="w-full h-[177px] object-cover" />
-
-                                {/* Review */}
-                                <div className="flex flex-row mt-[16px] items-center">
-                                    <div className="flex gap-[4px]">
-                                        {[...Array(5)].map((_, index) => {
-                                            // Fill in the ratings replace the 5
-                                            const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className="relative"
-                                                    style={{ width: `18px`, height: `18px` }}
-                                                >
-                                                    {/* Gray star background */}
-                                                    <FaStar
-                                                        className="absolute top-0 left-0 text-gray-300"
-                                                        size="18px"
-                                                    />
-                                                    {/* Red filled star */}
-                                                    <div
-                                                        className="absolute top-0 left-0 overflow-hidden"
-                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                                    >
-                                                        <FaStar
-                                                            className="text-[#DA1A32]"
-                                                            size="18px"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                        3 reviews
-                                    </div>
-                                </div>
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Small-Batch Brownies
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex gap-[14px] mt-[14px]">
-                                    <div className="flex items-center">
-                                        <img src="/images/Time.png" alt="recipe" className="w-[12px] h-[12px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            30
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            min
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Profile.png" alt="recipe" className="w-[11px] h-[11px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            8
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            servings
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Level.png" alt="recipe" className="w-[14px] h-[14px] object-cover" />
-                                        <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                            Beginner
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* Recipe Card */}
-                            <div className="max-h-[297px] w-[262px] group cursor-pointer">
-                                <img src="/images/Recipe.jpeg" alt="recipe" className="w-full h-[177px] object-cover" />
-
-                                {/* Review */}
-                                <div className="flex flex-row mt-[16px] items-center">
-                                    <div className="flex gap-[4px]">
-                                        {[...Array(5)].map((_, index) => {
-                                            // Fill in the ratings replace the 5
-                                            const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className="relative"
-                                                    style={{ width: `18px`, height: `18px` }}
-                                                >
-                                                    {/* Gray star background */}
-                                                    <FaStar
-                                                        className="absolute top-0 left-0 text-gray-300"
-                                                        size="18px"
-                                                    />
-                                                    {/* Red filled star */}
-                                                    <div
-                                                        className="absolute top-0 left-0 overflow-hidden"
-                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                                    >
-                                                        <FaStar
-                                                            className="text-[#DA1A32]"
-                                                            size="18px"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                        3 reviews
-                                    </div>
-                                </div>
-
-                                {/* Title */}
-                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Small-Batch Brownies
-                                </div>
-
-                                {/* Details */}
-                                <div className="flex gap-[14px] mt-[14px]">
-                                    <div className="flex items-center">
-                                        <img src="/images/Time.png" alt="recipe" className="w-[12px] h-[12px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            30
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            min
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Profile.png" alt="recipe" className="w-[11px] h-[11px] object-cover" />
-                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                            8
-                                        </div>
-                                        <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                            servings
-                                        </div>
-                                    </div>
-
-                                    <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                    <div className="flex items-center">
-                                        <img src="/images/Level.png" alt="recipe" className="w-[14px] h-[14px] object-cover" />
-                                        <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                            Beginner
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
+                            ))}
                         </div>
                     </div>
+                    )}
                 </div>
             </div>
         </RgUserLayout>
@@ -600,3 +284,4 @@ const RgUserCol = () => {
 };
 
 export default RgUserCol;
+

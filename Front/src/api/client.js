@@ -498,3 +498,43 @@ export async function deleteBadge(id) {
   if (!res.ok) throw new Error(`Failed to delete badge: ${res.status}`);
   return true;
 }
+
+// User Courses API
+export async function getUserCourses(userId, status) {
+  const url = status 
+    ? `/api/UserCourses?userId=${userId}&status=${status}` 
+    : `/api/UserCourses?userId=${userId}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch user courses: ${res.status}`);
+  return res.json();
+}
+
+export async function getUserCourseActivity(userId, courseId) {
+  const res = await fetch(`/api/UserCourses/${userId}/${courseId}`);
+  if (!res.ok) throw new Error(`Failed to fetch user course activity: ${res.status}`);
+  return res.json();
+}
+
+export async function toggleCourseBookmark(userId, courseId, bookmark) {
+  const res = await fetch(`/api/UserCourses/${userId}/${courseId}/bookmark`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(bookmark),
+  });
+  if (!res.ok) throw new Error(`Failed to toggle bookmark: ${res.status}`);
+  return res.json();
+}
+
+export async function updateCourseQuizStatus(userId, courseId, quizData) {
+  const res = await fetch(`/api/UserCourses/${userId}/${courseId}/quiz-status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(quizData),
+  });
+  if (!res.ok) throw new Error(`Failed to update quiz status: ${res.status}`);
+  return res.json();
+}
