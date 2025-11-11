@@ -5,6 +5,7 @@ import { TbArrowsSort } from "react-icons/tb";
 import { FaStar } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { getUserCourses } from "../api/client.js";
+import { RxCross2 } from "react-icons/rx";
 
 interface Course {
     courseId: number;
@@ -29,6 +30,17 @@ const RgUserCol = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [showFilterModal, setShowFilterModal] = useState(false);
+    const [showSortModal, setShowSortModal] = useState(false);
+    
+    // Filter states
+    const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
+    const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+    const [minCookingTime, setMinCookingTime] = useState<number>(0);
+    const [maxCookingTime, setMaxCookingTime] = useState<number>(180);
+    
+    // Sort state
+    const [sortBy, setSortBy] = useState<string>("default");
 
     const tabs = ["Progressing", "Completed", "Bookmarked"];
 
@@ -74,15 +86,88 @@ const RgUserCol = () => {
     // Handle search
     const handleSearch = (value: string) => {
         setSearchTerm(value);
-        if (value.trim() === "") {
-            setFilteredCourses(courses);
-        } else {
-            const filtered = courses.filter(course =>
-                course.title.toLowerCase().includes(value.toLowerCase()) ||
-                course.description.toLowerCase().includes(value.toLowerCase())
+        applyFiltersAndSort(courses, value);
+    };
+
+    // Get unique levels from courses
+    const getUniqueLevels = () => {
+        const levels = new Set(courses.map(course => course.levelName));
+        return Array.from(levels).filter(level => level);
+    };
+
+    // Apply filters and sort
+    const applyFiltersAndSort = (sourceCourses: Course[], search: string = searchTerm) => {
+        let result = [...sourceCourses];
+
+        // Apply search filter
+        if (search.trim() !== "") {
+            result = result.filter(course =>
+                course.title.toLowerCase().includes(search.toLowerCase()) ||
+                course.description.toLowerCase().includes(search.toLowerCase())
             );
-            setFilteredCourses(filtered);
         }
+
+        // Apply level filter
+        if (selectedLevels.length > 0) {
+            result = result.filter(course => selectedLevels.includes(course.levelName));
+        }
+
+        // Apply rating filter
+        if (ratingFilter !== null) {
+            result = result.filter(course => Math.floor(course.rating) >= ratingFilter);
+        }
+
+        // Apply cooking time filter
+        result = result.filter(course => 
+            course.cookingTimeMin >= minCookingTime && course.cookingTimeMin <= maxCookingTime
+        );
+
+        // Apply sorting
+        switch (sortBy) {
+            case "titleAsc":
+                result.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+            case "titleDesc":
+                result.sort((a, b) => b.title.localeCompare(a.title));
+                break;
+            case "ratingHigh":
+                result.sort((a, b) => b.rating - a.rating);
+                break;
+            case "ratingLow":
+                result.sort((a, b) => a.rating - b.rating);
+                break;
+            case "timeShort":
+                result.sort((a, b) => a.cookingTimeMin - b.cookingTimeMin);
+                break;
+            case "timeLong":
+                result.sort((a, b) => b.cookingTimeMin - a.cookingTimeMin);
+                break;
+            case "servingsAsc":
+                result.sort((a, b) => a.servings - b.servings);
+                break;
+            case "servingsDesc":
+                result.sort((a, b) => b.servings - a.servings);
+                break;
+            default:
+                // Keep original order
+                break;
+        }
+
+        setFilteredCourses(result);
+    };
+
+    // Apply filters and sort whenever any filter changes
+    useEffect(() => {
+        applyFiltersAndSort(courses);
+    }, [selectedLevels, ratingFilter, minCookingTime, maxCookingTime, sortBy]);
+
+    // Handle filter modal
+    const handleClearFilters = () => {
+        setSelectedLevels([]);
+        setRatingFilter(null);
+        setMinCookingTime(0);
+        setMaxCookingTime(180);
+        setSortBy("default");
     };
 
     return (
@@ -147,7 +232,9 @@ const RgUserCol = () => {
                         </div>
 
                         <div className="flex flex-row gap-[10px]">
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                            <button 
+                                onClick={() => setShowFilterModal(true)}
+                                className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">
                                     Filter
                                 </div>
@@ -156,7 +243,9 @@ const RgUserCol = () => {
                                 </div>
                             </button>
 
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                            <button 
+                                onClick={() => setShowSortModal(true)}
+                                className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">
                                     Sort
                                 </div>
@@ -276,6 +365,255 @@ const RgUserCol = () => {
                             ))}
                         </div>
                     </div>
+                    )}
+
+                    {/* Filter Modal */}
+                    {showFilterModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-2xl w-[400px] max-h-[600px] overflow-y-auto p-6 shadow-2xl">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="font-ibarra text-[24px] font-bold text-black">Filters</h2>
+                                    <button 
+                                        onClick={() => setShowFilterModal(false)}
+                                        className="text-gray-500 hover:text-black transition-all"
+                                    >
+                                        <RxCross2 size={24} />
+                                    </button>
+                                </div>
+
+                                {/* Level Filter */}
+                                <div className="mb-6">
+                                    <h3 className="font-ibarra text-[16px] font-bold text-black mb-3">Level</h3>
+                                    <div className="flex flex-col gap-2">
+                                        {getUniqueLevels().map((level) => (
+                                            <label key={level} className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedLevels.includes(level)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedLevels([...selectedLevels, level]);
+                                                        } else {
+                                                            setSelectedLevels(selectedLevels.filter(l => l !== level));
+                                                        }
+                                                    }}
+                                                    className="w-4 h-4 accent-[#DA1A32]"
+                                                />
+                                                <span className="font-inter text-[14px] text-gray-700">{level}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Rating Filter */}
+                                <div className="mb-6">
+                                    <h3 className="font-ibarra text-[16px] font-bold text-black mb-3">Minimum Rating</h3>
+                                    <div className="flex flex-col gap-2">
+                                        {[null, 1, 2, 3, 4, 5].map((rating) => (
+                                            <label key={rating === null ? "all" : rating} className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="rating"
+                                                    checked={ratingFilter === rating}
+                                                    onChange={() => setRatingFilter(rating)}
+                                                    className="w-4 h-4 accent-[#DA1A32]"
+                                                />
+                                                <span className="font-inter text-[14px] text-gray-700">
+                                                    {rating === null ? "All Ratings" : `${rating}+ Stars`}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Cooking Time Filter */}
+                                <div className="mb-6">
+                                    <h3 className="font-ibarra text-[16px] font-bold text-black mb-3">Cooking Time (minutes)</h3>
+                                    <div className="flex gap-4">
+                                        <div className="flex-1">
+                                            <label className="font-inter text-[12px] text-gray-600 block mb-1">Min: {minCookingTime}</label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="180"
+                                                value={minCookingTime}
+                                                onChange={(e) => setMinCookingTime(Number(e.target.value))}
+                                                className="w-full accent-[#DA1A32]"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="font-inter text-[12px] text-gray-600 block mb-1">Max: {maxCookingTime}</label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="180"
+                                                value={maxCookingTime}
+                                                onChange={(e) => setMaxCookingTime(Number(e.target.value))}
+                                                className="w-full accent-[#DA1A32]"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Filter Actions */}
+                                <div className="flex gap-3 pt-4 border-t">
+                                    <button
+                                        onClick={handleClearFilters}
+                                        className="flex-1 px-4 py-2 bg-gray-200 text-black rounded-full font-inter text-[14px] hover:bg-gray-300 transition-all"
+                                    >
+                                        Clear All
+                                    </button>
+                                    <button
+                                        onClick={() => setShowFilterModal(false)}
+                                        className="flex-1 px-4 py-2 bg-[#DA1A32] text-white rounded-full font-inter text-[14px] hover:bg-[#b91728] transition-all"
+                                    >
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Sort Modal */}
+                    {showSortModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-2xl w-[400px] max-h-[400px] overflow-y-auto p-6 shadow-2xl">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="font-ibarra text-[24px] font-bold text-black">Sort By</h2>
+                                    <button 
+                                        onClick={() => setShowSortModal(false)}
+                                        className="text-gray-500 hover:text-black transition-all"
+                                    >
+                                        <RxCross2 size={24} />
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="sort"
+                                            checked={sortBy === "default"}
+                                            onChange={() => setSortBy("default")}
+                                            className="w-4 h-4 accent-[#DA1A32]"
+                                        />
+                                        <span className="font-inter text-[14px] text-gray-700">Default</span>
+                                    </label>
+
+                                    <div className="border-t pt-3 mt-2">
+                                        <h3 className="font-inter text-[12px] font-bold text-gray-600 mb-2">Title</h3>
+                                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "titleAsc"}
+                                                onChange={() => setSortBy("titleAsc")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">A to Z</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "titleDesc"}
+                                                onChange={() => setSortBy("titleDesc")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">Z to A</span>
+                                        </label>
+                                    </div>
+
+                                    <div className="border-t pt-3 mt-2">
+                                        <h3 className="font-inter text-[12px] font-bold text-gray-600 mb-2">Rating</h3>
+                                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "ratingHigh"}
+                                                onChange={() => setSortBy("ratingHigh")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">Highest First</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "ratingLow"}
+                                                onChange={() => setSortBy("ratingLow")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">Lowest First</span>
+                                        </label>
+                                    </div>
+
+                                    <div className="border-t pt-3 mt-2">
+                                        <h3 className="font-inter text-[12px] font-bold text-gray-600 mb-2">Cooking Time</h3>
+                                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "timeShort"}
+                                                onChange={() => setSortBy("timeShort")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">Shortest First</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "timeLong"}
+                                                onChange={() => setSortBy("timeLong")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">Longest First</span>
+                                        </label>
+                                    </div>
+
+                                    <div className="border-t pt-3 mt-2">
+                                        <h3 className="font-inter text-[12px] font-bold text-gray-600 mb-2">Servings</h3>
+                                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "servingsAsc"}
+                                                onChange={() => setSortBy("servingsAsc")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">Low to High</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="sort"
+                                                checked={sortBy === "servingsDesc"}
+                                                onChange={() => setSortBy("servingsDesc")}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">High to Low</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* Sort Actions */}
+                                <div className="flex gap-3 pt-4 border-t mt-4">
+                                    <button
+                                        onClick={() => setSortBy("default")}
+                                        className="flex-1 px-4 py-2 bg-gray-200 text-black rounded-full font-inter text-[14px] hover:bg-gray-300 transition-all"
+                                    >
+                                        Reset
+                                    </button>
+                                    <button
+                                        onClick={() => setShowSortModal(false)}
+                                        className="flex-1 px-4 py-2 bg-[#DA1A32] text-white rounded-full font-inter text-[14px] hover:bg-[#b91728] transition-all"
+                                    >
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
