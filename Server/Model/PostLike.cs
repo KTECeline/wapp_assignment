@@ -16,4 +16,7 @@ public class PostLike
     [ForeignKey("UserPost")]
     public int PostId { get; set; }
     public UserPost UserPost { get; set; } = null!;
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; }
 }

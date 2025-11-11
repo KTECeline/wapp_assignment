@@ -395,3 +395,51 @@ export async function deleteCategory(id) {
   if (!res.ok) throw new Error(`Failed to delete category: ${res.status}`);
   return true;
 }
+
+// User Posts API
+export async function getUserPosts(userId = null) {
+  const url = userId ? `/api/UserPosts?userId=${userId}` : '/api/UserPosts';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch user posts: ${res.status}`);
+  return res.json();
+}
+
+export async function getLikedPosts(userId) {
+  const res = await fetch(`/api/UserPosts/liked/${userId}`);
+  if (!res.ok) throw new Error(`Failed to fetch liked posts: ${res.status}`);
+  return res.json();
+}
+
+export async function getUserPost(postId, userId = null) {
+  const url = userId ? `/api/UserPosts/${postId}?userId=${userId}` : `/api/UserPosts/${postId}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch user post: ${res.status}`);
+  return res.json();
+}
+
+export async function togglePostLike(postId, userId) {
+  const res = await fetch(`/api/UserPosts/${postId}/like`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId }),
+  });
+  if (!res.ok) throw new Error(`Failed to toggle like: ${res.status}`);
+  return res.json();
+}
+
+export async function createUserPost(postData) {
+  const res = await fetch('/api/UserPosts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(postData),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || `Failed to create post: ${res.status}`);
+  }
+  return res.json();
+}
