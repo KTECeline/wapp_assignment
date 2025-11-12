@@ -11,6 +11,9 @@ namespace Server.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // SQLite can't alter column types directly. Recreate CoursePrepItems table with metric as TEXT.
+            // Suppress the ambient EF transaction because this SQL already contains
+            // explicit BEGIN/COMMIT statements. Executing it inside EF's transaction
+            // would cause a nested transaction error on SQLite.
             migrationBuilder.Sql(@"
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
@@ -33,7 +36,7 @@ ALTER TABLE __CoursePrepItems_new RENAME TO CoursePrepItems;
 CREATE INDEX IF NOT EXISTS IX_CoursePrepItems_CourseId ON CoursePrepItems(course_id);
 COMMIT;
 PRAGMA foreign_keys=on;
-");
+", suppressTransaction: true);
         }
 
         /// <inheritdoc />
@@ -62,7 +65,7 @@ ALTER TABLE __CoursePrepItems_old RENAME TO CoursePrepItems;
 CREATE INDEX IF NOT EXISTS IX_CoursePrepItems_CourseId ON CoursePrepItems(course_id);
 COMMIT;
 PRAGMA foreign_keys=on;
-");
+", suppressTransaction: true);
         }
     }
 }
