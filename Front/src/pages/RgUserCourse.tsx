@@ -9,6 +9,7 @@ import { RxCross2 } from "react-icons/rx";
 import { useNavigate, useParams } from "react-router-dom";
 import { createCourseUserActivity, updateCourseUserActivity } from "../api/client.js";
 import { AnimatePresence, motion } from "framer-motion";
+import { startQuiz } from "../components/QuizManager.tsx";
 
 interface Course {
     courseId: number;
@@ -51,37 +52,36 @@ interface CoursePrepItem {
 }
 
 function useLocalToast() {
-  const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
+    const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
 
-  const add = useCallback((message: string, variant: "success" | "error" = "success") => {
-    const id = Math.random().toString(36).slice(2);
-    setToasts(prev => [...prev, { id, message, variant }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
-  }, []);
+    const add = useCallback((message: string, variant: "success" | "error" = "success") => {
+        const id = Math.random().toString(36).slice(2);
+        setToasts(prev => [...prev, { id, message, variant }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+    }, []);
 
-  const ToastContainer = (
-    <div className="fixed bottom-4 right-4 space-y-2 z-[9999] pointer-events-none">
-      <AnimatePresence>
-        {toasts.map(t => (
-          <motion.div
-            key={t.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className={`px-3 py-2 rounded-xl shadow-md border pointer-events-auto ${
-              t.variant === "error"
-                ? "bg-rose-100/90 text-rose-700 border-rose-200"
-                : "bg-emerald-50/90 text-emerald-700 border-emerald-200"
-            }`}
-          >
-            {t.message}
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
-  );
+    const ToastContainer = (
+        <div className="fixed bottom-4 right-4 space-y-2 z-[9999] pointer-events-none">
+            <AnimatePresence>
+                {toasts.map(t => (
+                    <motion.div
+                        key={t.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className={`px-3 py-2 rounded-xl shadow-md border pointer-events-auto ${t.variant === "error"
+                            ? "bg-rose-100/90 text-rose-700 border-rose-200"
+                            : "bg-emerald-50/90 text-emerald-700 border-emerald-200"
+                            }`}
+                    >
+                        {t.message}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
+    );
 
-  return { add, ToastContainer };
+    return { add, ToastContainer };
 }
 
 const RgUserCourse = () => {
@@ -94,7 +94,9 @@ const RgUserCourse = () => {
 
     const navigate = useNavigate();
     const { add, ToastContainer } = useLocalToast();
-    
+
+    const [userQuizResult, setUserQuizResult] = useState<{ accuracy: number; time: string } | null>(null);
+
     useEffect(() => {
         if (!id) return;
 
@@ -141,6 +143,26 @@ const RgUserCourse = () => {
             })
             .catch(err => console.error("Error fetching user course activity:", err));
     }, [id, user?.userId]);
+
+    useEffect(() => {
+        if (!course?.courseId || !user?.userId) return;
+
+        fetch(`/api/CourseUserActivities/leaderboard?courseId=${course.courseId}`)
+            .then(res => res.json())
+            .then((data) => {
+                const current = data.find((x: any) => x.userId === user.userId);
+                if (current) {
+                    setUserQuizResult({
+                        accuracy: current.accuracy,
+                        time: current.time
+                    });
+                } else {
+                    setUserQuizResult(null);
+                }
+            })
+            .catch(err => console.error("Error fetching leaderboard:", err));
+    }, [course?.courseId, user?.userId]);
+
 
 
     const TotalReviews = 3;
@@ -517,17 +539,21 @@ const RgUserCourse = () => {
                                     Step-by-Step Guide
                                 </div>
                             </button>
-                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
+                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group"
+                                onClick={() => startQuiz(course, user, navigate)} >
                                 <div className="font-ibarra text-[24px] font-bold text-black flex-3 flex justify-start group-hover:text-[#DA1A32] transition-all duration-[600ms]">
                                     Practice Quiz
                                 </div>
-                                <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] ml-24">
-                                    80%
-                                </div>
-                                <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] ml-20">
-                                    1:30
-                                    <span className="text-[16px]">min</span>
-                                </div>
+                                {userQuizResult && (
+                                    <>
+                                        <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] ml-20">
+                                            {userQuizResult.accuracy}%
+                                        </div>
+                                        <div className="font-ibarra text-[18px] font-bold text-[#DA1A32] ml-20">
+                                            {userQuizResult.time}
+                                            <span className="text-[16px]"> min</span>
+                                        </div>
+                                    </>)}
                             </button>
                             <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
                                 <div className="font-ibarra text-[24px] font-bold text-black flex-2 flex justify-start group-hover:text-[#DA1A32] transition-all duration-[600ms]">

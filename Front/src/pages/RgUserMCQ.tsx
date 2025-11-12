@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import RgUserQLayout from "../components/RgUserQLayout.tsx";
+import { handleAnswer } from "../components/QuizManager.tsx";
+import { useNavigate } from "react-router-dom";
 
 // Types
 type MCQOption = {
@@ -53,6 +54,8 @@ const RgUserMCQ = () => {
     const [showResult, setShowResult] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
 
+    const navigate = useNavigate();
+
     // Fetch MCQ dynamically by ID
     useEffect(() => {
         if (!id) return;
@@ -75,14 +78,16 @@ const RgUserMCQ = () => {
 
     const checkAnswer = () => {
         if (selectedOption === null || !question) return;
-        setIsCorrect(selectedOption === question.answer);
+
+        const correct = selectedOption === question.answer;
+        setIsCorrect(correct);
         setShowResult(true);
     };
 
     if (!question) return <div className="p-4">Loading question...</div>;
 
     return (
-        <RgUserQLayout progress={10}>
+        <div className="flex">
             {/* Left: Question + Media */}
             <div className="h-screen flex flex-col w-[36.7%] bg-gradient-to-r from-[#301818] to-[#732222]">
                 <div className="mt-[112px] h-[472px] w-[455px] mx-auto gap-[16px] flex flex-col overflow-y-scroll scrol">
@@ -166,14 +171,17 @@ const RgUserMCQ = () => {
                         {isCorrect ? "Correct" : "Incorrect"}
                     </span>
                     <button
-                        onClick={() => setShowResult(false)}
+                        onClick={async () => {
+                            setShowResult(false);
+                            await handleAnswer(isCorrect, navigate); // this will update queue and progress, then navigate
+                        }}
                         className="mt-[8px] font-ibarra cursor-pointer bg-white w-[154px] h-[40px] flex justify-center items-center rounded-full font-bold text-[24px] hover:scale-105 transition-all duration-[600ms] text-black hover:text-[#DA1A32]"
                     >
                         Continue
                     </button>
                 </div>
             )}
-        </RgUserQLayout>
+        </div>
     );
 };
 

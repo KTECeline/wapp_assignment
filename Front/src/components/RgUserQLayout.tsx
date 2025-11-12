@@ -1,12 +1,55 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
-
+import { Outlet } from "react-router-dom";
 interface RgUserQQLayoutProps {
   children: React.ReactNode;
-  progress: number;
 }
 
-const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children, progress }) => {
+const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children }) => {
+  const [totalQuestions, setTotalQuestions] = useState(1);
+  const [progress, setProgress] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // 1️⃣ Get courseId from sessionStorage
+  const courseId = Number(sessionStorage.getItem("currentCourseId") || 0);
+
+  // 2️⃣ Fetch total questions from API
+  useEffect(() => {
+    if (!courseId) return;
+
+    fetch(`/api/Questions/course/${courseId}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject("Failed to fetch questions")))
+      .then((data: any[]) => setTotalQuestions(data.length || 1))
+      .catch(() => setTotalQuestions(1));
+  }, [courseId]);
+
+  // 3️⃣ Poll localProgress from sessionStorage every 0.5s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const localProgress = Number(sessionStorage.getItem("localProgress") || 0);
+      const percent = Math.min((localProgress / totalQuestions) * 100, 100);
+      setProgress(percent);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [totalQuestions]);
+
+  // Timer effect (display only)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Format elapsedSeconds as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const secs = (seconds % 60).toString().padStart(2, "0");
+    return `${mins}:${secs}`;
+  };
+
   return (
     <div className="font-inter bg-white min-h-screen w-full overflow-hidden">
       {/* Header */}
@@ -16,7 +59,7 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children, progress }) =
         </div>
 
         <div className="flex flex-row mx-auto text-black text-[16px] font-light gap-[28px] pl-32">
-          {/* Stop Quiz*/}
+          {/* Stop Quiz */}
           <button className="cursor-pointer">
             <RxCross2 className="h-[28px] w-[28px] transition-all duration-300 hover:text-[#DA1A32]" />
           </button>
@@ -28,14 +71,16 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children, progress }) =
               style={{ width: `${progress}%` }}
             />
           </div>
-            <div className="flex flex-row w-[96px] h-[30px] bg-white rounded-full border border-black justify-center items-center">
-              1:36
-            </div>
+
+          {/* Timer placeholder */}
+          <div className="flex flex-row w-[96px] h-[30px] bg-white rounded-full border border-black justify-center items-center">
+            {formatTime(elapsedSeconds)}
+          </div>
         </div>
       </header>
 
       {/* Page Content */}
-      <div className="flex">{children}</div>
+      <Outlet />
     </div>
   );
 };

@@ -22,7 +22,7 @@ public class CourseUserActivitiesController : ControllerBase
         if (activity == null) return Ok(new { registered = false, saved = false });
         return Ok(new { registered = activity.Registered, saved = activity.Bookmark });
     }
-    
+
     // GET status
     [HttpGet]
     public async Task<ActionResult<CourseUserActivity?>> GetActivity([FromQuery] int userId, [FromQuery] int courseId)
@@ -77,4 +77,48 @@ public class CourseUserActivitiesController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(activity);
     }
+
+    // GET: api/CourseUserActivities/leaderboard?courseId=5
+    [HttpGet("leaderboard")]
+    public async Task<ActionResult<IEnumerable<object>>> GetLeaderboard([FromQuery] int courseId)
+    {
+        var activities = await _context.CourseUserActivities
+            .Include(a => a.User)
+            .Where(a => a.CourseId == courseId && a.QuizTotalTime != null)
+            .ToListAsync();
+
+        if (!activities.Any()) return Ok(new List<object>());
+
+        // Compute leaderboard
+        var leaderboard = activities
+            .Select(a => new
+            {
+                a.UserId,
+                Name = a.User.Username,
+                Accuracy = a.QuizProgress > 0
+                    ? (int)Math.Round((double)(a.QuizProgress - a.QuizMistake) / a.QuizProgress * 100)
+                    : 0, // return integer percentage
+                Time = a.QuizTotalTime.HasValue ? a.QuizTotalTime.Value.ToString(@"mm\:ss") : "-",
+                a.QuizTotalTime
+            })
+            .OrderBy(a => a.QuizTotalTime)
+            .ToList();
+
+        // Add rank
+        var rankedLeaderboard = leaderboard
+            .Select((a, index) => new
+            {
+                Rank = index + 1,
+                a.UserId,
+                a.Name,
+                a.Accuracy,
+                a.Time,
+                a.QuizTotalTime
+            })
+            .ToList();
+
+        return Ok(rankedLeaderboard);
+    }
+
+
 }
