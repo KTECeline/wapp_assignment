@@ -9,6 +9,7 @@ import { RxCross2 } from "react-icons/rx";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { startQuiz } from "../components/QuizManager.tsx";
+import jsPDF from "jspdf";
 
 interface Course {
     courseId: number;
@@ -48,6 +49,19 @@ interface CoursePrepItem {
     amount?: number;
     metric?: string;
     courseId: number;
+}
+
+interface CourseTip {
+    tipId: number;
+    courseId: number;
+    description: string;
+}
+
+interface CourseStep {
+    courseStepId: number;
+    description: string;
+    step: number;
+    courseStepImg: string;
 }
 
 function useLocalToast() {
@@ -162,7 +176,26 @@ const RgUserCourse = () => {
             .catch(err => console.error("Error fetching leaderboard:", err));
     }, [course?.courseId, user?.userId]);
 
+    const [steps, setSteps] = useState<CourseStep[]>([]);
+    const [tips, setTips] = useState<CourseTip[]>([]);
 
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/CourseSteps/course/${id}`)
+            .then(res => res.json())
+            .then((data: CourseStep[]) => setSteps(data))
+            .catch(err => console.error(err));
+    }, [id]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/CourseTips/course/${id}`)
+            .then(res => res.json())
+            .then((data: CourseTip[]) => setTips(data))
+            .catch(err => console.error("Error fetching tips:", err));
+    }, [id]);
 
     const TotalReviews = 3;
 
@@ -269,7 +302,6 @@ const RgUserCourse = () => {
         }
     }
 
-
     async function handleSave() {
         if (!user?.userId || !course?.courseId) return;
 
@@ -343,7 +375,126 @@ const RgUserCourse = () => {
             alert(err.message || "Failed to unsave course.");
         }
     }
+    const downloadRecipePDF = async () => {
+        if (!course) return;
 
+        const doc = new jsPDF('p', 'pt', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 40;
+        let y = 40;
+
+        // Slightly more line spacing for readability
+        const wrapText = (text: string, x: number, yPos: number, maxWidth: number, lineHeight: number = 18) => {
+            const lines: string[] = doc.splitTextToSize(text, maxWidth);
+            lines.forEach((line: string, index: number) => {
+                doc.text(line, x, yPos + index * lineHeight);
+            });
+            return lines.length * lineHeight;
+        };
+
+        // Section and bullet spacing
+        const sectionSpacing = 20;   // larger separation between sections
+        const bulletSpacing = 10;    // clearer spacing between bullet points
+
+        // Title
+        doc.setFontSize(24);
+        doc.setFont("helvetica", "bold");
+        y += wrapText(course.title, margin, y, pageWidth - 2 * margin);
+        y += sectionSpacing;
+
+        // Course Info
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "italic");
+        const infoText = `Servings: ${course.servings}  |  Cooking Time: ${formatCookingTime(course.cookingTimeMin)}  |  Level: ${course.level.title}`;
+        y += wrapText(infoText, margin, y, pageWidth - 2 * margin);
+        y += sectionSpacing;
+
+        // Description
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        y += wrapText("Description:", margin, y, pageWidth - 2 * margin);
+        y += 8;
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        y += wrapText(course.description, margin, y, pageWidth - 2 * margin, 18);
+        y += sectionSpacing;
+
+        // Ingredients
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        y += wrapText("Ingredients:", margin, y, pageWidth - 2 * margin);
+        y += 8;
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        ingredients.forEach(item => {
+            const amountDisplay =
+                typeof item.amount === "number" && item.amount < 1 && item.amount > 0
+                    ? decimalToFraction(item.amount)
+                    : item.amount;
+
+            const text = `• ${item.title}${item.amount ? ` - ${amountDisplay} ${item.metric ?? ''}` : ''}`;
+            y += wrapText(text, margin + 10, y, pageWidth - 2 * margin - 10, 17);
+            y += bulletSpacing; // add gap between bullets
+        });
+        y += sectionSpacing;
+
+        // Tools
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        y += wrapText("Tools:", margin, y, pageWidth - 2 * margin);
+        y += 8;
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        tools.forEach(item => {
+            const text = `• ${item.title}`;
+            y += wrapText(text, margin + 10, y, pageWidth - 2 * margin - 10, 17);
+            y += bulletSpacing;
+        });
+        y += sectionSpacing;
+
+        // Steps
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        y += wrapText("Steps:", margin, y, pageWidth - 2 * margin);
+        y += 8;
+
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        steps.forEach(step => {
+            const stepText = `${step.step}. ${step.description}`;
+            y += wrapText(stepText, margin + 10, y, pageWidth - 2 * margin - 10, 18);
+            y += bulletSpacing;
+            if (y > 750) {
+                doc.addPage();
+                y = 40;
+            }
+        });
+        y += sectionSpacing;
+
+        // Tips
+        if (tips.length > 0) {
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            y += wrapText("Tips:", margin, y, pageWidth - 2 * margin);
+            y += 8;
+
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            tips.forEach(tip => {
+                const tipText = `• ${tip.description}`;
+                y += wrapText(tipText, margin + 10, y, pageWidth - 2 * margin - 10, 17);
+                y += bulletSpacing;
+                if (y > 750) {
+                    doc.addPage();
+                    y = 40;
+                }
+            });
+        }
+
+        doc.save(`${course.title}.pdf`);
+    };
 
     return (
         <Layout>
@@ -550,7 +701,8 @@ const RgUserCourse = () => {
                                         </div>
                                     </>)}
                             </button>
-                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group">
+                            <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group"
+                                onClick={downloadRecipePDF}>
                                 <div className="font-ibarra text-[24px] font-bold text-black flex-2 flex justify-start group-hover:text-[#DA1A32] transition-all duration-[600ms]">
                                     Download Recipe as PDF
                                 </div>
