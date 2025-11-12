@@ -76,7 +76,7 @@ export const navigateToNextQuestion = (navigate: any) => {
     const nextQuestion = quizQueue[0];
     if (nextQuestion.type.toLowerCase() === "mcq") {
         navigate(`/quiz/mcq/${nextQuestion.id}`);
-    } else if (nextQuestion.type.toLowerCase() === "dd") {
+    } else if (nextQuestion.type.toLowerCase() === "dragdrop") {
         navigate(`/quiz/dd/${nextQuestion.id}`);
     }
 };
