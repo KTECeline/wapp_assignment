@@ -44,8 +44,32 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    DatabaseSeeder.Initialize(context);
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        // Run seeding in the background so app startup is not blocked by long-running DB operations.
+        // Any exceptions during seeding are logged.
+        _ = System.Threading.Tasks.Task.Run(() =>
+        {
+            try
+            {
+                logger.LogInformation("Starting database seeder in background");
+                DatabaseSeeder.Initialize(context);
+                logger.LogInformation("Database seeding finished");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Database seeder failed");
+            }
+        });
+    }
+    catch (Exception ex)
+    {
+        var loggerScoped = services.GetRequiredService<ILogger<Program>>();
+        loggerScoped.LogError(ex, "Failed to resolve services for background seeding");
+    }
 }
 
 app.Run();
