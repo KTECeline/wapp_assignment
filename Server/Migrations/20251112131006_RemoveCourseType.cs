@@ -11,6 +11,7 @@ namespace Server.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // SQLite does not support DROP COLUMN directly. Recreate the table without the column.
+            // Use suppressTransaction: true because we're explicitly managing transactions
             migrationBuilder.Sql(@"
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
@@ -38,7 +39,7 @@ CREATE INDEX IF NOT EXISTS IX_Courses_CategoryId ON Courses(category_id);
 CREATE INDEX IF NOT EXISTS IX_Courses_LevelId ON Courses(level_id);
 COMMIT;
 PRAGMA foreign_keys=on; 
-");
+", suppressTransaction: true);
         }
 
         /// <inheritdoc />

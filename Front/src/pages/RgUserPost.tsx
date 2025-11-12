@@ -6,6 +6,7 @@ import { FaStar } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import { IoAdd, IoShareSocialSharp } from "react-icons/io5";
+import { RxCross2 } from "react-icons/rx";
 import { getUserPosts, getLikedPosts, togglePostLike, createUserPost } from "../api/client.js";
 import PostForm from "../components/PostForm.tsx";
 
@@ -33,9 +34,20 @@ const RgUserPost = () => {
 
     const [active, setActive] = useState("Discover Posts");
     const [posts, setPosts] = useState<Post[]>([]);
+    const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showPostForm, setShowPostForm] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [showFilterModal, setShowFilterModal] = useState(false);
+    const [showSortModal, setShowSortModal] = useState(false);
+
+    // Filter states
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+    const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+
+    // Sort state
+    const [sortBy, setSortBy] = useState<string>("default");
 
     const tabs = ["Discover Posts", "Liked Posts", "My Posts"];
 
@@ -50,22 +62,107 @@ const RgUserPost = () => {
             let data;
 
             if (active === "Discover Posts") {
-                data = await getUserPosts(user?.userId);
+                // For discover posts, don't pass userId to get all posts
+                data = await getUserPosts();
             } else if (active === "Liked Posts" && user?.userId) {
                 data = await getLikedPosts(user.userId);
             } else if (active === "My Posts" && user?.userId) {
+                // For my posts, pass the userId to get only this user's posts
                 data = await getUserPosts(user.userId);
             } else {
                 data = [];
             }
 
+            console.log("Fetched posts:", data);
             setPosts(data);
+            setFilteredPosts(data);
         } catch (err) {
             console.error("Error fetching posts:", err);
             setError(err instanceof Error ? err.message : "An error occurred");
         } finally {
             setLoading(false);
         }
+    };
+
+    // Handle search
+    const handleSearch = (value: string) => {
+        setSearchTerm(value);
+        applyFiltersAndSort(posts, value);
+    };
+
+    // Get unique post types and courses
+    const getUniqueTypes = () => {
+        const types = new Set(posts.map(post => post.type).filter(type => type));
+        return Array.from(types);
+    };
+
+    const getUniqueCourses = () => {
+        const courses = new Set(posts.map(post => post.courseName).filter(course => course));
+        return Array.from(courses);
+    };
+
+    // Apply filters and sort
+    const applyFiltersAndSort = (sourcePosts: Post[], search: string = searchTerm) => {
+        let result = [...sourcePosts];
+
+        // Apply search filter
+        if (search.trim() !== "") {
+            result = result.filter(post =>
+                post.title.toLowerCase().includes(search.toLowerCase()) ||
+                post.description.toLowerCase().includes(search.toLowerCase()) ||
+                post.courseName.toLowerCase().includes(search.toLowerCase()) ||
+                post.categoryName.toLowerCase().includes(search.toLowerCase())
+            );
+        }
+
+        // Apply type filter
+        if (selectedTypes.length > 0) {
+            result = result.filter(post => selectedTypes.includes(post.type));
+        }
+
+        // Apply course filter
+        if (selectedCourses.length > 0) {
+            result = result.filter(post => selectedCourses.includes(post.courseName));
+        }
+
+        // Apply sorting
+        switch (sortBy) {
+            case "titleAsc":
+                result.sort((a, b) => a.title.localeCompare(b.title));
+                break;
+            case "titleDesc":
+                result.sort((a, b) => b.title.localeCompare(a.title));
+                break;
+            case "newest":
+                result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                break;
+            case "oldest":
+                result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                break;
+            case "likesHigh":
+                result.sort((a, b) => b.likeCount - a.likeCount);
+                break;
+            case "likesLow":
+                result.sort((a, b) => a.likeCount - b.likeCount);
+                break;
+            default:
+                // Keep original order
+                break;
+        }
+
+        setFilteredPosts(result);
+    };
+
+    // Apply filters and sort whenever any filter changes or posts are updated
+    useEffect(() => {
+        applyFiltersAndSort(posts);
+    }, [selectedTypes, selectedCourses, sortBy, posts]);
+
+    // Handle filter clear
+    const handleClearFilters = () => {
+        setSelectedTypes([]);
+        setSelectedCourses([]);
+        setSortBy("default");
     };
 
     const handleLike = async (postId: number) => {
@@ -197,6 +294,8 @@ const RgUserPost = () => {
                             <input
                                 type="text"
                                 placeholder="Search..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 className="font-inter w-[160px] bg-transparent outline-none text-black text-[16px] font-light"
                             />
                             <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
@@ -205,13 +304,17 @@ const RgUserPost = () => {
                         </div>
 
                         <div className="flex flex-row gap-[10px]">
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                            <button 
+                                onClick={() => setShowFilterModal(true)}
+                                className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">Filter</div>
                                 <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
                                     <CiFilter className="text-white w-[20px] h-[20px]" />
                                 </div>
                             </button>
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                            <button 
+                                onClick={() => setShowSortModal(true)}
+                                className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">Sort</div>
                                 <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
                                     <TbArrowsSort className="text-white w-[18px] h-[18px] " />
@@ -231,14 +334,14 @@ const RgUserPost = () => {
                                 <div className="font-ibarra text-[20px] text-red-600">Error: {error}</div>
                             </div>
                         )}
-                        {!loading && !error && posts.length === 0 && (
+                        {!loading && !error && filteredPosts.length === 0 && (
                             <div className="flex justify-center items-center h-full">
                                 <div className="font-ibarra text-[20px]">No posts found</div>
                             </div>
                         )}
-                        {!loading && !error && posts.length > 0 && (
+                        {!loading && !error && filteredPosts.length > 0 && (
                             <div className="columns-3 gap-[20px] w-[1090px] mx-auto">
-                                {posts.map((post) => (
+                                {filteredPosts.map((post) => (
                                     <div key={post.postId} className="cursor-pointer hover:scale-[102%] transition-all duration-[600ms] w-full h-auto bg-white flex flex-col gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] mb-4 break-inside-avoid">
                                         <img src={post.postImg || "/images/Post.webp"} alt="post" className="w-[332px] h-auto max-h-[377px] object-cover rounded-[16px] " />
                                         <div className="flex flex-col w-full px-[6px]">
@@ -320,6 +423,205 @@ const RgUserPost = () => {
                         userId={user.userId}
                         from="home"
                     />
+                )}
+
+                {/* Filter Modal */}
+                {showFilterModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-2xl w-[400px] max-h-[600px] overflow-y-auto p-6 shadow-2xl">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="font-ibarra text-[24px] font-bold text-black">Filters</h2>
+                                <button 
+                                    onClick={() => setShowFilterModal(false)}
+                                    className="text-gray-500 hover:text-black transition-all"
+                                >
+                                    <RxCross2 size={24} />
+                                </button>
+                            </div>
+
+                            {/* Type Filter */}
+                            <div className="mb-6">
+                                <h3 className="font-ibarra text-[16px] font-bold text-black mb-3">Post Type</h3>
+                                <div className="flex flex-col gap-2">
+                                    {getUniqueTypes().map((type) => (
+                                        <label key={type} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedTypes.includes(type)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedTypes([...selectedTypes, type]);
+                                                    } else {
+                                                        setSelectedTypes(selectedTypes.filter(t => t !== type));
+                                                    }
+                                                }}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">{type}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Course Filter */}
+                            <div className="mb-6">
+                                <h3 className="font-ibarra text-[16px] font-bold text-black mb-3">Course</h3>
+                                <div className="flex flex-col gap-2">
+                                    {getUniqueCourses().map((course) => (
+                                        <label key={course} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCourses.includes(course)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedCourses([...selectedCourses, course]);
+                                                    } else {
+                                                        setSelectedCourses(selectedCourses.filter(c => c !== course));
+                                                    }
+                                                }}
+                                                className="w-4 h-4 accent-[#DA1A32]"
+                                            />
+                                            <span className="font-inter text-[14px] text-gray-700">{course}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Filter Actions */}
+                            <div className="flex gap-3 pt-4 border-t">
+                                <button
+                                    onClick={handleClearFilters}
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-black rounded-full font-inter text-[14px] hover:bg-gray-300 transition-all"
+                                >
+                                    Clear All
+                                </button>
+                                <button
+                                    onClick={() => setShowFilterModal(false)}
+                                    className="flex-1 px-4 py-2 bg-[#DA1A32] text-white rounded-full font-inter text-[14px] hover:bg-[#b91728] transition-all"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Sort Modal */}
+                {showSortModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-2xl w-[400px] max-h-[400px] overflow-y-auto p-6 shadow-2xl">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="font-ibarra text-[24px] font-bold text-black">Sort By</h2>
+                                <button 
+                                    onClick={() => setShowSortModal(false)}
+                                    className="text-gray-500 hover:text-black transition-all"
+                                >
+                                    <RxCross2 size={24} />
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="sort"
+                                        checked={sortBy === "default"}
+                                        onChange={() => setSortBy("default")}
+                                        className="w-4 h-4 accent-[#DA1A32]"
+                                    />
+                                    <span className="font-inter text-[14px] text-gray-700">Default</span>
+                                </label>
+
+                                <div className="border-t pt-3 mt-2">
+                                    <h3 className="font-inter text-[12px] font-bold text-gray-600 mb-2">Title</h3>
+                                    <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                        <input
+                                            type="radio"
+                                            name="sort"
+                                            checked={sortBy === "titleAsc"}
+                                            onChange={() => setSortBy("titleAsc")}
+                                            className="w-4 h-4 accent-[#DA1A32]"
+                                        />
+                                        <span className="font-inter text-[14px] text-gray-700">A to Z</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="sort"
+                                            checked={sortBy === "titleDesc"}
+                                            onChange={() => setSortBy("titleDesc")}
+                                            className="w-4 h-4 accent-[#DA1A32]"
+                                        />
+                                        <span className="font-inter text-[14px] text-gray-700">Z to A</span>
+                                    </label>
+                                </div>
+
+                                <div className="border-t pt-3 mt-2">
+                                    <h3 className="font-inter text-[12px] font-bold text-gray-600 mb-2">Date Posted</h3>
+                                    <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                        <input
+                                            type="radio"
+                                            name="sort"
+                                            checked={sortBy === "newest"}
+                                            onChange={() => setSortBy("newest")}
+                                            className="w-4 h-4 accent-[#DA1A32]"
+                                        />
+                                        <span className="font-inter text-[14px] text-gray-700">Newest First</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="sort"
+                                            checked={sortBy === "oldest"}
+                                            onChange={() => setSortBy("oldest")}
+                                            className="w-4 h-4 accent-[#DA1A32]"
+                                        />
+                                        <span className="font-inter text-[14px] text-gray-700">Oldest First</span>
+                                    </label>
+                                </div>
+
+                                <div className="border-t pt-3 mt-2">
+                                    <h3 className="font-inter text-[12px] font-bold text-gray-600 mb-2">Likes</h3>
+                                    <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                        <input
+                                            type="radio"
+                                            name="sort"
+                                            checked={sortBy === "likesHigh"}
+                                            onChange={() => setSortBy("likesHigh")}
+                                            className="w-4 h-4 accent-[#DA1A32]"
+                                        />
+                                        <span className="font-inter text-[14px] text-gray-700">Most Liked</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="sort"
+                                            checked={sortBy === "likesLow"}
+                                            onChange={() => setSortBy("likesLow")}
+                                            className="w-4 h-4 accent-[#DA1A32]"
+                                        />
+                                        <span className="font-inter text-[14px] text-gray-700">Least Liked</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Sort Actions */}
+                            <div className="flex gap-3 pt-4 border-t mt-4">
+                                <button
+                                    onClick={() => setSortBy("default")}
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-black rounded-full font-inter text-[14px] hover:bg-gray-300 transition-all"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={() => setShowSortModal(false)}
+                                    className="flex-1 px-4 py-2 bg-[#DA1A32] text-white rounded-full font-inter text-[14px] hover:bg-[#b91728] transition-all"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </Layout>

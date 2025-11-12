@@ -421,7 +421,9 @@ export async function deleteCategory(id) {
 
 // User Posts API
 export async function getUserPosts(userId = null) {
-  const url = userId ? `/api/UserPosts?userId=${userId}` : '/api/UserPosts';
+  // For "My Posts" - fetch all user's posts including pending
+  // For "Discover Posts" - fetch all posts regardless of approval status
+  const url = userId ? `/api/UserPosts?userId=${userId}&filter=all` : '/api/UserPosts?filter=all';
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch user posts: ${res.status}`);
   return res.json();
