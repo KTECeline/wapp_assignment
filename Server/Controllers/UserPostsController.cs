@@ -22,7 +22,7 @@ public class UserPostsController : ControllerBase
             .Include(p => p.User)
             .Include(p => p.Course)
                 .ThenInclude(c => c.Category)
-            .Where(p => p.DeletedAt == null && p.ApproveStatus == "Approved");
+            .Where(p => p.DeletedAt == null && (p.ApproveStatus == "Approved" || (userId.HasValue && p.UserId == userId.Value)));
 
         if (userId.HasValue)
         {
@@ -59,8 +59,8 @@ public class UserPostsController : ControllerBase
             userLastName = p.User.LastName,
             type = p.Type,
             courseId = p.CourseId,
-            courseName = p.Course.Title,
-            categoryName = p.Course.Category.Title,
+            courseName = p.Course?.Title ?? "",
+            categoryName = p.Course?.Category?.Title ?? "",
             title = p.Title,
             description = p.Description,
             postImg = p.PostImg,
@@ -105,8 +105,8 @@ public class UserPostsController : ControllerBase
             userLastName = p.User.LastName,
             type = p.Type,
             courseId = p.CourseId,
-            courseName = p.Course.Title,
-            categoryName = p.Course.Category.Title,
+            courseName = p.Course?.Title ?? "",
+            categoryName = p.Course?.Category?.Title ?? "",
             title = p.Title,
             description = p.Description,
             postImg = p.PostImg,
@@ -148,8 +148,8 @@ public class UserPostsController : ControllerBase
             userLastName = post.User.LastName,
             type = post.Type,
             courseId = post.CourseId,
-            courseName = post.Course.Title,
-            categoryName = post.Course.Category.Title,
+            courseName = post.Course?.Title ?? "",
+            categoryName = post.Course?.Category?.Title ?? "",
             title = post.Title,
             description = post.Description,
             postImg = post.PostImg,
@@ -261,7 +261,7 @@ public class CreateUserPostRequest
 {
     public int UserId { get; set; }
     public string Type { get; set; } = string.Empty;
-    public int CourseId { get; set; }
+    public int? CourseId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string PostImg { get; set; } = string.Empty;
