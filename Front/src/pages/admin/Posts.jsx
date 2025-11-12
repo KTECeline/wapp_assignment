@@ -1,80 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Heart, Share2, Check, XCircle, Eye, Trash2, Filter } from 'lucide-react';
 
-// Mock data for posts
-const initialPosts = [
-  {
-    id: 1,
-    user: 'Amy Wong',
-    title: 'My Freshly Baked Brownies',
-  description: `WOW — the chocolate flavor is next-level! Can't wait to share them with the family tonight. 🥰`,
-    image: 'https://images.unsplash.com/photo-1607920591413-4ec007e70023?w=400',
-    avatar: '',
-    date: 'Oct 4, 2025',
-    likes: 100,
-    courses: [
-      { name: 'Small-Batch Brownies', link: '/courses/brownies' },
-      { name: 'Cakes', link: '/courses/cakes' },
-    ],
-    status: 'pending'
-  },
-  {
-    id: 2,
-    user: 'John Smith',
-    title: 'Perfect Sourdough Bread',
-    description: 'After 3 days of fermentation, finally got the perfect crust and crumb! The tangy flavor is amazing.',
-    image: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=400',
-    avatar: '',
-    date: 'Oct 3, 2025',
-    likes: 85,
-    courses: [
-      { name: 'Artisan Bread', link: '/courses/bread' },
-    ],
-    status: 'pending'
-  },
-  {
-    id: 3,
-    user: 'Sarah Chen',
-    title: 'Homemade Croissants',
-    description: 'My first attempt at laminated dough! So many layers of buttery goodness. Took forever but worth it! 🥐',
-    image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400',
-    avatar: '',
-    date: 'Oct 2, 2025',
-    likes: 142,
-    courses: [
-      { name: 'French Pastries', link: '/courses/pastries' },
-    ],
-    status: 'approved'
-  },
-  {
-    id: 4,
-    user: 'Mike Johnson',
-    title: 'Chocolate Chip Cookies',
-    description: 'Classic recipe with a twist - added sea salt on top. These disappeared in minutes!',
-    image: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400',
-    avatar: '',
-    date: 'Oct 1, 2025',
-    likes: 67,
-    courses: [
-      { name: 'Cookie Basics', link: '/courses/cookies' },
-    ],
-    status: 'approved'
-  },
-  {
-    id: 5,
-    user: 'Lisa Park',
-    title: 'Matcha Swiss Roll',
-    description: 'Light and fluffy cake with smooth matcha cream filling. The color is so vibrant! 🍵',
-    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
-    avatar: '',
-    date: 'Sep 30, 2025',
-    likes: 95,
-    courses: [
-      { name: 'Japanese Desserts', link: '/courses/japanese' },
-    ],
-    status: 'rejected'
-  }
-];
+// We'll fetch posts from the backend API and map them into the UI shape
+const initialPosts = [];
 
 // Card Component
 const Card = ({ children, className = '' }) => (
@@ -211,27 +139,86 @@ export default function Posts() {
   const [toast, setToast] = useState(null);
   const [filter, setFilter] = useState('all');
 
+  useEffect(() => {
+    // fetch posts from backend API
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch('/api/UserPosts');
+        if (!res.ok) throw new Error('Failed to fetch posts');
+        const data = await res.json();
+
+        // map backend shape to UI shape
+        const mapped = data.map(p => ({
+          id: p.postId,
+          user: p.user || 'Unknown',
+          title: p.title,
+          description: p.description,
+          image: p.postImg || 'https://via.placeholder.com/400x300?text=No+Image',
+          avatar: '',
+          date: new Date(p.createdAt).toLocaleDateString(),
+          likes: p.likes || 0,
+          courses: p.course ? [{ name: p.course.name, link: `/courses/${p.course.id}` }] : [],
+          status: p.approveStatus || 'pending'
+        }));
+
+        setPosts(mapped);
+      } catch (err) {
+        console.error(err);
+        setPosts([]);
+        setToast({ message: 'Failed to load posts from server', type: 'error' });
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
   const showToast = (message, type) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
   const handleApprove = (id) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'approved' } : p));
-    setSelectedPost(null);
-    showToast('Post approved successfully!', 'success');
+    // call backend to approve
+    fetch(`/api/UserPosts/${id}/approve`, { method: 'POST' })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to approve post');
+        setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'approved' } : p));
+        setSelectedPost(null);
+        showToast('Post approved successfully!', 'success');
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Failed to approve post', 'error');
+      });
   };
 
   const handleReject = (id) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'rejected' } : p));
-    setSelectedPost(null);
-    showToast('Post rejected', 'error');
+    // call backend to reject
+    fetch(`/api/UserPosts/${id}/reject`, { method: 'POST' })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to reject post');
+        setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'rejected' } : p));
+        setSelectedPost(null);
+        showToast('Post rejected', 'error');
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Failed to reject post', 'error');
+      });
   };
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      setPosts(prev => prev.filter(p => p.id !== id));
-      showToast('Post deleted', 'success');
+      fetch(`/api/UserPosts/${id}`, { method: 'DELETE' })
+        .then(res => {
+          if (!res.ok && res.status !== 204) throw new Error('Failed to delete post');
+          setPosts(prev => prev.filter(p => p.id !== id));
+          showToast('Post deleted', 'success');
+        })
+        .catch(err => {
+          console.error(err);
+          showToast('Failed to delete post', 'error');
+        });
     }
   };
 

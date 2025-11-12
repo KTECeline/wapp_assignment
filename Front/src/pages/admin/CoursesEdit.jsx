@@ -94,7 +94,8 @@ export default function CoursesEdit() {
     ...q,
     type: 'dragdrop',
     questionImg: q.questionImg || undefined,
-    options: (q.options || []).map((opt, idx) => ({ id: `${q.id}-opt-${idx}`, text: opt, image: undefined }))
+    // each option now has an explicit type: 'text' or 'image'
+    options: (q.options || []).map((opt, idx) => ({ id: `${q.id}-opt-${idx}`, text: opt, image: undefined, type: 'text' }))
   }))));
   const [selectedQuestion, setSelectedQuestion] = useState(() => (mode === 'create' ? null : (questions[0]?.id ?? null)));
   const [questionForm, setQuestionForm] = useState({ title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [] });
@@ -120,9 +121,12 @@ export default function CoursesEdit() {
       content: selectedQuestionObj.content,
       type: 'dragdrop',
       questionImg: selectedQuestionObj.questionImg || undefined,
-      options: (selectedQuestionObj.options || []).map((opt, idx) => (
-        typeof opt === 'string' ? { id: `${selectedQuestionObj.id}-opt-${idx}`, text: opt, image: undefined } : { id: opt.id ?? `${selectedQuestionObj.id}-opt-${idx}`, text: opt.text ?? opt.optionText ?? '', image: opt.image ?? opt.optionImg ?? undefined }
-      ))
+      options: (selectedQuestionObj.options || []).map((opt, idx) => {
+        // infer option type from server data: if image exists and text empty -> image, otherwise text
+        const existing = (typeof opt === 'string') ? { id: `${selectedQuestionObj.id}-opt-${idx}`, text: opt, image: undefined } : { id: opt.id ?? `${selectedQuestionObj.id}-opt-${idx}`, text: opt.text ?? opt.optionText ?? '', image: opt.image ?? opt.optionImg ?? undefined };
+        const inferredType = existing.image ? 'image' : 'text';
+        return { ...existing, type: inferredType };
+      })
     });
   }, [selectedQuestionObj]);
 
@@ -232,6 +236,8 @@ export default function CoursesEdit() {
     setCourseMeta(prev => ({ ...prev, [name]: value }));
   };
   const onSaveCourse = async () => {
+    // Build a stable copy of questions to persist. If an editor is open, merge its form into the copy
+    const questionsToPersist = (questions || []).map(q => (q.id === selectedQuestionObj?.id ? { ...q, ...questionForm } : q));
     try {
       // Validate required fields
       if (!courseMeta.title || !courseMeta.categoryId || !courseMeta.levelId) {
@@ -321,17 +327,21 @@ export default function CoursesEdit() {
           }));
 
           // Questions (create). Upload question and option images and include them in payload.
-          await Promise.all(questions.map(async (q) => {
+          await Promise.all(questionsToPersist.map(async (q) => {
             if (!q) return;
             try {
               const questionImgUrl = await uploadMaybe(q.questionImg);
               const optionsPayload = await Promise.all((q.options || []).map(async (opt) => {
-                const optImg = await uploadMaybe(opt.image);
-                return { OptionText: opt.text || '', OptionImg: optImg || '' };
+                // Respect option type: send only text or image (not both)
+                if ((opt.type || 'text') === 'image') {
+                  const optImg = await uploadMaybe(opt.image);
+                  return { OptionText: '', OptionImg: optImg || '' };
+                }
+                return { OptionText: opt.text || '', OptionImg: '' };
               }));
               const payload = {
                 QuestionText: q.content || q.title || '',
-                QuestionType: 'dragdrop',
+                QuestionType: q.type || 'dragdrop',
                 QuestionImg: questionImgUrl || '',
                 Options: optionsPayload,
                 CourseId: courseId
@@ -470,18 +480,21 @@ export default function CoursesEdit() {
           }));
 
           // Questions
-          const currentQuestionIds = questions.map(q => extractId(q, ['questionId', 'question_id', 'id'])).filter(Boolean);
-          console.log('Processing questions:', { questions, currentQuestionIds, originalQuestionIds });
-          await Promise.all(questions.map(async (q) => {
+          const currentQuestionIds = questionsToPersist.map(q => extractId(q, ['questionId', 'question_id', 'id'])).filter(Boolean);
+          console.log('Processing questions:', { questions: questionsToPersist, currentQuestionIds, originalQuestionIds });
+          await Promise.all(questionsToPersist.map(async (q) => {
             const id = extractId(q, ['questionId', 'question_id', 'id']);
             try {
               // Upload question image and option images where provided
               const questionImgUrl = await uploadMaybe(q.questionImg);
               const optionsPayload = await Promise.all((q.options || []).map(async (opt) => {
-                const optImg = await uploadMaybe(opt.image);
-                return { OptionText: opt.text || '', OptionImg: optImg || '' };
+                if ((opt.type || 'text') === 'image') {
+                  const optImg = await uploadMaybe(opt.image);
+                  return { OptionText: '', OptionImg: optImg || '' };
+                }
+                return { OptionText: opt.text || '', OptionImg: '' };
               }));
-              const payload = { QuestionText: q.content || q.title || '', QuestionType: 'dragdrop', QuestionImg: questionImgUrl || '', Options: optionsPayload, CourseId: courseId };
+              const payload = { QuestionText: q.content || q.title || '', QuestionType: q.type || 'dragdrop', QuestionImg: questionImgUrl || '', Options: optionsPayload, CourseId: courseId };
               if (id) {
                 console.log('Updating question:', id, payload);
                 await questionsAPI.update(id, payload);
@@ -582,12 +595,12 @@ export default function CoursesEdit() {
   const onAddQuestion = () => {
     const newId = Date.now();
     const newQ = { id: newId, title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [
-      { id: `${newId}-opt-0`, text: '', image: undefined },
-      { id: `${newId}-opt-1`, text: '', image: undefined }
+      { id: `${newId}-opt-0`, text: '', image: undefined, type: 'text' },
+      { id: `${newId}-opt-1`, text: '', image: undefined, type: 'text' }
     ] };
     setQuestions(prev => [...prev, newQ]);
     setSelectedQuestion(newId);
-    setQuestionForm({ title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [{ id: `${newId}-opt-0`, text: '', image: undefined }, { id: `${newId}-opt-1`, text: '', image: undefined }] });
+    setQuestionForm({ title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [{ id: `${newId}-opt-0`, text: '', image: undefined, type: 'text' }, { id: `${newId}-opt-1`, text: '', image: undefined, type: 'text' }] });
   };
   const onSaveQuestion = () => {
     if (!selectedQuestionObj) return;
@@ -1159,6 +1172,7 @@ export default function CoursesEdit() {
                           {q.title || 'Untitled question'}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">Drag &amp; Drop</div>
+              <div className="text-xs text-gray-500 mt-1">{q.type === 'mcq' ? 'MCQ' : 'Drag & Drop'}</div>
                       </motion.div>
                     );
                   })
@@ -1192,13 +1206,26 @@ export default function CoursesEdit() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Question Image (optional)</label>
+                    <label className="block text-sm font-medium mb-2">{questionForm.type === 'mcq' ? 'Question Media (optional)' : 'Question Image (optional)'}</label>
                     <DropUpload
                       value={questionForm.questionImg}
                       onChange={(fileOrDataUrl) => setQuestionForm(prev => ({ ...prev, questionImg: fileOrDataUrl }))}
-                      description="Upload optional image for the question"
+                      description={questionForm.type === 'mcq' ? 'Upload optional media for MCQ question' : 'Upload optional image for the question'}
                       className="bg-white h-40"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Question Type</label>
+                    <select
+                      value={questionForm.type}
+                      onChange={(e) => setQuestionForm(prev => ({ ...prev, type: e.target.value }))}
+                      className="rounded-lg border px-3 py-2"
+                      style={{ borderColor: 'var(--border)' }}
+                    >
+                      <option value="dragdrop">Drag & Drop</option>
+                      <option value="mcq">MCQ</option>
+                    </select>
                   </div>
 
                   <div>
@@ -1206,7 +1233,7 @@ export default function CoursesEdit() {
                       <label className="block text-sm font-medium">Answer Options</label>
                       <button
                         onClick={() => {
-                          const newOpt = { id: `opt-${Date.now()}`, text: '', image: undefined };
+                          const newOpt = { id: `opt-${Date.now()}`, text: '', image: undefined, type: 'text' };
                           setQuestionForm(prev => ({ ...prev, options: [...(prev.options || []), newOpt] }));
                         }}
                         className="btn btn-outline btn-sm"
@@ -1217,14 +1244,19 @@ export default function CoursesEdit() {
                     <div className="space-y-3">
                       {(questionForm.options || []).map((opt, idx) => (
                         <div key={opt.id || idx} className="space-y-2 border rounded-xl p-3" style={{ borderColor: 'var(--border)' }}>
-                          <div className="flex items-center gap-2">
-                            <input
-                              value={opt.text}
-                              onChange={(e) => setQuestionForm(prev => ({ ...prev, options: prev.options.map((o) => o.id === opt.id ? { ...o, text: e.target.value } : o) }))}
-                              className="flex-1 rounded-xl border px-3 py-2 focus:ring-2 focus:ring-[var(--accent)] outline-none"
-                              style={{ borderColor: 'var(--border)' }}
-                              placeholder={`Option ${idx + 1} (text optional)`}
-                            />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="text-sm text-gray-600">Option {idx + 1}</div>
+                              <select
+                                value={opt.type || 'text'}
+                                onChange={(e) => setQuestionForm(prev => ({ ...prev, options: prev.options.map(o => o.id === opt.id ? { ...o, type: e.target.value, /* clear opposite field */ ...(e.target.value === 'text' ? { image: undefined } : { text: '' }) } : o) }))}
+                                className="rounded-lg border px-2 py-1 text-sm"
+                                style={{ borderColor: 'var(--border)' }}
+                              >
+                                <option value="text">Text</option>
+                                <option value="image">Image</option>
+                              </select>
+                            </div>
                             <button
                               onClick={() => setQuestionForm(prev => ({ ...prev, options: prev.options.filter(o => o.id !== opt.id) }))}
                               className="btn btn-danger btn-sm"
@@ -1232,15 +1264,28 @@ export default function CoursesEdit() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Option Image (optional)</label>
-                            <DropUpload
-                              value={opt.image}
-                              onChange={(fileOrDataUrl) => setQuestionForm(prev => ({ ...prev, options: prev.options.map(o => o.id === opt.id ? { ...o, image: fileOrDataUrl } : o) }))}
-                              description="Upload optional image for this option"
-                              className="bg-white h-32"
-                            />
-                          </div>
+
+                          {opt.type === 'image' ? (
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Option Image</label>
+                              <DropUpload
+                                value={opt.image}
+                                onChange={(fileOrDataUrl) => setQuestionForm(prev => ({ ...prev, options: prev.options.map(o => o.id === opt.id ? { ...o, image: fileOrDataUrl, text: '' } : o) }))}
+                                description="Upload image for this option"
+                                className="bg-white h-32"
+                              />
+                            </div>
+                          ) : (
+                            <div>
+                              <input
+                                value={opt.text}
+                                onChange={(e) => setQuestionForm(prev => ({ ...prev, options: prev.options.map((o) => o.id === opt.id ? { ...o, text: e.target.value, image: undefined } : o) }))}
+                                className="w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-[var(--accent)] outline-none"
+                                style={{ borderColor: 'var(--border)' }}
+                                placeholder={`Option ${idx + 1} (text)`}
+                              />
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

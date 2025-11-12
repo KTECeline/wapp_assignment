@@ -668,6 +668,10 @@ namespace Server.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("like_id");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_at");
+
                     b.Property<int>("PostId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("post_id");

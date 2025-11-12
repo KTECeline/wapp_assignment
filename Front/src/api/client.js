@@ -4,6 +4,12 @@ export async function getUsers() {
   return res.json();
 }
 
+export async function getUser(id) {
+  const res = await fetch(`/api/Users/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch user: ${res.status}`);
+  return res.json();
+}
+
 export async function getCategories() {
   const res = await fetch('/api/Categories');
   if (!res.ok) throw new Error(`Failed to fetch categories: ${res.status}`);
@@ -148,7 +154,13 @@ export async function createMessage(message) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(message)
   });
-  if (!res.ok) throw new Error(`Failed to create message: ${res.status}`);
+
+  if (!res.ok) {
+    // Try to read server-provided error details
+    let text = '';
+    try { text = await res.text(); } catch { /* ignore */ }
+    throw new Error(text || `Failed to create message: ${res.status}`);
+  }
   return res.json();
 }
 
@@ -406,6 +418,54 @@ export async function createCourseUserActivity(courseData) {
     const text = await res.text();
     throw new Error(text || `Failed to create CourseUserActivity: ${res.status}`);
   }
+}
+
+// User Posts API
+export async function getUserPosts(userId = null) {
+  const url = userId ? `/api/UserPosts?userId=${userId}` : '/api/UserPosts';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch user posts: ${res.status}`);
+  return res.json();
+}
+
+export async function getLikedPosts(userId) {
+  const res = await fetch(`/api/UserPosts/liked/${userId}`);
+  if (!res.ok) throw new Error(`Failed to fetch liked posts: ${res.status}`);
+  return res.json();
+}
+
+export async function getUserPost(postId, userId = null) {
+  const url = userId ? `/api/UserPosts/${postId}?userId=${userId}` : `/api/UserPosts/${postId}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch user post: ${res.status}`);
+  return res.json();
+}
+
+export async function togglePostLike(postId, userId) {
+  const res = await fetch(`/api/UserPosts/${postId}/like`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId }),
+  });
+  if (!res.ok) throw new Error(`Failed to toggle like: ${res.status}`);
+  return res.json();
+}
+
+export async function createUserPost(postData) {
+  const res = await fetch('/api/UserPosts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(postData),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || `Failed to create post: ${res.status}`);
+
+  }
   return res.json();
 }
 
@@ -421,3 +481,87 @@ export async function updateCourseUserActivity(id, courseData) {
   }
   return res.json();
 }
+
+// Badges API
+export async function getBadges() {
+  const res = await fetch('/api/Badges');
+  if (!res.ok) throw new Error(`Failed to fetch badges: ${res.status}`);
+  return res.json();
+}
+
+export async function getBadge(id) {
+  const res = await fetch(`/api/Badges/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch badge: ${res.status}`);
+  return res.json();
+}
+
+export async function createBadge(badgeData) {
+  const res = await fetch('/api/Badges', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(badgeData),
+  });
+  if (!res.ok) throw new Error(`Failed to create badge: ${res.status}`);
+  return res.json();
+}
+
+export async function updateBadge(id, badgeData) {
+  const res = await fetch(`/api/Badges/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(badgeData),
+  });
+  if (!res.ok) throw new Error(`Failed to update badge: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteBadge(id) {
+  const res = await fetch(`/api/Badges/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Failed to delete badge: ${res.status}`);
+  return true;
+}
+
+// User Courses API
+export async function getUserCourses(userId, status) {
+  const url = status 
+    ? `/api/UserCourses?userId=${userId}&status=${status}` 
+    : `/api/UserCourses?userId=${userId}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch user courses: ${res.status}`);
+  return res.json();
+}
+
+export async function getUserCourseActivity(userId, courseId) {
+  const res = await fetch(`/api/UserCourses/${userId}/${courseId}`);
+  if (!res.ok) throw new Error(`Failed to fetch user course activity: ${res.status}`);
+  return res.json();
+}
+
+export async function toggleCourseBookmark(userId, courseId, bookmark) {
+  const res = await fetch(`/api/UserCourses/${userId}/${courseId}/bookmark`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(bookmark),
+  });
+  if (!res.ok) throw new Error(`Failed to toggle bookmark: ${res.status}`);
+  return res.json();
+}
+
+export async function updateCourseQuizStatus(userId, courseId, quizData) {
+  const res = await fetch(`/api/UserCourses/${userId}/${courseId}/quiz-status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(quizData),
+  });
+  if (!res.ok) throw new Error(`Failed to update quiz status: ${res.status}`);
+  return res.json();
+}
+

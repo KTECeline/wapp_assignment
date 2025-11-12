@@ -10,7 +10,8 @@ public class Message
     [Column("session_id")]
     [ForeignKey("Session")]
     public int SessionId { get; set; }
-    public HelpSession Session { get; set; } = null!;
+    // Make navigation property nullable so creating a Message does not require the full Session payload
+    public HelpSession? Session { get; set; }
 
     [Column("content")]
     public string Content { get; set; } = string.Empty;

@@ -1,101 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Users, BookOpen, MessageSquare, TrendingUp, CheckCircle, ArrowUpRight, ArrowDownRight, BarChart3, Bell, Settings } from 'lucide-react';
+import { Users, BookOpen, MessageSquare, TrendingUp, ArrowUpRight, ArrowDownRight, BarChart3 } from 'lucide-react';
 
-const stats = [
-  {
-    title: 'Total Users',
-    value: 3450,
-    subtitle: 'Active pastry enthusiasts',
-    icon: Users,
-    change: '+12%',
-    changeValue: '+382',
-    trend: 'up'
-  },
-  {
-    title: 'Active Courses',
-    value: 28,
-    subtitle: 'Baking adventures available',
-    icon: BookOpen,
-    change: '+10.7%',
-    changeValue: '+3 courses',
-    trend: 'up'
-  },
-  {
-    title: 'Feedback Pending',
-    value: 12,
-    subtitle: 'Awaiting your attention',
-    icon: MessageSquare,
-    change: '-14.3%',
-    changeValue: '-2 items',
-    trend: 'down'
-  },
-  {
-    title: 'Completion Rate',
-    value: '87%',
-    subtitle: 'Average course completion',
-    icon: TrendingUp,
-    change: '+5.2%',
-    changeValue: '+4.5pts',
-    trend: 'up'
-  },
+// initial placeholder while loading real data from server
+const initialStats = [
+  { title: 'Total Users', value: 0, subtitle: 'Active pastry enthusiasts', icon: Users, change: '', changeValue: '', trend: 'up' },
+  { title: 'Active Courses', value: 0, subtitle: 'Baking adventures available', icon: BookOpen, change: '', changeValue: '', trend: 'up' },
+  { title: 'Feedback Pending', value: 0, subtitle: 'Awaiting your attention', icon: MessageSquare, change: '', changeValue: '', trend: 'down' },
+  { title: 'Completion Rate', value: '0%', subtitle: 'Average course completion', icon: TrendingUp, change: '', changeValue: '', trend: 'up' }
 ];
 
-const enrollmentData = [
-  { name: 'Jan', value: 120, previous: 95 },
-  { name: 'Feb', value: 160, previous: 130 },
-  { name: 'Mar', value: 200, previous: 165 },
-  { name: 'Apr', value: 240, previous: 190 },
-  { name: 'May', value: 220, previous: 200 },
-  { name: 'Jun', value: 280, previous: 235 },
+// enrollmentData will be loaded from reports; start empty while loading
+const defaultEnrollment = [
+  { name: 'Jan', value: 0, previous: 0 },
+  { name: 'Feb', value: 0, previous: 0 },
+  { name: 'Mar', value: 0, previous: 0 },
+  { name: 'Apr', value: 0, previous: 0 },
+  { name: 'May', value: 0, previous: 0 },
+  { name: 'Jun', value: 0, previous: 0 },
 ];
 
-const recentActivity = [
-  {
-    id: 1,
-    type: 'user',
-    title: 'New user registered',
-    description: 'pastrylover@example.com',
-    time: '2 minutes ago',
-    icon: Users,
-    color: 'var(--accent)',
-    bgColor: 'var(--surface)',
-    badge: 'New'
-  },
-  {
-    id: 2,
-    type: 'course',
-    title: 'Course updated',
-    description: 'Art of Sourdough',
-    time: '1 hour ago',
-    icon: BookOpen,
-    color: 'var(--accent)',
-    bgColor: 'var(--surface)',
-  },
-  {
-    id: 3,
-    type: 'feedback',
-    title: 'Feedback resolved',
-    description: 'Video playback issue',
-    time: '3 hours ago',
-    icon: CheckCircle,
-    color: 'var(--accent)',
-    bgColor: 'var(--surface)',
-    badge: 'Resolved'
-  },
-  {
-    id: 4,
-    type: 'user',
-    title: 'Milestone achieved',
-    description: '1000+ course completions',
-    time: '5 hours ago',
-    icon: TrendingUp,
-    color: 'var(--accent)',
-    bgColor: 'var(--surface)',
-    badge: 'Milestone'
-  },
-];
+// recent activity will be pulled from feedbacks (fallback to empty)
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -111,7 +38,64 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [hoveredStat, setHoveredStat] = useState(null);
+
+  const [stats, setStats] = useState(initialStats);
+  const [enrollmentDataState, setEnrollmentDataState] = useState(defaultEnrollment);
+  const [recentActivityState, setRecentActivityState] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [usersRes, coursesRes, feedbacksRes, completionRes, usersGrowth] = await Promise.all([
+          fetch('/api/Users').then(r => r.ok ? r.json() : []),
+          fetch('/api/Courses').then(r => r.ok ? r.json() : []),
+          fetch('/api/UserFeedbacks').then(r => r.ok ? r.json() : []),
+          fetch('/api/Reports/CompletionRate?months=1').then(r => r.ok ? r.json() : []),
+          fetch('/api/Reports/UsersGrowth?weeks=6').then(r => r.ok ? r.json() : [])
+        ]);
+
+        const totalUsers = Array.isArray(usersRes) ? usersRes.length : 0;
+        const activeCourses = Array.isArray(coursesRes) ? coursesRes.length : 0;
+        const feedbackPending = Array.isArray(feedbacksRes) ? feedbacksRes.length : 0;
+        const completionVal = Array.isArray(completionRes) && completionRes.length ? completionRes[completionRes.length - 1].value : 0;
+
+        setStats([
+          { title: 'Total Users', value: totalUsers, subtitle: 'Active pastry enthusiasts', icon: Users, change: '', changeValue: '', trend: 'up' },
+          { title: 'Active Courses', value: activeCourses, subtitle: 'Baking adventures available', icon: BookOpen, change: '', changeValue: '', trend: 'up' },
+          { title: 'Feedback Pending', value: feedbackPending, subtitle: 'Awaiting your attention', icon: MessageSquare, change: '', changeValue: '', trend: 'down' },
+          { title: 'Completion Rate', value: `${completionVal}%`, subtitle: 'Average course completion', icon: TrendingUp, change: '', changeValue: '', trend: 'up' }
+        ]);
+
+        // usersGrowth -> map to enrollmentDataState (use value + previous placeholder)
+        if (Array.isArray(usersGrowth) && usersGrowth.length > 0) {
+          // Map weeks to chart points; create previous as zero for now
+          const mapped = usersGrowth.map((g, idx) => ({ name: g.name || `W${idx+1}`, value: g.value || 0, previous: 0 }));
+          setEnrollmentDataState(mapped.length ? mapped : defaultEnrollment);
+        }
+
+        // Recent activity: use latest feedbacks as activity entries
+        if (Array.isArray(feedbacksRes)) {
+          const recent = feedbacksRes.slice(0, 8).map((f) => ({
+            id: f.id || f.feedbackId || f.FeedbackId,
+            type: 'feedback',
+            title: f.title || (f.courseTitle ? `Feedback on ${f.courseTitle}` : 'User feedback'),
+            description: `${f.userName || f.userEmail || ''}${f.courseTitle ? ' — ' + f.courseTitle : ''}`,
+            time: f.createdAt ? new Date(f.createdAt).toLocaleString() : '',
+            icon: MessageSquare,
+            color: 'var(--accent)',
+            bgColor: 'var(--surface)',
+            badge: ''
+          }));
+          setRecentActivityState(recent);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data', err);
+      }
+    };
+    load();
+  }, []);
 
   return (
   <div className="min-h-screen">
@@ -168,7 +152,7 @@ export default function Dashboard() {
             </div>
             
             <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={enrollmentData}>
+              <AreaChart data={enrollmentDataState}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#D9433B" stopOpacity={0.25}/>
@@ -198,31 +182,35 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="group flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer border"
-                  style={{ borderColor: 'transparent' }}
-                >
-                  <div className="p-2 rounded-lg group-hover:scale-110 transition-transform duration-200" style={{ backgroundColor: 'var(--surface)' }}>
-                    <activity.icon className="w-4 h-4" style={{ color: activity.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{activity.title}</p>
-                      {activity.badge && (
-                        <span className="px-1.5 py-0.5 text-xs font-medium rounded border" style={{ backgroundColor: 'var(--surface)', color: 'var(--accent-dark)', borderColor: 'var(--border)' }}>
-                          {activity.badge}
-                        </span>
-                      )}
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {recentActivityState.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="group flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer border"
+                    style={{ borderColor: 'transparent' }}
+                    onClick={() => {
+                      // navigate to feedback detail if id present
+                      if (activity.type === 'feedback' && activity.id) navigate(`/admin/feedback`);
+                    }}
+                  >
+                    <div className="p-2 rounded-lg group-hover:scale-110 transition-transform duration-200" style={{ backgroundColor: 'var(--surface)' }}>
+                      <activity.icon className="w-4 h-4" style={{ color: activity.color }} />
                     </div>
-                    <p className="text-xs text-gray-600 truncate">{activity.description}</p>
-                    <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{activity.title}</p>
+                        {activity.badge && (
+                          <span className="px-1.5 py-0.5 text-xs font-medium rounded border" style={{ backgroundColor: 'var(--surface)', color: 'var(--accent-dark)', borderColor: 'var(--border)' }}>
+                            {activity.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 truncate">{activity.description}</p>
+                      <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
           </div>
         </div>
 
@@ -235,13 +223,14 @@ export default function Dashboard() {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { icon: Users, label: 'Add User' },
-              { icon: BookOpen, label: 'New Course' },
-              { icon: MessageSquare, label: 'View Feedback' },
-              { icon: BarChart3, label: 'Reports' },
+              { icon: Users, label: 'Add User', onClick: () => navigate('/admin/users') },
+              { icon: BookOpen, label: 'New Course', onClick: () => navigate('/admin/courses/edit', { state: { mode: 'create' } }) },
+              { icon: MessageSquare, label: 'View Feedback', onClick: () => navigate('/admin/feedback') },
+              { icon: BarChart3, label: 'Reports', onClick: () => navigate('/admin/reports') },
             ].map((btn) => (
               <button
                 key={btn.label}
+                onClick={btn.onClick}
                 className="group relative p-5 rounded-xl bg-white border transition-all duration-300 hover:shadow-md hover:-translate-y-1 overflow-hidden hover:bg-[var(--surface)]"
                 style={{ borderColor: 'var(--border)' }}
               >

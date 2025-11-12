@@ -24,12 +24,34 @@ public class MessagesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Message>> CreateMessage(Message message)
     {
+        // Basic validation
+        if (message == null) return BadRequest("Message payload is required.");
+        if (string.IsNullOrWhiteSpace(message.Content)) return BadRequest("Message content cannot be empty.");
+
+        // Verify the help session exists to avoid FK violations
+        var sessionExists = await _context.HelpSessions.AnyAsync(h => h.SessionId == message.SessionId);
+        if (!sessionExists) return BadRequest($"Help session with id {message.SessionId} does not exist.");
+
         message.SentDate = DateTime.UtcNow;
+        // default view flags
         message.ViewByUser = false;
         message.ViewByAdmin = false;
 
+        // Ensure SentByAdmin has a deterministic value (false if not provided)
+        // (bool defaults to false in C# so this is mainly for clarity)
+        // message.SentByAdmin = message.SentByAdmin;
+
         _context.Messages.Add(message);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Return a 500 with a concise message for debugging in dev
+            return Problem(detail: ex.Message, statusCode: 500);
+        }
+
         return CreatedAtAction(nameof(GetMessagesBySession), new { sessionId = message.SessionId }, message);
     }
 
