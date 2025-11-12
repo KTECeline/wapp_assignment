@@ -41,6 +41,7 @@ const RgUserPost = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [showSortModal, setShowSortModal] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
     // Filter states
     const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -342,7 +343,10 @@ const RgUserPost = () => {
                         {!loading && !error && filteredPosts.length > 0 && (
                             <div className="columns-3 gap-[20px] w-[1090px] mx-auto">
                                 {filteredPosts.map((post) => (
-                                    <div key={post.postId} className="cursor-pointer hover:scale-[102%] transition-all duration-[600ms] w-full h-auto bg-white flex flex-col gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] mb-4 break-inside-avoid">
+                                    <div 
+                                        key={post.postId} 
+                                        onClick={() => setSelectedPost(post)}
+                                        className="cursor-pointer hover:scale-[102%] transition-all duration-[600ms] w-full h-auto bg-white flex flex-col gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] mb-4 break-inside-avoid">
                                         <img src={post.postImg || "/images/Post.webp"} alt="post" className="w-[332px] h-auto max-h-[377px] object-cover rounded-[16px] " />
                                         <div className="flex flex-col w-full px-[6px]">
                                             <div className="flex flex-row justify-between items-center">
@@ -619,6 +623,132 @@ const RgUserPost = () => {
                                 >
                                     Apply
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Post Zoom Modal */}
+                {selectedPost && (
+                    <div 
+                        className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+                        onClick={() => setSelectedPost(null)}
+                    >
+                        <div 
+                            className="bg-white rounded-[24px] max-w-[600px] w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Close Button */}
+                            <div className="sticky top-0 flex justify-between items-center p-6 border-b bg-white rounded-t-[24px]">
+                                <h2 className="font-ibarra text-[24px] font-bold text-black">Post Details</h2>
+                                <button 
+                                    onClick={() => setSelectedPost(null)}
+                                    className="text-gray-500 hover:text-black transition-all"
+                                >
+                                    <RxCross2 size={28} />
+                                </button>
+                            </div>
+
+                            {/* Post Content */}
+                            <div className="p-6 flex flex-col gap-6">
+                                {/* Post Image */}
+                                <img 
+                                    src={selectedPost.postImg || "/images/Post.webp"} 
+                                    alt="post" 
+                                    className="w-full h-[400px] object-cover rounded-[16px]"
+                                />
+
+                                {/* User Info */}
+                                <div className="flex flex-row gap-4 items-start">
+                                    <div className="w-[50px] h-[50px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[18px] font-bold flex-shrink-0">
+                                        {getUserInitial(selectedPost.userFirstName, selectedPost.userLastName)}
+                                    </div>
+                                    <div className="flex flex-col flex-1">
+                                        <div className="font-ibarra text-[16px] font-bold text-black">
+                                            {selectedPost.userFirstName} {selectedPost.userLastName}
+                                        </div>
+                                        <div className="font-inter text-[12px] text-gray-600">
+                                            @{selectedPost.userName}
+                                        </div>
+                                        <div className="font-inter text-[11px] text-gray-500 mt-1">
+                                            {formatTimeAgo(selectedPost.createdAt)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Post Title */}
+                                <div>
+                                    <h3 className="font-ibarra text-[22px] font-bold text-black leading-tight">
+                                        {selectedPost.title}
+                                    </h3>
+                                </div>
+
+                                {/* Post Description */}
+                                <div className="font-inter text-[14px] text-gray-800 leading-relaxed text-justify">
+                                    {selectedPost.description}
+                                </div>
+
+                                {/* Hashtags */}
+                                <div className="font-inter text-[13px] text-gray-600 flex flex-wrap gap-3">
+                                    <span className="text-[#DA1A32] font-semibold cursor-pointer hover:underline">
+                                        #{selectedPost.courseName}
+                                    </span>
+                                    <span className="text-[#DA1A32] font-semibold cursor-pointer hover:underline">
+                                        #{selectedPost.categoryName}
+                                    </span>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="bg-gray-300 w-full h-[1px]" />
+
+                                {/* Like Count */}
+                                <div className="flex flex-row items-center gap-3 font-inter text-[14px]">
+                                    <IoMdHeart className="w-[24px] h-[24px] text-[#FF5454]" />
+                                    <span className="font-semibold text-black">{selectedPost.likeCount}</span>
+                                    <span className="text-gray-600">people liked this</span>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex flex-row gap-3 pt-4">
+                                    {user?.userId && (
+                                        <button 
+                                            onClick={() => {
+                                                handleLike(selectedPost.postId);
+                                                setPosts(prevPosts => 
+                                                    prevPosts.map(post => 
+                                                        post.postId === selectedPost.postId 
+                                                            ? { ...post, isLiked: !post.isLiked, likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1 }
+                                                            : post
+                                                    )
+                                                );
+                                                setFilteredPosts(prevPosts => 
+                                                    prevPosts.map(post => 
+                                                        post.postId === selectedPost.postId 
+                                                            ? { ...post, isLiked: !post.isLiked, likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1 }
+                                                            : post
+                                                    )
+                                                );
+                                                setSelectedPost(prev => prev ? { ...prev, isLiked: !prev.isLiked, likeCount: prev.isLiked ? prev.likeCount - 1 : prev.likeCount + 1 } : null);
+                                            }}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#FFE5E5] text-[#DA1A32] rounded-full font-inter font-semibold text-[14px] hover:bg-[#FFCCCC] transition-all"
+                                        >
+                                            <IoMdHeart className={`w-[20px] h-[20px] ${selectedPost.isLiked ? "text-[#FF5454]" : "text-[#DA1A32]"}`} />
+                                            {selectedPost.isLiked ? "Liked" : "Like"}
+                                        </button>
+                                    )}
+                                    {!user?.userId && (
+                                        <button 
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 text-gray-600 rounded-full font-inter font-semibold text-[14px] cursor-not-allowed"
+                                        >
+                                            <IoMdHeart className="w-[20px] h-[20px]" />
+                                            Like
+                                        </button>
+                                    )}
+                                    <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#E8E8E8] text-[#4f4f4f] rounded-full font-inter font-semibold text-[14px] hover:bg-[#D9D9D9] transition-all">
+                                        <IoShareSocialSharp className="w-[18px] h-[18px]" />
+                                        Share
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
