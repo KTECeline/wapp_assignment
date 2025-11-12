@@ -249,9 +249,8 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                             dob: values.DOB ? new Date(values.DOB).toISOString() : null,
                             // Map string values to IDs
                             levelId: values.plevel === 'Beginner' ? 1 : values.plevel === 'Amateur' ? 2 : 3,
-                            categoryId: pcats.findIndex(cat => cat.value === values.pcat) + 1,
-                            // Include password if it's required (you might want to handle this differently)
-                            password: "changeme" // Required by the model, you should implement proper password handling
+                            categoryId: pcats.findIndex(cat => cat.value === values.pcat) + 1
+                            // Note: Password is not included in profile updates; use dedicated change-password endpoint for password changes
                         };
 
                         // Attach file if present — client.updateUser will build FormData when a File is present
