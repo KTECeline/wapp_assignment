@@ -18,14 +18,41 @@ public class UserPostsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<object>>> GetUserPosts([FromQuery] string? filter = null, [FromQuery] int? userId = null)
     {
+        // Build base query with includes
         var query = _context.UserPosts
             .Include(p => p.User)
             .Include(p => p.Course)
                 .ThenInclude(c => c.Category)
-            .Where(p => p.DeletedAt == null && (p.ApproveStatus == "Approved" || (userId.HasValue && p.UserId == userId.Value)));
+            .Where(p => p.DeletedAt == null);
+
+        // Apply filter: default to only approved posts for public consumption.
+        // For admin views, caller can pass ?filter=pending to retrieve pending posts,
+        // or filter=all to retrieve everything (not recommended for public).
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            var f = filter.Trim().ToLower();
+            if (f == "pending")
+                query = query.Where(p => p.ApproveStatus.ToLower() == "pending");
+            else if (f == "approved")
+                query = query.Where(p => p.ApproveStatus.ToLower() == "approved");
+            else if (f == "rejected")
+                query = query.Where(p => p.ApproveStatus.ToLower() == "rejected");
+            else if (f == "all")
+            {
+                // no additional filter - return all non-deleted posts
+            }
+            else
+                query = query.Where(p => p.ApproveStatus.ToLower() == f);
+        }
+        else
+        {
+            // default behavior: only return approved posts (public listing)
+            query = query.Where(p => p.ApproveStatus == "Approved");
+        }
 
         if (userId.HasValue)
         {
+            // ensure user-specific requests can still filter by user id
             query = query.Where(p => p.UserId == userId.Value);
         }
 
@@ -54,17 +81,23 @@ public class UserPostsController : ControllerBase
         {
             postId = p.PostId,
             userId = p.UserId,
+            // provide both userName and user for frontend convenience
             userName = p.User.Username,
+            user = p.User.Username,
             userFirstName = p.User.FirstName,
             userLastName = p.User.LastName,
             type = p.Type,
             courseId = p.CourseId,
+            course = p.Course != null ? new { id = p.Course.CourseId, name = p.Course.Title } : null,
             courseName = p.Course?.Title ?? "",
             categoryName = p.Course?.Category?.Title ?? "",
             title = p.Title,
             description = p.Description,
             postImg = p.PostImg,
             createdAt = p.CreatedAt,
+            // provide fields matching frontend expectations
+            approveStatus = p.ApproveStatus,
+            likes = likeCounts.FirstOrDefault(lc => lc.PostId == p.PostId)?.Count ?? 0,
             likeCount = likeCounts.FirstOrDefault(lc => lc.PostId == p.PostId)?.Count ?? 0,
             isLiked = userLikes.Contains(p.PostId)
         });

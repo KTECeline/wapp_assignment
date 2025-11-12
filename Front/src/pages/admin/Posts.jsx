@@ -137,31 +137,55 @@ export default function Posts() {
   const [posts, setPosts] = useState(initialPosts);
   const [selectedPost, setSelectedPost] = useState(null);
   const [toast, setToast] = useState(null);
-  const [filter, setFilter] = useState('all');
+  // Default to 'pending' so admin sees posts awaiting moderation
+  const [filter, setFilter] = useState('pending');
+  // Keep a full cache of all posts (used only for counting statuses)
+  const [allPosts, setAllPosts] = useState(initialPosts);
+
+  // Helper to refresh the full posts cache used for status counters
+  const fetchAllCounts = async () => {
+    try {
+      const allRes = await fetch(`/api/UserPosts?filter=all`);
+      if (!allRes.ok) return;
+      const allData = await allRes.json();
+      const allMapped = allData.map(p => ({
+        id: p.postId,
+        status: (p.approveStatus || 'pending').toString().toLowerCase()
+      }));
+      setAllPosts(allMapped);
+    } catch (err) {
+      console.warn('Failed to refresh all posts for counters', err);
+    }
+  };
 
   useEffect(() => {
     // fetch posts from backend API
     const fetchPosts = async () => {
       try {
-        const res = await fetch('/api/UserPosts');
+        const q = filter ? `?filter=${encodeURIComponent(filter)}` : '';
+        const res = await fetch(`/api/UserPosts${q}`);
         if (!res.ok) throw new Error('Failed to fetch posts');
         const data = await res.json();
 
         // map backend shape to UI shape
         const mapped = data.map(p => ({
           id: p.postId,
-          user: p.user || 'Unknown',
+          user: p.user || p.userName || 'Unknown',
           title: p.title,
           description: p.description,
           image: p.postImg || 'https://via.placeholder.com/400x300?text=No+Image',
           avatar: '',
           date: new Date(p.createdAt).toLocaleDateString(),
-          likes: p.likes || 0,
-          courses: p.course ? [{ name: p.course.name, link: `/courses/${p.course.id}` }] : [],
-          status: p.approveStatus || 'pending'
+          // normalize likes / likeCount
+          likes: (p.likes ?? p.likeCount) || 0,
+          courses: p.course ? [{ name: p.course.name, link: `/courses/${p.course.id}` }] : (p.courseName ? [{ name: p.courseName, link: '#' }] : []),
+          // normalize status to lowercase so frontend comparisons work consistently
+          status: (p.approveStatus || 'pending').toString().toLowerCase()
         }));
 
         setPosts(mapped);
+        // Refresh counters
+        fetchAllCounts();
       } catch (err) {
         console.error(err);
         setPosts([]);
@@ -170,7 +194,8 @@ export default function Posts() {
     };
 
     fetchPosts();
-  }, []);
+  }, [filter]);
+  
 
   const showToast = (message, type) => {
     setToast({ message, type });
@@ -185,6 +210,8 @@ export default function Posts() {
         setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'approved' } : p));
         setSelectedPost(null);
         showToast('Post approved successfully!', 'success');
+        // refresh global counters
+        fetchAllCounts();
       })
       .catch(err => {
         console.error(err);
@@ -200,6 +227,8 @@ export default function Posts() {
         setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'rejected' } : p));
         setSelectedPost(null);
         showToast('Post rejected', 'error');
+        // refresh global counters
+        fetchAllCounts();
       })
       .catch(err => {
         console.error(err);
@@ -214,6 +243,8 @@ export default function Posts() {
           if (!res.ok && res.status !== 204) throw new Error('Failed to delete post');
           setPosts(prev => prev.filter(p => p.id !== id));
           showToast('Post deleted', 'success');
+          // refresh global counters
+          fetchAllCounts();
         })
         .catch(err => {
           console.error(err);
@@ -223,11 +254,12 @@ export default function Posts() {
   };
 
   const filteredPosts = filter === 'all' ? posts : posts.filter(p => p.status === filter);
+  // Use the full posts cache for global counts so the counters stay in sync
   const statusCounts = {
-    all: posts.length,
-    pending: posts.filter(p => p.status === 'pending').length,
-    approved: posts.filter(p => p.status === 'approved').length,
-    rejected: posts.filter(p => p.status === 'rejected').length
+    all: allPosts.length,
+    pending: allPosts.filter(p => p.status === 'pending').length,
+    approved: allPosts.filter(p => p.status === 'approved').length,
+    rejected: allPosts.filter(p => p.status === 'rejected').length
   };
 
   return (
