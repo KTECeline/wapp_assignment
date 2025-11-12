@@ -121,7 +121,7 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
     }, [isEdit, postId]);
 
     return (
-        <div className="fixed top-0 left-0 w-full h-full bg-black/30 z-80 flex items-center justify-center">
+        <div className="fixed top-0 left-0 w-full h-full bg-black/30 z-[100] flex items-center justify-center">
             <div className="bg-white text-black rounded-2xl w-[500px] pt-[16px] pb-[18px] px-[18px] relative shadow-lg">
                 <button className="absolute top-3 right-3 text-black">
                     <RxCross2 size={20} onClick={onClose} className="cursor-pointer hover:text-[#eb5757] active:text-[#bf4b4b] transition-all duration-[400ms]" />
@@ -259,7 +259,7 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
                             {/* Post Pic Field */}
                             <div className="mb-6 relative">
                                 <div className="flex flex-row justify-between">
-                                    <label htmlFor="name" className="block text-sm font-medium mb-[5px] ml-[2px] text-black">Profile Picture</label>
+                                    <label htmlFor="name" className="block text-sm font-medium mb-[5px] ml-[2px] text-black">Post Image</label>
                                     {values.postimage && (
                                         <div className="flex items-end mb-[5px]">
                                             <button
