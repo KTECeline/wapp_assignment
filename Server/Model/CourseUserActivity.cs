@@ -45,4 +45,7 @@ public class CourseUserActivity
 
     [Column("registered")]
     public bool Registered { get; set; } = false;
+
+    [Column("completed")]
+    public bool Completed { get; set; } = false;
 }
