@@ -59,15 +59,14 @@ const RgUserCourseStep = () => {
     useEffect(() => {
         if (!id) return;
 
-        fetch(`/api/courses/${id}`) // fetch from your ASP.NET backend
+        fetch(`/api/courses/${id}`)
             .then(res => {
                 if (!res.ok) throw new Error("Network response was not ok");
                 return res.json();
             })
-            .then(data => setCourse(data))
+            .then(data => setCourse(data.course)) // <-- Use the actual course object
             .catch(err => console.error("Error fetching course:", err));
     }, [id]);
-
 
     useEffect(() => {
         if (!id) return;

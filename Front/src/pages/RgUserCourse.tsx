@@ -4,9 +4,11 @@ import VisitorLayout from "../components/VisitorLayout.tsx";
 import { CiBookmark } from "react-icons/ci";
 import { FaStar } from "react-icons/fa";
 import { IoAdd, IoBookmark } from "react-icons/io5";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { useNavigate, useParams } from "react-router-dom";
+import { createCourseUserActivity, updateCourseUserActivity } from "../api/client.js";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Course {
     courseId: number;
@@ -48,6 +50,40 @@ interface CoursePrepItem {
     courseId: number;
 }
 
+function useLocalToast() {
+  const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
+
+  const add = useCallback((message: string, variant: "success" | "error" = "success") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts(prev => [...prev, { id, message, variant }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  const ToastContainer = (
+    <div className="fixed bottom-4 right-4 space-y-2 z-[9999] pointer-events-none">
+      <AnimatePresence>
+        {toasts.map(t => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className={`px-3 py-2 rounded-xl shadow-md border pointer-events-auto ${
+              t.variant === "error"
+                ? "bg-rose-100/90 text-rose-700 border-rose-200"
+                : "bg-emerald-50/90 text-emerald-700 border-emerald-200"
+            }`}
+          >
+            {t.message}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+
+  return { add, ToastContainer };
+}
+
 const RgUserCourse = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -57,18 +93,20 @@ const RgUserCourse = () => {
     const [course, setCourse] = useState<Course | null>(null);
 
     const navigate = useNavigate();
-
+    const { add, ToastContainer } = useLocalToast();
+    
     useEffect(() => {
         if (!id) return;
 
-        fetch(`/api/courses/${id}`) // fetch from your ASP.NET backend
+        fetch(`/api/courses/${id}`)
             .then(res => {
                 if (!res.ok) throw new Error("Network response was not ok");
                 return res.json();
             })
-            .then(data => setCourse(data))
+            .then(data => setCourse(data.course)) // <-- Use the actual course object
             .catch(err => console.error("Error fetching course:", err));
     }, [id]);
+
 
     const [coursePrepItems, setCoursePrepItems] = useState<CoursePrepItem[]>([]);
     const [ingredients, setIngredients] = useState<CoursePrepItem[]>([]);
@@ -89,9 +127,21 @@ const RgUserCourse = () => {
     }, [id]);
 
 
-    // Placeholder first
-    const UserRegisteredCourse = true;
-    const Saved = false;
+    const [UserRegisteredCourse, setUserRegisteredCourse] = useState(false);
+    const [Saved, setSaved] = useState(false);
+
+    useEffect(() => {
+        if (!user?.userId || !id) return;
+
+        fetch(`/api/CourseUserActivities/status?courseId=${id}&userId=${user.userId}`)
+            .then(res => res.json())
+            .then(data => {
+                setUserRegisteredCourse(data.registered);
+                setSaved(data.saved);
+            })
+            .catch(err => console.error("Error fetching user course activity:", err));
+    }, [id, user?.userId]);
+
 
     const TotalReviews = 3;
 
@@ -127,6 +177,160 @@ const RgUserCourse = () => {
             </Layout>
         );
     }
+
+    // Register for course
+    async function handleRegister() {
+        if (!user?.userId || !course?.courseId) return;
+
+        try {
+            // Step 1: Check if an existing activity exists
+            const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
+            if (checkRes.ok) {
+                // Activity exists -> update it
+                const existingActivity = await checkRes.json();
+                console.log("Existing activity found:", existingActivity);
+
+                const updateData = {
+                    ...existingActivity,
+                    registered: true
+                };
+
+                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
+                console.log("Updated existing activity:", updated);
+
+                setUserRegisteredCourse(true);
+                add("Successfully registered for this course!");
+                return;
+            }
+
+            // Step 2: If not found (404), create a new activity
+            if (checkRes.status === 404) {
+                const activityData = {
+                    userId: user.userId,
+                    courseId: course.courseId,
+                    registered: true,
+                    bookmark: false
+                };
+
+                const created = await createCourseUserActivity(activityData);
+                console.log("Created new course activity:", created);
+
+                setUserRegisteredCourse(true);
+                setSaved(false);
+                add("Successfully registered for this course!");
+            }
+        } catch (err: any) {
+            console.error("Error registering course:", err);
+            alert(err.message || "Failed to register for course.");
+        }
+    }
+
+
+    async function handleRemove() {
+        if (!user?.userId || !course?.courseId) return;
+
+        try {
+            // Step 1: Check if an existing activity exists
+            const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
+            if (checkRes.ok) {
+                const existingActivity = await checkRes.json();
+                console.log("Existing activity found for removal:", existingActivity);
+
+                const updateData = {
+                    ...existingActivity,
+                    registered: false
+                };
+
+                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
+                console.log("Unregistered from course:", updated);
+
+                setUserRegisteredCourse(false);
+                add("You have unregistered from this course.");
+            } else {
+                console.warn("No existing registration found to remove.");
+            }
+        } catch (err: any) {
+            console.error("Error unregistering course:", err);
+            alert(err.message || "Failed to unregister from course.");
+        }
+    }
+
+
+    async function handleSave() {
+        if (!user?.userId || !course?.courseId) return;
+
+        try {
+            // Step 1: Check if an existing activity exists
+            const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
+            if (checkRes.ok) {
+                // Activity exists -> update it
+                const existingActivity = await checkRes.json();
+                console.log("Existing activity found:", existingActivity);
+
+                const updateData = {
+                    ...existingActivity,
+                    bookmark: true
+                };
+
+                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
+                console.log("Updated existing bookmark:", updated);
+
+                setSaved(true);
+                add("Course saved to bookmarks!");
+                return;
+            }
+
+            // Step 2: If not found (404), create a new activity
+            if (checkRes.status === 404) {
+                const activityData = {
+                    userId: user.userId,
+                    courseId: course.courseId,
+                    registered: false,
+                    bookmark: true
+                };
+
+                const created = await createCourseUserActivity(activityData);
+                console.log("Created new bookmark activity:", created);
+
+                setUserRegisteredCourse(false);
+                setSaved(true);
+                add("Course saved to bookmarks!");
+            }
+        } catch (err: any) {
+            console.error("Error saving course:", err);
+            alert(err.message || "Failed to save course.");
+        }
+    }
+
+    async function handleUnsave() {
+        if (!user?.userId || !course?.courseId) return;
+
+        try {
+            const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
+            if (checkRes.ok) {
+                const existingActivity = await checkRes.json();
+                console.log("Existing activity found for unsave:", existingActivity);
+
+                const updateData = {
+                    ...existingActivity,
+                    bookmark: false
+                };
+
+                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
+                console.log("Removed bookmark:", updated);
+
+                setSaved(false);
+                add("Removed from bookmarks.");
+            } else {
+                console.warn("No existing bookmark found to remove.");
+            }
+        } catch (err: any) {
+            console.error("Error unsaving course:", err);
+            alert(err.message || "Failed to unsave course.");
+        }
+    }
+
+
 
     return (
         <Layout>
@@ -263,24 +467,28 @@ const RgUserCourse = () => {
                         {/* Action Buttons */}
                         {!user?.userId ? (
                             <div className="flex flex-row gap-[10px] mt-[20px]">
-                                <button className="w-full h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                <button className="w-full h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                                    onClick={() => navigate(`/Register`)}>
                                     Register now to start course
                                 </button>
                             </div>
                         ) : (
                             <div className="flex flex-row gap-[10px] mt-[20px]">
                                 {!UserRegisteredCourse ? (
-                                    <button className="w-[265px] h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                    <button className="w-[265px] h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                                        onClick={handleRegister}>
                                         Start Now
                                     </button>
                                 ) : (
-                                    <button className="w-[265px] h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                    <button className="w-[265px] h-[48px] flex justify-center items-center text-[16px] bg-[#DA1A32] rounded-full text-white cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                                        onClick={handleRemove}>
                                         Remove Course
                                     </button>
                                 )}
 
                                 {!Saved ? (
-                                    <button className="w-[160px] flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                    <button className="w-[160px] flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                                        onClick={handleSave}>
                                         <div className="font-inter text-[16px] font-light ml-[10px]">
                                             Save
                                         </div>
@@ -289,7 +497,8 @@ const RgUserCourse = () => {
                                         </div>
                                     </button>
                                 ) : (
-                                    <button className="w-[160px] flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                    <button className="w-[160px] flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                                        onClick={handleUnsave}>
                                         <div className="font-inter text-[16px] font-light ml-[10px]">
                                             Saved
                                         </div>
@@ -307,7 +516,7 @@ const RgUserCourse = () => {
                     ) : (
                         <div className="w-[503px] flex flex-col gap-[16px]">
                             <button className="w-full h-[100px] border border-[#B9A9A1] bg-[#F8F5F0] flex items-center px-[36px] rounded-[10px] cursor-pointer hover:scale-[104%] transition-all duration-[600ms] group"
-                            onClick={() => navigate(`/RgUserCourseStep/${course.courseId}`)} >
+                                onClick={() => navigate(`/RgUserCourseStep/${course.courseId}`)} >
                                 <div className="font-ibarra text-[24px] font-bold text-black group-hover:text-[#DA1A32] transition-all duration-[600ms]">
                                     Step-by-Step Guide
                                 </div>
@@ -873,6 +1082,7 @@ const RgUserCourse = () => {
                     </button>
                 </div>
             </div>
+            {ToastContainer}
         </Layout>
     );
 };

@@ -395,3 +395,29 @@ export async function deleteCategory(id) {
   if (!res.ok) throw new Error(`Failed to delete category: ${res.status}`);
   return true;
 }
+
+export async function createCourseUserActivity(courseData) {
+  const res = await fetch('/api/CourseUserActivities', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(courseData)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to create CourseUserActivity: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function updateCourseUserActivity(id, courseData) {
+  const res = await fetch(`/api/CourseUserActivities/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(courseData)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Failed to update course: ${res.status}`);
+  }
+  return res.json();
+}

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 public class CourseUserActivity
 {
@@ -10,12 +11,16 @@ public class CourseUserActivity
     [Column("user_id")]
     [ForeignKey("User")]
     public int UserId { get; set; }
-    public User User { get; set; } = null!;
+
+    [JsonIgnore]
+    public User? User { get; set; } = null!;
 
     [Column("course_id")]
     [ForeignKey("Course")]
     public int CourseId { get; set; }
-    public Course Course { get; set; } = null!;
+
+    [JsonIgnore]
+    public Course? Course { get; set; } = null!;
 
     [Column("quiz_status")]
     public string QuizStatus { get; set; } = string.Empty;
