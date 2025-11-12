@@ -41,8 +41,8 @@ function App() {
         <Route path="/RgUserCoursePost" element={<RgUserCoursePost />} />
         <Route path="/RgUserCourseReview" element={<RgUserCourseReview />} />
         <Route path="/RgUserCourseStep/:id" element={<RgUserCourseStep />} />
-        <Route path="/RgUserMCQ" element={<RgUserMCQ />} />
-        <Route path="/RgUserDD" element={<RgUserDD />} />
+        <Route path="/RgUserMCQ/:id" element={<RgUserMCQ />} />
+        <Route path="/RgUserDD/:id" element={<RgUserDD />} />
         <Route path="/RgUserQuizCp" element={<RgUserQuizCp />} />
         <Route path="/RgUserExamCp" element={<RgUserExamCp />} />
         <Route path="/RgUserBadge" element={<RgUserBadge />} />

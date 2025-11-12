@@ -225,7 +225,6 @@ const RgUserCourse = () => {
         }
     }
 
-
     async function handleRemove() {
         if (!user?.userId || !course?.courseId) return;
 
@@ -254,7 +253,6 @@ const RgUserCourse = () => {
             alert(err.message || "Failed to unregister from course.");
         }
     }
-
 
     async function handleSave() {
         if (!user?.userId || !course?.courseId) return;
@@ -329,8 +327,6 @@ const RgUserCourse = () => {
             alert(err.message || "Failed to unsave course.");
         }
     }
-
-
 
     return (
         <Layout>

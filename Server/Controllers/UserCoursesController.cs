@@ -61,7 +61,7 @@ public class UserCoursesController : ControllerBase
                 servings = a.Course.Servings,
                 video = a.Course.Video,
                 levelId = a.Course.LevelId,
-                levelName = a.Course.Level.LevelName,
+                levelName = a.Course.Level.Title,
                 bookmark = a.Bookmark,
                 quizStatus = a.QuizStatus,
                 quizProgress = a.QuizProgress
@@ -97,7 +97,7 @@ public class UserCoursesController : ControllerBase
             servings = activity.Course.Servings,
             video = activity.Course.Video,
             levelId = activity.Course.LevelId,
-            levelName = activity.Course.Level?.LevelName,
+            levelName = activity.Course.Level?.Title,
             bookmark = activity.Bookmark,
             quizStatus = activity.QuizStatus,
             quizProgress = activity.QuizProgress
