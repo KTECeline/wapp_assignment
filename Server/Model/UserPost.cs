@@ -18,8 +18,8 @@ public class UserPost
 
     [Column("course_id")]
     [ForeignKey("Course")]
-    public int CourseId { get; set; }
-    public Course Course { get; set; } = null!;
+    public int? CourseId { get; set; }
+    public Course? Course { get; set; } = null;
 
     [Column("title")]
     [StringLength(255)]

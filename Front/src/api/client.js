@@ -55,39 +55,50 @@ export async function createUser(userData) {
 }
 
 export async function updateUser(id, user) {
-  // Always use FormData to handle both file uploads and regular fields
+  // Use FormData so we can send files and regular fields using the
+  // same field names that the backend expects (case-insensitive,
+  // avoid snake_case like first_name which doesn't bind to the model).
   const formData = new FormData();
-  
-  // Map and add fields using exact column names from User.cs
-  const fieldMappings = {
-    username: 'username',
-    email: 'email',
-    firstName: 'first_name',
-    lastName: 'last_name',
-    gender: 'gender',
-    dob: 'DOB',
-    levelId: 'level_id',
-    categoryId: 'category_id'
-  };
 
-  // Add mapped fields to FormData
   Object.entries(user).forEach(([key, value]) => {
-    if (value !== null && value !== undefined) {
+    if (value !== null && value !== undefined && value !== '') {
       if (key === 'profileimage') {
         formData.append('profileimage', value);
       } else {
-        const dbField = fieldMappings[key] || key;
-        formData.append(dbField, value);
+        // Append the key as-is so ASP.NET model binder can map it to the
+        // User object's properties (e.g. firstName, lastName, DOB, levelId).
+        formData.append(key, value);
       }
     }
   });
+
+  // Some backend models validate the presence of the Password field even
+  // when it's blank during an update. Ensure a password field is always
+  // sent (empty string) so model validation doesn't fail when the client
+  // isn't trying to change the password.
+  try {
+    if (!formData.has('password')) {
+      formData.append('password', '');
+    }
+  } catch (e) {
+    // formData.has may not be available in some environments; as a
+    // fallback, append password if not present in the input object.
+    if (!Object.prototype.hasOwnProperty.call(user, 'password')) {
+      formData.append('password', '');
+    }
+  }
 
   const res = await fetch(`/api/Users/${id}`, {
     method: 'PUT',
     // Let the browser set the correct Content-Type for FormData
     body: formData
   });
-  if (!res.ok) throw new Error(`Failed to update user: ${res.status}`);
+  if (!res.ok) {
+    // Try to read server-provided error details for better debugging
+    let text = '';
+    try { text = await res.text(); } catch (e) { /* ignore */ }
+    throw new Error(text || `Failed to update user: ${res.status}`);
+  }
   return res.json();
 }
 

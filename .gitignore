@@ -17,3 +17,4 @@ obj/
 Server/app.db
 Server/app.db-shm
 Server/app.db-wal
+Front/src/api/client_backup.js

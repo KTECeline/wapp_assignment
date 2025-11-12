@@ -90,10 +90,23 @@ export default function Users() {
           userType: record.userType || current.userType,
         };
 
+        // If attempting to change userType, require admin validation first
+        if (updatePayload.userType && updatePayload.userType !== current.userType && !adminValidated) {
+          // Open admin validation modal so admin can provide credentials
+          setShowAdminModal(true);
+          return;
+        }
+
         // If admin validated and a new password is provided, include it and admin creds
         if (newPassword) {
           if (!adminValidated) throw new Error('Admin validation required to change password');
           updatePayload.password = newPassword;
+          updatePayload.adminLogin = validatedAdmin?.login;
+          updatePayload.adminPassword = validatedAdmin?.password;
+        }
+
+        // If admin validated and userType changed, include admin creds so server can authorize role change
+        if (adminValidated && updatePayload.userType && updatePayload.userType !== current.userType) {
           updatePayload.adminLogin = validatedAdmin?.login;
           updatePayload.adminPassword = validatedAdmin?.password;
         }

@@ -6,7 +6,8 @@ import { FaStar } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import { IoAdd, IoShareSocialSharp } from "react-icons/io5";
-import { getUserPosts, getLikedPosts, togglePostLike } from "../api/client.js";
+import { getUserPosts, getLikedPosts, togglePostLike, createUserPost } from "../api/client.js";
+import PostForm from "../components/PostForm.tsx";
 
 interface Post {
     postId: number;
@@ -34,6 +35,7 @@ const RgUserPost = () => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showPostForm, setShowPostForm] = useState(false);
 
     const tabs = ["Discover Posts", "Liked Posts", "My Posts"];
 
@@ -80,6 +82,62 @@ const RgUserPost = () => {
             );
         } catch (err) {
             console.error("Error toggling like:", err);
+        }
+    };
+
+    const handleSavePost = async (postData: any, isEdit: boolean) => {
+        try {
+            let imageUrl = "";
+
+            // Step 1: Upload image if provided
+            if (postData.postimage instanceof File) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', postData.postimage);
+
+                const uploadRes = await fetch('/api/Uploads', {
+                    method: 'POST',
+                    body: uploadFormData,
+                });
+
+                if (!uploadRes.ok) {
+                    const errorText = await uploadRes.text();
+                    throw new Error("Image upload failed: " + (errorText || `${uploadRes.status}`));
+                }
+
+                const uploadedData = await uploadRes.json();
+                imageUrl = uploadedData.path || uploadedData.url || "";
+            }
+
+            // Step 2: Create post with image URL
+            const postPayload = {
+                userId: user.userId,
+                title: postData.title,
+                description: postData.description,
+                type: postData.posttype,
+                courseId: postData.posttype === "course" ? (postData.course_id || null) : null,
+                postImg: imageUrl,
+            };
+
+            const res = await fetch('/api/UserPosts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postPayload),
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText || `Failed to create post: ${res.status}`);
+            }
+
+            // Refresh the posts list
+            setShowPostForm(false);
+            await fetchPosts();
+            alert("Post created successfully!");
+        } catch (err) {
+            console.error("Error saving post:", err);
+            alert("Failed to create post: " + (err instanceof Error ? err.message : "Unknown error"));
         }
     };
 
@@ -244,7 +302,10 @@ const RgUserPost = () => {
                     </div>
 
                     {user?.userId && (
-                        <button className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                        <button 
+                            onClick={() => setShowPostForm(true)}
+                            className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                        >
                             <div className="font-inter text-[16px] font-light text-black">Post</div>
                             <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
                                 <IoAdd className="text-white w-[32px] h-[32px]" />
@@ -252,6 +313,14 @@ const RgUserPost = () => {
                         </button>
                     )}
                 </div>
+                {showPostForm && user?.userId && (
+                    <PostForm 
+                        onClose={() => setShowPostForm(false)}
+                        onSave={handleSavePost}
+                        userId={user.userId}
+                        from="home"
+                    />
+                )}
             </div>
         </Layout>
     );
