@@ -22,7 +22,8 @@ public class UserFeedbacksController : ControllerBase
             .OrderByDescending(f => f.CreatedAt)
             .ToListAsync();
 
-        var result = list.Select(f => new {
+        var result = list.Select(f => new
+        {
             id = f.FeedbackId,
             userId = f.UserId,
             userName = f.User != null ? $"{f.User.FirstName} {f.User.LastName}".Trim() : null,
@@ -45,7 +46,8 @@ public class UserFeedbacksController : ControllerBase
     {
         var f = await _context.UserFeedbacks.Include(x => x.User).Include(x => x.Course).FirstOrDefaultAsync(x => x.FeedbackId == id && x.DeletedAt == null);
         if (f == null) return NotFound();
-        return Ok(new {
+        return Ok(new
+        {
             id = f.FeedbackId,
             userId = f.UserId,
             userName = f.User != null ? $"{f.User.FirstName} {f.User.LastName}".Trim() : null,
@@ -87,4 +89,41 @@ public class UserFeedbacksController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    [HttpGet("count/{courseId}")]
+    public async Task<ActionResult<int>> GetFeedbackCountByCourse(int courseId)
+    {
+        var count = await _context.UserFeedbacks
+            .Where(f => f.CourseId == courseId && f.DeletedAt == null)
+            .CountAsync();
+
+        return Ok(count);
+    }
+
+    [HttpGet("course/{courseId}")]
+    public async Task<IActionResult> GetCourseFeedbackSummary(int courseId)
+    {
+        var feedbacks = await _context.UserFeedbacks
+            .Where(f => f.CourseId == courseId && f.DeletedAt == null)
+            .ToListAsync();
+
+        if (!feedbacks.Any())
+        {
+            return Ok(new
+            {
+                averageRating = 0,
+                totalReviews = 0
+            });
+        }
+
+        var averageRating = feedbacks.Average(f => f.Rating);
+        var totalReviews = feedbacks.Count;
+
+        return Ok(new
+        {
+            averageRating,
+            totalReviews
+        });
+    }
+
 }

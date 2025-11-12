@@ -17,7 +17,6 @@ interface Course {
     description: string;
     courseImg: string;
     rating: number;
-    reviews: number;
     cookingTimeMin: number;
     servings: number;
     levelId: number;
@@ -197,7 +196,16 @@ const RgUserCourse = () => {
             .catch(err => console.error("Error fetching tips:", err));
     }, [id]);
 
-    const TotalReviews = 3;
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/UserFeedbacks/count/${id}`)
+            .then(res => res.json())
+            .then(data => setTotalReviews(data))
+            .catch(err => console.error("Error fetching review count:", err));
+    }, [id]);
+
+    const [totalReviews, setTotalReviews] = useState<number>(0);
 
     function formatCookingTime(minutes: number) {
         if (minutes < 60) return `${minutes} mins`;
@@ -375,6 +383,7 @@ const RgUserCourse = () => {
             alert(err.message || "Failed to unsave course.");
         }
     }
+
     const downloadRecipePDF = async () => {
         if (!course) return;
 
@@ -553,12 +562,12 @@ const RgUserCourse = () => {
                             <div className="flex flex-col gap-[2px] justify-center translate-y-[-2px]">
                                 {/* Review */}
                                 <div className="font-inter text-[#484848] text-[14px] font-light">
-                                    {TotalReviews} reviews
+                                    {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
                                 </div>
 
                                 <div className="flex gap-[4px]">
                                     {[...Array(5)].map((_, index) => {
-                                        const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+                                        const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
 
                                         return (
                                             <div

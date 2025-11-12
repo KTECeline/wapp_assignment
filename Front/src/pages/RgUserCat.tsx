@@ -36,7 +36,8 @@ interface Course {
     title: string;
     description: string;
     courseImg: string;
-    reviews: number;
+    rating: number;
+    totalReviews: number;
     cookingTimeMin: number;
     servings: number;
     levelId: number;
@@ -74,10 +75,28 @@ const RgUserCat = () => {
 
         fetch('/api/courses')
             .then(res => res.json())
-            .then(data => {
-                // Filter the courses for this category
+            .then(async (data) => {
+                // Filter courses by category
                 const filtered = data.filter((c: Course) => c.categoryId === Number(id));
-                setCourses(filtered);
+
+                // Fetch only the totalReviews for each course
+                const withReviews = await Promise.all(
+                    filtered.map(async (course: Course) => {
+                        try {
+                            const res = await fetch(`/api/UserFeedbacks/course/${course.courseId}`);
+                            const feedbackData = await res.json();
+                            return {
+                                ...course,
+                                totalReviews: feedbackData.totalReviews || 0
+                            };
+                        } catch (err) {
+                            console.error(`Error fetching reviews for course ${course.courseId}:`, err);
+                            return { ...course, totalReviews: 0 };
+                        }
+                    })
+                );
+
+                setCourses(withReviews);
             })
             .catch(err => console.error("Error fetching courses:", err));
     }, [id]);
@@ -189,7 +208,7 @@ const RgUserCat = () => {
                                     <div className="flex flex-row mt-[16px] items-center">
                                         <div className="flex gap-[4px]">
                                             {[...Array(5)].map((_, index) => {
-                                                const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+                                                const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
                                                 return (
                                                     <div key={index} className="relative" style={{ width: "18px", height: "18px" }}>
                                                         <FaStar className="absolute top-0 left-0 text-gray-300" size="18px" />
@@ -200,7 +219,7 @@ const RgUserCat = () => {
                                                 );
                                             })}
                                         </div>
-                                        <div className="font-inter ml-[8px] text-[#484848] text-[12px]">{course.reviews} reviews</div>
+                                        <div className="font-inter ml-[8px] text-[#484848] text-[12px]">{course.totalReviews} {course.totalReviews === 1 ? "review" : "reviews"}</div>
                                     </div>
 
                                     {/* Title */}
@@ -213,7 +232,6 @@ const RgUserCat = () => {
                                         <div className="flex items-center">
                                             <img src="/images/Time.png" alt="time" className="w-[12px] h-[12px] object-cover" />
                                             <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">{formatCookingTime(course.cookingTimeMin)}</div>
-                                            <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">min</div>
                                         </div>
 
                                         <div className="h-[16px] w-[1.1px] bg-black" />
