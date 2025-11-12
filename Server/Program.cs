@@ -41,36 +41,26 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-using (var scope = app.Services.CreateScope())
+// Start background seeding. Create a fresh scope inside the background task so
+// the DbContext instance stays alive for the duration of seeding and is not
+// disposed when the original scope leaves this block.
+_ = System.Threading.Tasks.Task.Run(() =>
 {
-    var services = scope.ServiceProvider;
+    using var seedScope = app.Services.CreateScope();
+    var services = seedScope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-
-        // Run seeding in the background so app startup is not blocked by long-running DB operations.
-        // Any exceptions during seeding are logged.
-        _ = System.Threading.Tasks.Task.Run(() =>
-        {
-            try
-            {
-                logger.LogInformation("Starting database seeder in background");
-                DatabaseSeeder.Initialize(context);
-                logger.LogInformation("Database seeding finished");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Database seeder failed");
-            }
-        });
+        logger.LogInformation("Starting database seeder in background");
+        DatabaseSeeder.Initialize(context);
+        logger.LogInformation("Database seeding finished");
     }
     catch (Exception ex)
     {
-        var loggerScoped = services.GetRequiredService<ILogger<Program>>();
-        loggerScoped.LogError(ex, "Failed to resolve services for background seeding");
+        logger.LogError(ex, "Database seeder failed");
     }
-}
+});
 
 app.Run();
 
