@@ -273,7 +273,8 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromForm] User update, IFormFile? profileimage, [FromForm] string? adminLogin = null, [FromForm] string? adminPassword = null)
+    // Accept a dedicated DTO for updates so we don't require fields like Password on every update
+    public async Task<IActionResult> UpdateUser(int id, [FromForm] UserUpdateDto update, IFormFile? profileimage, [FromForm] string? adminLogin = null, [FromForm] string? adminPassword = null)
     {
         try
         {
@@ -307,6 +308,53 @@ public class UsersController : ControllerBase
             user.DOB = update.DOB ?? user.DOB;
             user.LevelId = update.LevelId ?? user.LevelId;
             user.CategoryId = update.CategoryId ?? user.CategoryId;
+            
+            // If the request includes a change to UserType, require admin validation
+            if (!string.IsNullOrWhiteSpace(update.UserType) && !string.Equals(update.UserType, user.UserType, StringComparison.OrdinalIgnoreCase))
+            {
+                // Only allow 'admin' or 'user' values
+                var normalized = update.UserType.Trim().ToLower();
+                if (normalized != "admin" && normalized != "user")
+                {
+                    return BadRequest("Invalid userType. Allowed values: 'Admin' or 'User'.");
+                }
+
+                // Admin credentials must be provided to change another user's role
+                if (string.IsNullOrWhiteSpace(adminLogin) || string.IsNullOrWhiteSpace(adminPassword))
+                {
+                    return BadRequest("Admin credentials are required to change a user's role.");
+                }
+
+                // Find the admin user by login (username or email) and verify password
+                var adminUser = await _context.Users
+                    .Where(u => u.DeletedAt == null &&
+                        (u.Username.ToLower() == adminLogin.ToLower() || u.Email.ToLower() == adminLogin.ToLower()))
+                    .FirstOrDefaultAsync();
+
+                if (adminUser == null)
+                    return Unauthorized("Invalid admin credentials or account is not an admin.");
+
+                // Support legacy seeded passwords that may be stored unhashed: accept either the BCrypt hash
+                // verification or a plain-text match as a fallback.
+                var adminVerified = false;
+                try
+                {
+                    adminVerified = BCrypt.Net.BCrypt.Verify(adminPassword, adminUser.Password);
+                }
+                catch { adminVerified = false; }
+                if (!adminVerified && adminUser.Password == adminPassword)
+                {
+                    adminVerified = true;
+                }
+
+                if (!adminVerified || !string.Equals(adminUser.UserType, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Unauthorized("Invalid admin credentials or account is not an admin.");
+                }
+
+                // Apply normalized role
+                user.UserType = normalized;
+            }
             // Handle password change: require admin validation
             if (!string.IsNullOrWhiteSpace(update.Password))
             {
@@ -317,17 +365,31 @@ public class UsersController : ControllerBase
                 }
 
                 var adminUser = await _context.Users
-                    .Where(u => u.DeletedAt == null && u.UserType == "admin" &&
+                    .Where(u => u.DeletedAt == null &&
                         (u.Username.ToLower() == adminLogin.ToLower() || u.Email.ToLower() == adminLogin.ToLower()))
                     .FirstOrDefaultAsync();
 
-                if (adminUser == null || !BCrypt.Net.BCrypt.Verify(adminPassword, adminUser.Password))
+                if (adminUser == null)
+                    return Unauthorized("Invalid admin credentials.");
+
+                var adminVerified = false;
+                try
+                {
+                    adminVerified = BCrypt.Net.BCrypt.Verify(adminPassword, adminUser.Password);
+                }
+                catch { adminVerified = false; }
+                if (!adminVerified && adminUser.Password == adminPassword)
+                {
+                    adminVerified = true;
+                }
+
+                if (!adminVerified || !string.Equals(adminUser.UserType, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     return Unauthorized("Invalid admin credentials.");
                 }
 
                 // Hash new password before storing
-                user.Password = BCrypt.Net.BCrypt.HashPassword(update.Password);
+                user.Password = BCrypt.Net.BCrypt.HashPassword(update.Password!);
             }
 
             await _context.SaveChangesAsync();
