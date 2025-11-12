@@ -28,7 +28,7 @@ public class McqQuestionsController : ControllerBase
         return mcq;
     }
 
-    // Optional: get all MCQs for a course
+    // Get all MCQs for a course
     [HttpGet("course/{courseId}")]
     public async Task<ActionResult<IEnumerable<McqQuestion>>> GetMcqQuestionsByCourse(int courseId)
     {
@@ -40,7 +40,7 @@ public class McqQuestionsController : ControllerBase
         return mcqs;
     }
 
-    // Optional: create MCQ
+    // Create MCQ
     [HttpPost]
     public async Task<ActionResult<McqQuestion>> CreateMcq([FromBody] McqQuestion mcq)
     {
@@ -49,7 +49,7 @@ public class McqQuestionsController : ControllerBase
         return CreatedAtAction(nameof(GetMcqQuestion), new { id = mcq.QuestionId }, mcq);
     }
 
-    // Optional: update MCQ
+    // Update MCQ
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateMcq(int id, [FromBody] McqQuestion update)
     {

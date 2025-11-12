@@ -97,7 +97,7 @@ public class CourseUserActivitiesController : ControllerBase
                 Name = a.User.Username,
                 Accuracy = a.QuizProgress > 0
                     ? (int)Math.Round((double)(a.QuizProgress - a.QuizMistake) / a.QuizProgress * 100)
-                    : 0, // return integer percentage
+                    : 0, 
                 Time = a.QuizTotalTime.HasValue ? a.QuizTotalTime.Value.ToString(@"mm\:ss") : "-",
                 a.QuizTotalTime
             })

@@ -408,18 +408,6 @@ export async function deleteCategory(id) {
   return true;
 }
 
-export async function createCourseUserActivity(courseData) {
-  const res = await fetch('/api/CourseUserActivities', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(courseData)
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Failed to create CourseUserActivity: ${res.status}`);
-  }
-}
-
 // User Posts API
 export async function getUserPosts(userId = null) {
   const url = userId ? `/api/UserPosts?userId=${userId}` : '/api/UserPosts';
@@ -465,19 +453,6 @@ export async function createUserPost(postData) {
     const errorText = await res.text();
     throw new Error(errorText || `Failed to create post: ${res.status}`);
 
-  }
-  return res.json();
-}
-
-export async function updateCourseUserActivity(id, courseData) {
-  const res = await fetch(`/api/CourseUserActivities/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(courseData)
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Failed to update course: ${res.status}`);
   }
   return res.json();
 }

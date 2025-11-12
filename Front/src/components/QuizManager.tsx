@@ -1,6 +1,3 @@
-// quizManager.tsx
-import { useNavigate } from "react-router-dom";
-
 // Utility: shuffle quiz order
 const shuffleArray = <T,>(arr: T[]): T[] => {
     const newArr = [...arr];
@@ -39,7 +36,7 @@ export const startQuiz = async (course: any, user: any, navigate: any) => {
     sessionStorage.setItem("currentCourseId", String(course.courseId));
     sessionStorage.setItem("localProgress", "0"); // ✅ local progress counter
 
-    // 1️⃣ Shuffle questions
+    // Shuffle questions
     const res = await fetch(`/api/Questions/course/${course.courseId}`);
     const questions = await res.json();
 
@@ -49,7 +46,7 @@ export const startQuiz = async (course: any, user: any, navigate: any) => {
 
     sessionStorage.setItem("quizQueue", JSON.stringify(quizQueue));
 
-    // 2️⃣ Find or update activity row
+    // Find or update activity row
     const existingActivity = await getExistingActivity(user.userId, course.courseId);
 
     const now = new Date();
@@ -97,7 +94,7 @@ export const handleAnswer = async (isCorrect: boolean, navigate: any) => {
     if (!isCorrect) quizQueue.push(currentQuestion);
     sessionStorage.setItem("quizQueue", JSON.stringify(quizQueue));
 
-    // ✅ Local progress (only for correct answers)
+    // Local progress (only for correct answers)
     if (isCorrect) {
         const localProgress = Number(sessionStorage.getItem("localProgress") || "0") + 1;
         sessionStorage.setItem("localProgress", String(localProgress));

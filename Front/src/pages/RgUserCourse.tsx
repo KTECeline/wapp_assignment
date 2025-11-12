@@ -7,7 +7,6 @@ import { IoAdd, IoBookmark } from "react-icons/io5";
 import { useCallback, useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { useNavigate, useParams } from "react-router-dom";
-import { createCourseUserActivity, updateCourseUserActivity } from "../api/client.js";
 import { AnimatePresence, motion } from "framer-motion";
 import { startQuiz } from "../components/QuizManager.tsx";
 
@@ -120,7 +119,7 @@ const RgUserCourse = () => {
         fetch(`/api/courseprepitems/course/${id}`)
             .then(res => res.json())
             .then((data: CoursePrepItem[]) => {
-                console.log("Fetched prep items:", data);  // <-- Add this
+                console.log("Fetched prep items:", data);
                 setCoursePrepItems(data);
                 setIngredients(data.filter(item => item.type.toLowerCase() === "ingredients"));
                 setTools(data.filter(item => item.type.toLowerCase() === "tools"));
@@ -177,7 +176,7 @@ const RgUserCourse = () => {
     const [popupItem, setPopupItem] = useState(null as null | typeof coursePrepItems[0]);
 
     function decimalToFraction(decimal: number): string {
-        const tolerance = 1.0e-6; // for floating point precision
+        const tolerance = 1.0e-6;
         let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
         let b = decimal;
         do {
@@ -205,44 +204,40 @@ const RgUserCourse = () => {
         if (!user?.userId || !course?.courseId) return;
 
         try {
-            // Step 1: Check if an existing activity exists
+            // Try to get existing activity
             const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
-            if (checkRes.ok) {
-                // Activity exists -> update it
-                const existingActivity = await checkRes.json();
-                console.log("Existing activity found:", existingActivity);
+            const existingActivity = checkRes.ok ? await checkRes.json() : null;
 
-                const updateData = {
-                    ...existingActivity,
-                    registered: true
-                };
+            if (existingActivity?.activityId) {
+                // Update existing activity
+                const updatedRes = await fetch(`/api/CourseUserActivities/${existingActivity.activityId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...existingActivity, registered: true }),
+                });
 
-                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
-                console.log("Updated existing activity:", updated);
+                if (!updatedRes.ok) throw new Error('Failed to update activity');
 
                 setUserRegisteredCourse(true);
                 add("Successfully registered for this course!");
                 return;
             }
 
-            // Step 2: If not found (404), create a new activity
-            if (checkRes.status === 404) {
-                const activityData = {
-                    userId: user.userId,
-                    courseId: course.courseId,
-                    registered: true,
-                    bookmark: false
-                };
+            // If no existing activity, create new
+            const createRes = await fetch('/api/CourseUserActivities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.userId, courseId: course.courseId, registered: true, bookmark: false }),
+            });
 
-                const created = await createCourseUserActivity(activityData);
-                console.log("Created new course activity:", created);
+            if (!createRes.ok) throw new Error('Failed to create activity');
 
-                setUserRegisteredCourse(true);
-                setSaved(false);
-                add("Successfully registered for this course!");
-            }
+            setUserRegisteredCourse(true);
+            setSaved(false);
+            add("Successfully registered for this course!");
+
         } catch (err: any) {
-            console.error("Error registering course:", err);
+            console.error(err);
             alert(err.message || "Failed to register for course.");
         }
     }
@@ -251,71 +246,68 @@ const RgUserCourse = () => {
         if (!user?.userId || !course?.courseId) return;
 
         try {
-            // Step 1: Check if an existing activity exists
             const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
-            if (checkRes.ok) {
-                const existingActivity = await checkRes.json();
-                console.log("Existing activity found for removal:", existingActivity);
+            const existingActivity = checkRes.ok ? await checkRes.json() : null;
 
-                const updateData = {
-                    ...existingActivity,
-                    registered: false
-                };
+            if (existingActivity?.activityId) {
+                const updatedRes = await fetch(`/api/CourseUserActivities/${existingActivity.activityId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...existingActivity, registered: false }),
+                });
 
-                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
-                console.log("Unregistered from course:", updated);
+                if (!updatedRes.ok) throw new Error('Failed to unregister activity');
 
                 setUserRegisteredCourse(false);
                 add("You have unregistered from this course.");
             } else {
-                console.warn("No existing registration found to remove.");
+                console.warn("No existing registration found.");
             }
         } catch (err: any) {
-            console.error("Error unregistering course:", err);
+            console.error(err);
             alert(err.message || "Failed to unregister from course.");
         }
     }
+
 
     async function handleSave() {
         if (!user?.userId || !course?.courseId) return;
 
         try {
-            // Step 1: Check if an existing activity exists
+            // Check if an existing activity exists
             const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
-            if (checkRes.ok) {
-                // Activity exists -> update it
-                const existingActivity = await checkRes.json();
-                console.log("Existing activity found:", existingActivity);
+            const existingActivity = checkRes.ok ? await checkRes.json() : null;
 
-                const updateData = {
-                    ...existingActivity,
-                    bookmark: true
-                };
+            if (existingActivity?.activityId) {
+                // Update existing activity's bookmark
+                const updatedRes = await fetch(`/api/CourseUserActivities/${existingActivity.activityId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...existingActivity, bookmark: true }),
+                });
 
-                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
-                console.log("Updated existing bookmark:", updated);
+                if (!updatedRes.ok) throw new Error('Failed to update bookmark');
 
                 setSaved(true);
                 add("Course saved to bookmarks!");
+                console.log("Updated existing bookmark");
                 return;
             }
 
-            // Step 2: If not found (404), create a new activity
-            if (checkRes.status === 404) {
-                const activityData = {
-                    userId: user.userId,
-                    courseId: course.courseId,
-                    registered: false,
-                    bookmark: true
-                };
+            // If not found, create new activity
+            const createRes = await fetch('/api/CourseUserActivities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.userId, courseId: course.courseId, registered: false, bookmark: true }),
+            });
 
-                const created = await createCourseUserActivity(activityData);
-                console.log("Created new bookmark activity:", created);
+            if (!createRes.ok) throw new Error('Failed to create bookmark activity');
 
-                setUserRegisteredCourse(false);
-                setSaved(true);
-                add("Course saved to bookmarks!");
-            }
+            setUserRegisteredCourse(false);
+            setSaved(true);
+            add("Course saved to bookmarks!");
+            console.log("Created new bookmark activity");
+
         } catch (err: any) {
             console.error("Error saving course:", err);
             alert(err.message || "Failed to save course.");
@@ -327,28 +319,31 @@ const RgUserCourse = () => {
 
         try {
             const checkRes = await fetch(`/api/CourseUserActivities?userId=${user.userId}&courseId=${course.courseId}`);
-            if (checkRes.ok) {
-                const existingActivity = await checkRes.json();
-                console.log("Existing activity found for unsave:", existingActivity);
+            const existingActivity = checkRes.ok ? await checkRes.json() : null;
 
-                const updateData = {
-                    ...existingActivity,
-                    bookmark: false
-                };
+            if (existingActivity?.activityId) {
+                // Update activity to remove bookmark
+                const updatedRes = await fetch(`/api/CourseUserActivities/${existingActivity.activityId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...existingActivity, bookmark: false }),
+                });
 
-                const updated = await updateCourseUserActivity(existingActivity.activityId, updateData);
-                console.log("Removed bookmark:", updated);
+                if (!updatedRes.ok) throw new Error('Failed to remove bookmark');
 
                 setSaved(false);
                 add("Removed from bookmarks.");
+                console.log("Removed bookmark");
             } else {
                 console.warn("No existing bookmark found to remove.");
             }
+
         } catch (err: any) {
             console.error("Error unsaving course:", err);
             alert(err.message || "Failed to unsave course.");
         }
     }
+
 
     return (
         <Layout>

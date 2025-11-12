@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
-import { Outlet } from "react-router-dom";
-interface RgUserQQLayoutProps {
+import { Outlet, useNavigate } from "react-router-dom";
+interface RgUserQLayoutProps {
   children: React.ReactNode;
 }
 
-const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children }) => {
+const RgUserQLayout: React.FC<RgUserQLayoutProps> = ({ children }) => {
   const [totalQuestions, setTotalQuestions] = useState(1);
   const [progress, setProgress] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const navigate = useNavigate();
 
-  // 1️⃣ Get courseId from sessionStorage
+  // Get courseId from sessionStorage
   const courseId = Number(sessionStorage.getItem("currentCourseId") || 0);
 
-  // 2️⃣ Fetch total questions from API
+  // Fetch total questions from API
   useEffect(() => {
     if (!courseId) return;
 
@@ -23,7 +24,7 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children }) => {
       .catch(() => setTotalQuestions(1));
   }, [courseId]);
 
-  // 3️⃣ Poll localProgress from sessionStorage every 0.5s
+  // Poll localProgress from sessionStorage every 0.5s
   useEffect(() => {
     const interval = setInterval(() => {
       const localProgress = Number(sessionStorage.getItem("localProgress") || 0);
@@ -34,7 +35,7 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children }) => {
     return () => clearInterval(interval);
   }, [totalQuestions]);
 
-  // Timer effect (display only)
+  // Timer effect
   useEffect(() => {
     const timer = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
@@ -60,7 +61,8 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children }) => {
 
         <div className="flex flex-row mx-auto text-black text-[16px] font-light gap-[28px] pl-32">
           {/* Stop Quiz */}
-          <button className="cursor-pointer">
+          <button className="cursor-pointer"
+            onClick={() => navigate(`/RgUserCourse/${courseId}`)}>
             <RxCross2 className="h-[28px] w-[28px] transition-all duration-300 hover:text-[#DA1A32]" />
           </button>
 
@@ -85,4 +87,4 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children }) => {
   );
 };
 
-export default RgUserQQLayout;
+export default RgUserQLayout;

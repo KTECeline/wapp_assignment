@@ -22,7 +22,6 @@ public class DragDropQuestionsController : ControllerBase
 
         if (dd == null) return NotFound();
 
-        // Map to shape expected by React
         return new
         {
             questionId = dd.QuestionId,
@@ -37,11 +36,8 @@ public class DragDropQuestionsController : ControllerBase
             option4 = dd.Option4
         };
     }
-
-
-
-
-    // Optional: get all drag-and-drop questions for a course
+    
+    // Get all drag-and-drop questions for a course
     [HttpGet("course/{courseId}")]
     public async Task<ActionResult<IEnumerable<DragDropQuestion>>> GetDragDropQuestionsByCourse(int courseId)
     {
@@ -53,7 +49,7 @@ public class DragDropQuestionsController : ControllerBase
         return questions;
     }
 
-    // Optional: create drag-and-drop question
+    // Create drag-and-drop question
     [HttpPost]
     public async Task<ActionResult<DragDropQuestion>> CreateDragDrop([FromBody] DragDropQuestion question)
     {
@@ -63,7 +59,7 @@ public class DragDropQuestionsController : ControllerBase
         return CreatedAtAction(nameof(GetDragDropQuestion), new { id = question.QuestionId }, question);
     }
 
-    // Optional: update drag-and-drop question
+    // Optional: Update drag-and-drop question
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDragDrop(int id, [FromBody] DragDropQuestion update)
     {

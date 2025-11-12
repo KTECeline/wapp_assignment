@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 // Types
 type MCQOption = {
     id: number;
-    content: string; // text or media URL
+    content: string; 
 };
 
 type MCQQuestion = {
@@ -125,7 +125,7 @@ const RgUserMCQ = () => {
                                 key={opt.id}
                                 onClick={() => setSelectedOption(opt.id)}
                                 className={`font-inter w-[203px] h-full bg-white flex justify-center items-center p-[24px] text-black text-[14px] border-[3px] rounded-[20px] cursor-pointer shadow-[0px_5px_0px_rgba(185,169,161,1)] transition-all duration-[600ms]
-                ${selectedOption === opt.id ? "border-[#DA1A32] text-[#DA1A32] shadow-[0px_5px_0px_rgba(218,26,50,1)]" : "border-[#B9A9A1]"}`}
+                                ${selectedOption === opt.id ? "border-[#DA1A32] text-[#DA1A32] shadow-[0px_5px_0px_rgba(218,26,50,1)]" : "border-[#B9A9A1]"}`}
                             >
                                 {isImage(opt.content) ? (
                                     <img
@@ -173,7 +173,7 @@ const RgUserMCQ = () => {
                     <button
                         onClick={async () => {
                             setShowResult(false);
-                            await handleAnswer(isCorrect, navigate); // this will update queue and progress, then navigate
+                            await handleAnswer(isCorrect, navigate); 
                         }}
                         className="mt-[8px] font-ibarra cursor-pointer bg-white w-[154px] h-[40px] flex justify-center items-center rounded-full font-bold text-[24px] hover:scale-105 transition-all duration-[600ms] text-black hover:text-[#DA1A32]"
                     >

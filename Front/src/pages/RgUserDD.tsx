@@ -170,7 +170,7 @@ const RgUserDD = () => {
                     <button
                         onClick={async () => {
                             setShowResult(false);
-                            await handleAnswer(isCorrect, navigate); // ✅ update queue, progress, navigate
+                            await handleAnswer(isCorrect, navigate); 
                         }}
                         className="mt-[8px] font-ibarra cursor-pointer bg-white w-[154px] h-[40px] flex justify-center items-center rounded-full font-bold text-[24px] hover:scale-105 transition-all duration-[600ms] text-black hover:text-[#DA1A32]"
                     >
