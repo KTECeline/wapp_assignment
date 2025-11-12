@@ -22,15 +22,6 @@ interface Level {
     title: string;
 }
 
-interface Category {
-    categoryId: number;
-    title: string;
-    catImg: string;
-    catBanner: string;
-    description: string;
-    deleted: boolean;
-}
-
 interface Course {
     courseId: number;
     title: string;
@@ -44,7 +35,6 @@ interface Course {
     level: Level;
     categoryId: number;
 }
-
 
 
 const RgUserCat = () => {
