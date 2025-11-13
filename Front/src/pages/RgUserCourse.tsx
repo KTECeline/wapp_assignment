@@ -1022,8 +1022,8 @@ const RgUserCourse = () => {
 
                                     {/* Hashtage, Course Name and Category */}
                                     <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                        <a>#Small-Batch Brownies</a>
-                                        <a>#Cakes</a>
+                                        <span>#Small-Batch Brownies</span>
+                                        <span>#Cakes</span>
                                     </div>
                                 </div>
 
@@ -1087,8 +1087,8 @@ const RgUserCourse = () => {
 
                                     {/* Hashtage, Course Name and Category */}
                                     <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                        <a>#Small-Batch Brownies</a>
-                                        <a>#Cakes</a>
+                                        <span>#Small-Batch Brownies</span>
+                                        <span>#Cakes</span>
                                     </div>
                                 </div>
 
@@ -1152,8 +1152,8 @@ const RgUserCourse = () => {
 
                                     {/* Hashtage, Course Name and Category */}
                                     <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                        <a>#Small-Batch Brownies</a>
-                                        <a>#Cakes</a>
+                                        <span>#Small-Batch Brownies</span>
+                                        <span>#Cakes</span>
                                     </div>
                                 </div>
 

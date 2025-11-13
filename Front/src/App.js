@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AdminRoutes from './router/AdminRoutes';
 import { ToastProvider } from './components/Toast';
 import { ConfirmProvider } from './components/Confirm';
