@@ -1,4 +1,4 @@
-using Server.Data;
+// using Server.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure logging
@@ -53,7 +53,7 @@ _ = System.Threading.Tasks.Task.Run(() =>
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         logger.LogInformation("Starting database seeder in background");
-        DatabaseSeeder.Initialize(context);
+        // DatabaseSeeder.Initialize(context);
         logger.LogInformation("Database seeding finished");
     }
     catch (Exception ex)
