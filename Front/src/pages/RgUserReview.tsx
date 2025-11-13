@@ -1,5 +1,6 @@
 import { IoIosArrowBack, IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 import { FaStar } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { IoAdd } from "react-icons/io5";
@@ -46,6 +47,7 @@ const RgUserReview = () => {
     const [isReviewEdit, setIsReviewEdit] = useState(false);
     const [reviewId, setReviewId] = useState<number | null>(null);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isLoggedIn = !!user?.userId;
     const [userId] = useState(user?.userId || 1);
     const [courseId] = useState<number | null>(null);
     const [reviewtype] = useState<string>("website");
@@ -362,8 +364,10 @@ const RgUserReview = () => {
         setReviewId(null);
     };
 
+    const LayoutComponent = isLoggedIn ? RgUserLayout : VisitorLayout;
+
     return (
-        <RgUserLayout>
+        <LayoutComponent>
             {showReviewForm && (
                 <div className="fixed z-[100]">
                     <ReviewForm
@@ -661,19 +665,21 @@ const RgUserReview = () => {
                     </div>
 
 
-                    <button 
-                        onClick={() => setShowReviewForm(true)}
-                        className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                        <div className="font-inter text-[16px] font-light text-black">
-                            Review
-                        </div>
-                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                            <IoAdd className="text-white w-[32px] h-[32px]" />
-                        </div>
-                    </button>
+                    {isLoggedIn && (
+                        <button 
+                            onClick={() => setShowReviewForm(true)}
+                            className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                            <div className="font-inter text-[16px] font-light text-black">
+                                Review
+                            </div>
+                            <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                                <IoAdd className="text-white w-[32px] h-[32px]" />
+                            </div>
+                        </button>
+                    )}
                 </div>
             </div>
-        </RgUserLayout>
+        </LayoutComponent>
     );
 };
 

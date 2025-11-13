@@ -30,7 +30,70 @@ const Toast = ({ message, type, onClose }) => (
 );
 
 // Display Post Modal
-const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
+const DisplayPost = ({ post, onClose, onApprove, onReject, onLikeUpdate }) => {
+  const [likes, setLikes] = useState(post.likes || 0);
+  const [isLiked, setIsLiked] = useState(false);
+
+  console.log('DisplayPost render - likes:', likes, 'isLiked:', isLiked);
+
+  useEffect(() => {
+    console.log('useEffect triggered - likes changed to:', likes);
+  }, [likes]);
+
+  useEffect(() => {
+    console.log('useEffect triggered - isLiked changed to:', isLiked);
+  }, [isLiked]);
+
+  const handleLike = async () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('User from localStorage:', user);
+    console.log('User ID:', user?.userId);
+    console.log('Post ID:', post.id);
+    
+    if (!user?.userId) {
+      alert("Please login to like posts");
+      return;
+    }
+
+    try {
+      const requestBody = { userId: user.userId };
+      console.log('Sending like request:', requestBody);
+      
+      const response = await fetch(`/api/UserPosts/${post.id}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Failed to toggle like');
+      }
+      
+      const result = await response.json();
+      console.log('Like result:', result);
+      console.log('New like count:', result.likeCount);
+      console.log('Is liked:', result.isLiked);
+      console.log('Setting likes to:', result.likeCount);
+      setLikes(result.likeCount);
+      console.log('Setting isLiked to:', result.isLiked);
+      setIsLiked(result.isLiked);
+      console.log('State updated successfully');
+      
+      // Update parent component's post list
+      if (onLikeUpdate) {
+        onLikeUpdate(post.id, result.likeCount);
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      alert('Failed to toggle like: ' + err.message);
+    }
+  };
+
+  return (
   <div
     className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-center items-center cursor-pointer p-4 animate-fade-in"
     onClick={onClose}
@@ -46,8 +109,13 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
         <X size={24} />
       </button>
 
-      <button className="absolute top-3 right-14 cursor-pointer z-30 bg-white rounded-full p-1 shadow-md hover:bg-[#FFF8F2] transition-colors">
-        <Heart className="w-6 h-6 text-slate-300 hover:text-[#D9433B] transition-colors" />
+      <button 
+        onClick={handleLike}
+        className="absolute top-3 right-14 cursor-pointer z-30 bg-white rounded-full p-1 shadow-md hover:bg-[#FFF8F2] transition-colors"
+      >
+        <Heart 
+          className={`w-6 h-6 transition-colors ${isLiked ? 'text-[#D9433B] fill-[#D9433B]' : 'text-slate-300'}`}
+        />
       </button>
 
       <div className="relative w-full md:w-[340px] h-64 md:h-full rounded-xl overflow-hidden flex-shrink-0">
@@ -102,7 +170,7 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
           <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: '#F2E6E0' }}>
             <div className="flex items-center gap-2">
               <Heart className="" size={20} style={{ color: '#D9433B', fill: '#D9433B' }} />
-              <span className="text-base font-semibold text-slate-700">{post.likes} likes</span>
+              <span className="text-base font-semibold text-slate-700">{likes} likes</span>
             </div>
             <button className="text-slate-400 hover:text-[#B13A33] transition-colors">
               <Share2 size={20} />
@@ -130,7 +198,8 @@ const DisplayPost = ({ post, onClose, onApprove, onReject }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // Main Component
 export default function Posts() {
@@ -407,6 +476,15 @@ export default function Posts() {
           onClose={() => setSelectedPost(null)}
           onApprove={handleApprove}
           onReject={handleReject}
+          onLikeUpdate={(postId, newLikeCount) => {
+            setPosts(prev => prev.map(p => 
+              p.id === postId ? { ...p, likes: newLikeCount } : p
+            ));
+            setAllPosts(prev => prev.map(p => 
+              p.id === postId ? { ...p, likes: newLikeCount } : p
+            ));
+            setSelectedPost(prev => prev ? { ...prev, likes: newLikeCount } : null);
+          }}
         />
       )}
 

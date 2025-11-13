@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import DisplayPost from "../components/DisplayPost.tsx";
 
 interface Review {
     id: number;
@@ -15,10 +16,30 @@ interface Review {
     timeAgo: string;
 }
 
+interface Post {
+    id: number;
+    userId: number;
+    userName: string;
+    userInitial: string;
+    title: string;
+    description: string;
+    postImg: string;
+    type: string;
+    courseId: number | null;
+    courseTitle: string | null;
+    likeCount: number;
+    isLiked: boolean;
+    timeAgo: string;
+}
+
 const RgUserHome = () => {
     const [categories, setCategories] = useState<any[]>([]);
     const [reviews, setReviews] = useState<Review[]>([]);
     const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [postsLoading, setPostsLoading] = useState(true);
+    const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     useEffect(() => {
         fetch('/api/categories')
@@ -90,6 +111,61 @@ const RgUserHome = () => {
         };
 
         fetchReviews();
+    }, []);
+
+    // Fetch posts on component mount
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                setPostsLoading(true);
+                const res = await fetch('/api/UserPosts');
+                if (!res.ok) throw new Error("Failed to fetch posts");
+                
+                const data = await res.json();
+                
+                // Filter approved posts, sort by likes then by date
+                const postsData = data
+                    .filter((item: any) => item.approveStatus === "Approved" && !item.deletedAt)
+                    .sort((a: any, b: any) => {
+                        // First sort by like count (highest first)
+                        if (b.likeCount !== a.likeCount) {
+                            return b.likeCount - a.likeCount;
+                        }
+                        // If likes are equal, sort by date (most recent first)
+                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    })
+                    .slice(0, 3) // Take only first 3 posts
+                    .map((item: any) => {
+                        const userInitial = item.userName ? item.userName.charAt(0).toUpperCase() : 'U';
+                        const timeAgo = getTimeAgo(new Date(item.createdAt));
+                        
+                        return {
+                            id: item.id,
+                            userId: item.userId,
+                            userName: item.userName || 'Anonymous',
+                            userInitial,
+                            title: item.title,
+                            description: item.description,
+                            postImg: item.postImg,
+                            type: item.type,
+                            courseId: item.courseId,
+                            courseTitle: item.courseTitle,
+                            likeCount: item.likeCount || 0,
+                            isLiked: item.isLiked || false,
+                            timeAgo
+                        };
+                    });
+                
+                setPosts(postsData);
+            } catch (err) {
+                console.error("Error fetching posts:", err);
+                setPosts([]);
+            } finally {
+                setPostsLoading(false);
+            }
+        };
+
+        fetchPosts();
     }, []);
 
 
@@ -209,209 +285,96 @@ const RgUserHome = () => {
                 </div>
 
                 <div className="mt-[8px] font-inter text-[14px] flex flex-row items-center font-light max-w-[540px] text-center">
-                    Share your creations, exchange tips, and connect with fellow baking enthusiasts worldwide. De Pastry Lab is more than learning, it’s about growing together.
+                    Share your creations, exchange tips, and connect with fellow baking enthusiasts worldwide. De Pastry Lab is more than learning, it's about growing together.
                 </div>
 
                 {/* Post Container */}
-                <div className="mt-[38px] flex flex-row gap-[20px] max-w-screen">
-
-                    {/* Post Card */}
-                    <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                        <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
-                            <img src="/images/Post.webp" alt="post" className="w-full h-full object-cover z-0" />
-                            <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                            <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                <img src="/images/Post.webp" alt="post" className="w-full object-cover" />
+                <div className="mt-[38px] flex flex-row gap-[20px] justify-center">
+                {postsLoading ? (
+                    <div className="text-center py-8 w-full">Loading posts...</div>
+                ) : posts.length === 0 ? (
+                    <div className="text-center py-8 w-full">No posts yet</div>
+                ) : (
+                    posts.map((post) => (
+                        <div 
+                            key={post.id} 
+                            onClick={() => setSelectedPost(post)}
+                            className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0"
+                        >
+                            <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
+                                <img src={post.postImg} alt="post" className="w-full h-full object-cover z-0" />
+                                <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
+                                <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
+                                    <img src={post.postImg} alt="post" className="w-full object-cover" />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="flex flex-col w-[142px] justify-between">
-                            <div>
-                                <div className="flex flex-row justify-between items-center">
-                                    {/* Profile and time */}
-                                    <div className="flex flex-row gap-[6px]">
-                                        <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                            A
-                                        </div>
-
-                                        <div className="flex flex-col">
-                                            <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                Amy Wong
+                            <div className="flex flex-col w-[142px] justify-between">
+                                <div>
+                                    <div className="flex flex-row justify-between items-center">
+                                        {/* Profile and time */}
+                                        <div className="flex flex-row gap-[6px]">
+                                            <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                                {post.userInitial}
                                             </div>
 
-                                            <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                                17 hours ago
+                                            <div className="flex flex-col">
+                                                <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                                    {post.userName}
+                                                </div>
+
+                                                <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
+                                                    {post.timeAgo}
+                                                </div>
                                             </div>
                                         </div>
+
+                                        {/* Like button */}
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowLoginPrompt(true);
+                                            }}
+                                            className="cursor-pointer"
+                                        >
+                                            <IoMdHeart className={`w-[20px] h-[20px] ${post.isLiked ? 'text-[#FF5454]' : 'text-[#D9D9D9]'}`} />
+                                        </button>
                                     </div>
 
-                                    {/* Like button */}
-                                    <button className="cursor-pointer">
-                                        <IoMdHeart className="w-[20px] h-[20px] text-[#D9D9D9]" />
-                                    </button>
-                                </div>
-
-                                {/* Post title */}
-                                <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
-                                    My Freshly Baked Brownies
-                                </div>
-
-                                {/* Post Description */}
-                                <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
-                                    WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                                </div>
-
-                                {/* Hashtage, Course Name and Category */}
-                                <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                    <span>#Small-Batch Brownies</span>
-                                    <span>#Cakes</span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col">
-                                <div className="bg-black w-full h-[1px]" />
-                                <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
-                                    <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
-                                    <div className="translate-y-[2px]">
-                                        100
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Post Card */}
-                    <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                        <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
-                            <img src="/images/Post.webp" alt="post" className="w-full h-full object-cover z-0" />
-                            <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                            <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                <img src="/images/Post.webp" alt="post" className="w-full object-cover" />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col w-[142px] justify-between">
-                            <div>
-                                <div className="flex flex-row justify-between items-center">
-                                    {/* Profile and time */}
-                                    <div className="flex flex-row gap-[6px]">
-                                        <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                            A
-                                        </div>
-
-                                        <div className="flex flex-col">
-                                            <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                Amy Wong
-                                            </div>
-
-                                            <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                                17 hours ago
-                                            </div>
-                                        </div>
+                                    {/* Post title */}
+                                    <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
+                                        {post.title}
                                     </div>
 
-                                    {/* Like button */}
-                                    <button className="cursor-pointer">
-                                        <IoMdHeart className="w-[20px] h-[20px] text-[#D9D9D9]" />
-                                    </button>
+                                    {/* Post Description */}
+                                    <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
+                                        {post.description}
+                                    </div>
+
+                                    {/* Hashtags, Course Name */}
+                                    {post.type === 'course' && post.courseTitle && (
+                                        <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
+                                            <span>#{post.courseTitle}</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Post title */}
-                                <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
-                                    My Freshly Baked Brownies
-                                </div>
-
-                                {/* Post Description */}
-                                <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
-                                    WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                                </div>
-
-                                {/* Hashtage, Course Name and Category */}
-                                <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                    <span>#Small-Batch Brownies</span>
-                                    <span>#Cakes</span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col">
-                                <div className="bg-black w-full h-[1px]" />
-                                <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
-                                    <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
-                                    <div className="translate-y-[2px]">
-                                        100
+                                <div className="flex flex-col">
+                                    <div className="bg-black w-full h-[1px]" />
+                                    <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
+                                        <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
+                                        <div className="translate-y-[2px]">
+                                            {post.likeCount}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Post Card */}
-                    <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                        <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
-                            <img src="/images/Post.webp" alt="post" className="w-full h-full object-cover z-0" />
-                            <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                            <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                <img src="/images/Post.webp" alt="post" className="w-full object-cover" />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col w-[142px] justify-between">
-                            <div>
-                                <div className="flex flex-row justify-between items-center">
-                                    {/* Profile and time */}
-                                    <div className="flex flex-row gap-[6px]">
-                                        <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                            A
-                                        </div>
-
-                                        <div className="flex flex-col">
-                                            <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                Amy Wong
-                                            </div>
-
-                                            <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                                17 hours ago
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Like button */}
-                                    <button className="cursor-pointer">
-                                        <IoMdHeart className="w-[20px] h-[20px] text-[#D9D9D9]" />
-                                    </button>
-                                </div>
-
-                                {/* Post title */}
-                                <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
-                                    My Freshly Baked Brownies
-                                </div>
-
-                                {/* Post Description */}
-                                <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
-                                    WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                                </div>
-
-                                {/* Hashtage, Course Name and Category */}
-                                <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                    <span>#Small-Batch Brownies</span>
-                                    <span>#Cakes</span>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col">
-                                <div className="bg-black w-full h-[1px]" />
-                                <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
-                                    <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
-                                    <div className="translate-y-[2px]">
-                                        100
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    ))
+                )}
                 </div>
 
-                <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                <button onClick={() => navigate('/RgUserPost')} className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
                     View More
                 </button>
             </div>
@@ -432,7 +395,7 @@ const RgUserHome = () => {
                             </p>
 
                             <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
-                                At De Pastry Lab, we believe that the art of baking should be accessible to everyone. Whether you’re a complete beginner discovering the joy of baking for the first time or an aspiring pastry chef aiming to perfect your craft. Our platform was created with one mission in mind: To inspire and empower learners to explore the world of pastries, cakes, and desserts through hands-on, high-quality online learning.
+                                At De Pastry Lab, we believe that the art of baking should be accessible to everyone. Whether you're a complete beginner discovering the joy of baking for the first time or an aspiring pastry chef aiming to perfect your craft. Our platform was created with one mission in mind: To inspire and empower learners to explore the world of pastries, cakes, and desserts through hands-on, high-quality online learning.
                             </p>
 
                             <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
@@ -442,7 +405,6 @@ const RgUserHome = () => {
                             <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
                                 Our mission is to make pastry education engaging, practical, and inclusive. We aim to bridge the gap between professional techniques and home-baking creativity by offering easy-to-follow lessons, expert guidance, and a supportive learning community.
                             </p>
-
 
                             <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
                                 Our Vision
@@ -517,7 +479,6 @@ const RgUserHome = () => {
                 </div>
             </div>
 
-
             {/* Reviews */}
             <div className="mt-[62px] items-center text-black flex flex-col w-full bg-[#F8F5F0] pt-[36px] pb-[62px] relative">
                 <div className="font-ibarra text-[32px] font-bold flex flex-row items-center gap-[8px]">
@@ -527,13 +488,11 @@ const RgUserHome = () => {
                 </div>
 
                 {/* Review Container */}
-                <div className="mt-[38px] flex flex-row gap-[20px] max-w-screen">
-
-
+                <div className="mt-[38px] flex flex-row gap-[20px] max-w-screen overflow-x-auto scrol">
                 {reviewsLoading ? (
-                    <div className="text-center py-8">Loading reviews...</div>
+                    <div className="text-center py-8 w-full">Loading reviews...</div>
                 ) : reviews.length === 0 ? (
-                    <div className="text-center py-8">No reviews yet</div>
+                    <div className="text-center py-8 w-full">No reviews yet</div>
                 ) : (
                     reviews.map((review) => (
                         <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
@@ -600,7 +559,10 @@ const RgUserHome = () => {
                 )}
                 </div>
 
-                <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                <button 
+                    onClick={() => navigate('/RgUserReview')}
+                    className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]"
+                >
                     View More
                 </button>
             </div>
@@ -625,7 +587,7 @@ const RgUserHome = () => {
                 {/* Subtext */}
                 <p className="font-inter text-[15px] text-gray-600 text-center max-w-[600px] mb-8">
                     Join De Pastry Lab today and learn step-by-step from expert pastry chefs.
-                    Whether you're baking for fun or chasing your dream, we’ve got the right course for you.
+                    Whether you're baking for fun or chasing your dream, we've got the right course for you.
                 </p>
 
                 {/* Buttons */}
@@ -1010,6 +972,75 @@ const RgUserHome = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Display Post Modal */}
+            {selectedPost && (
+                <DisplayPost
+                    post={{
+                        postId: selectedPost.id,
+                        userId: selectedPost.userId,
+                        userName: selectedPost.userName,
+                        type: selectedPost.type,
+                        courseId: selectedPost.courseId || undefined,
+                        courseName: selectedPost.courseTitle || undefined,
+                        title: selectedPost.title,
+                        description: selectedPost.description,
+                        postImg: selectedPost.postImg,
+                        createdAt: selectedPost.timeAgo,
+                        likeCount: selectedPost.likeCount,
+                        isLiked: selectedPost.isLiked,
+                    }}
+                    onClose={() => setSelectedPost(null)}
+                    onLikeUpdate={(postId, newLikeCount, newIsLiked) => {
+                        setPosts(posts.map(p => 
+                            p.id === postId 
+                                ? { ...p, likeCount: newLikeCount, isLiked: newIsLiked }
+                                : p
+                        ));
+                        setSelectedPost(prev => prev ? { ...prev, likeCount: newLikeCount, isLiked: newIsLiked } : null);
+                    }}
+                />
+            )}
+
+            {/* Login Prompt Popup */}
+            {showLoginPrompt && (
+                <div 
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                    onClick={() => setShowLoginPrompt(false)}
+                >
+                    <div 
+                        className="bg-white rounded-[20px] p-[30px] shadow-2xl max-w-[400px] mx-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex flex-col items-center text-center">
+                            <IoMdHeart className="w-[50px] h-[50px] text-[#DA1A32] mb-[16px]" />
+                            <h3 className="font-ibarra text-[24px] font-bold text-black mb-[12px]">
+                                Login Required
+                            </h3>
+                            <p className="font-inter text-[14px] text-gray-600 mb-[24px]">
+                                Please login to like posts and interact with our community!
+                            </p>
+                            <div className="flex gap-[12px] w-full">
+                                <button
+                                    onClick={() => {
+                                        setShowLoginPrompt(false);
+                                        navigate('/Login');
+                                    }}
+                                    className="flex-1 bg-[#DA1A32] text-white font-inter font-medium py-[10px] px-[20px] rounded-full hover:bg-[#b91528] transition-all duration-300"
+                                >
+                                    Login
+                                </button>
+                                <button
+                                    onClick={() => setShowLoginPrompt(false)}
+                                    className="flex-1 bg-gray-200 text-gray-700 font-inter font-medium py-[10px] px-[20px] rounded-full hover:bg-gray-300 transition-all duration-300"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </VisitorLayout>
     );
 };
