@@ -6,6 +6,7 @@ import { FaStar } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { getUserCourses } from "../api/client.js";
 import { RxCross2 } from "react-icons/rx";
+import { useNavigate } from "react-router-dom";
 
 interface Course {
     courseId: number;
@@ -25,6 +26,7 @@ interface Course {
 }
 
 const RgUserCol = () => {
+    const navigate = useNavigate();
     const [active, setActive] = useState("Progressing");
     const [courses, setCourses] = useState<Course[]>([]);
     const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
@@ -305,7 +307,7 @@ const RgUserCol = () => {
                     <div className="mt-[32px] w-screen max-h-[512px] overflow-y-scroll no-scrollbar pb-[64px]">
                         <div className="grid grid-cols-4 gap-x-[14px] gap-y-[48px] w-[1090px] mx-auto">
                             {filteredCourses.map((course) => (
-                                <div key={course.courseId} className="max-h-[297px] w-[262px] group cursor-pointer">
+                                <div key={course.courseId} className="max-h-[297px] w-[262px] group cursor-pointer" onClick={() => navigate(`/RgUserCourse/${course.courseId}`)}>
                                     <img src={course.courseImg || "/images/Recipe.jpeg"} alt={course.title} className="w-full h-[177px] object-cover" />
 
                                     {/* Review */}

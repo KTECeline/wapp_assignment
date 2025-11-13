@@ -5,6 +5,7 @@ import { RxCross2 } from "react-icons/rx";
 import { BsCheck } from "react-icons/bs";
 import IconLoading from "./IconLoading.tsx";
 import DropUpload from "./DropUpload.tsx";
+import { getCourses } from "../api/client.js";
 
 type Post = {
     id: string;
@@ -47,27 +48,19 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
             }),
     });
 
-    // 🧠 Placeholder: later fetch from supabase
+    // 🧠 Fetch courses from backend
     useEffect(() => {
         if (from === "home") {
-            // 🔒 When backend is ready:
-            /*
-            const fetchCourses = async () => {
-                const { data, error } = await supabase
-                    .from("course")
-                    .select("id, title")
-                    .eq("user_id", userId);
-                if (!error) setCourses(data || []);
+            const fetchCoursesFromBackend = async () => {
+                try {
+                    const data = await getCourses();
+                    setCourses(data || []);
+                } catch (err) {
+                    console.error("Error fetching courses:", err);
+                    setCourses([]);
+                }
             };
-            fetchCourses();
-            */
-
-            // 🧩 Placeholder mock data for now
-            setCourses([
-                { id: 1, title: "Pastry Basics" },
-                { id: 2, title: "Chocolate Artistry" },
-                { id: 3, title: "Cake Decorating Mastery" },
-            ]);
+            fetchCoursesFromBackend();
         }
     }, [from, userId]);
 
