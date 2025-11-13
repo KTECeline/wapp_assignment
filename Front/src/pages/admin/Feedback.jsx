@@ -113,12 +113,38 @@ export default function FeedbackV2() {
   const uniqueCourses = Array.from(new Set(rows.map(r => r.courseId).filter(Boolean))).length;
   const categoryCounts = rows.reduce((acc, r) => { acc[r.category] = (acc[r.category] || 0) + 1; return acc; }, {});
   const topCategory = Object.entries(categoryCounts).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
+  
+  // Calculate trend: feedback from last 24 hours vs previous 24 hours
+  const now = new Date();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+  
+  const recentFeedback = rows.filter(r => {
+    const feedbackDate = new Date(r.date);
+    return feedbackDate >= oneDayAgo && feedbackDate <= now;
+  }).length;
+  
+  const previousFeedback = rows.filter(r => {
+    const feedbackDate = new Date(r.date);
+    return feedbackDate >= twoDaysAgo && feedbackDate < oneDayAgo;
+  }).length;
+  
+  const calculateTrend = () => {
+    if (previousFeedback === 0) {
+      return recentFeedback > 0 ? `+${recentFeedback} today` : 'No change';
+    }
+    const percentChange = ((recentFeedback - previousFeedback) / previousFeedback) * 100;
+    const sign = percentChange > 0 ? '+' : '';
+    return `${sign}${percentChange.toFixed(1)}% per day`;
+  };
+  
   const stats = {
     total: rows.length,
     avgRating: rows.length ? (rows.reduce((acc, r) => acc + r.rating, 0) / rows.length).toFixed(1) : '0.0',
     uniqueCourses,
     topCategory,
-    trend: '+12%'
+    trend: calculateTrend(),
+    trendPositive: recentFeedback >= previousFeedback
   };
 
   const renderStars = (rating) => {
@@ -157,7 +183,13 @@ export default function FeedbackV2() {
                   <h3 className="text-sm font-medium text-gray-600">Total Feedback</h3>
                   <p className="text-lg font-bold text-gray-900">{stats.total}</p>
                 </div>
-                <span className="text-xs font-semibold px-2 py-1 rounded-full border" style={{ color: 'var(--accent-dark)', backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>{stats.trend}</span>
+                <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
+                  stats.trendPositive 
+                    ? 'bg-green-50 text-green-700 border-green-200' 
+                    : 'bg-red-50 text-red-700 border-red-200'
+                }`}>
+                  {stats.trend}
+                </span>
               </div>
               <p className="text-xs text-gray-500">All time submissions</p>
             </div>

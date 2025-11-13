@@ -519,74 +519,68 @@ public static class DatabaseSeeder
         context.SaveChanges();
 
         // Add user feedbacks (reviews/ratings) for courses
-        var feedbacks = new[]
+        // Only seed if no feedbacks exist yet
+        if (!context.UserFeedbacks.Any())
         {
-            new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[0].CourseId, Rating = 5, Type = "review", Title = "Great starter guide", Description = "Followed the steps and my starter came to life.", CreatedAt = DateTime.UtcNow.AddDays(-7) },
-            new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[0].CourseId, Rating = 4, Type = "review", Title = "Good, long proofs", Description = "Takes time, but worth it.", CreatedAt = DateTime.UtcNow.AddDays(-3) },
-            new UserFeedback { UserId = dbUsers[4].UserId, CourseId = dbCourses[1].CourseId, Rating = 4, Type = "review", Title = "Tasty dough", Description = "Crispy crust at home.", CreatedAt = DateTime.UtcNow.AddDays(-2) },
-            new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[3].CourseId, Rating = 5, Type = "review", Title = "Life-changing croissants", Description = "Finally mastered lamination!", CreatedAt = DateTime.UtcNow.AddDays(-5) },
-            new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[4].CourseId, Rating = 4, Type = "review", Title = "Perfect cookies every time", Description = "My family loves these.", CreatedAt = DateTime.UtcNow.AddDays(-4) },
-            new UserFeedback { UserId = dbUsers[4].UserId, CourseId = dbCourses[5].CourseId, Rating = 5, Type = "review", Title = "Best apple pie ever", Description = "Crust is flaky and filling is perfect.", CreatedAt = DateTime.UtcNow.AddDays(-1) },
-            new UserFeedback { UserId = dbUsers[1].UserId, CourseId = dbCourses[6].CourseId, Rating = 5, Type = "review", Title = "Authentic English scones", Description = "Exactly how they should be.", CreatedAt = DateTime.UtcNow.AddDays(-6) },
-            new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[7].CourseId, Rating = 4, Type = "review", Title = "Healthy bread that tastes great", Description = "Much better than store-bought.", CreatedAt = DateTime.UtcNow.AddDays(-2) },
-            new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[8].CourseId, Rating = 5, Type = "review", Title = "Macarons made easy", Description = "Beautiful and delicious results!", CreatedAt = DateTime.UtcNow.AddDays(-8) }
-        };
-
-        // Add feedbacks only if the user hasn't already left feedback for the course
-        foreach (var fb in feedbacks)
-        {
-            if (!context.UserFeedbacks.Any(f => f.UserId == fb.UserId && f.CourseId == fb.CourseId && f.Title == fb.Title))
+            var feedbacks = new[]
             {
-                context.UserFeedbacks.Add(fb);
-            }
+                new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[0].CourseId, Rating = 5, Type = "review", Title = "Great starter guide", Description = "Followed the steps and my starter came to life.", CreatedAt = DateTime.UtcNow.AddDays(-7) },
+                new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[0].CourseId, Rating = 4, Type = "review", Title = "Good, long proofs", Description = "Takes time, but worth it.", CreatedAt = DateTime.UtcNow.AddDays(-3) },
+                new UserFeedback { UserId = dbUsers[4].UserId, CourseId = dbCourses[1].CourseId, Rating = 4, Type = "review", Title = "Tasty dough", Description = "Crispy crust at home.", CreatedAt = DateTime.UtcNow.AddDays(-2) },
+                new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[3].CourseId, Rating = 5, Type = "review", Title = "Life-changing croissants", Description = "Finally mastered lamination!", CreatedAt = DateTime.UtcNow.AddDays(-5) },
+                new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[4].CourseId, Rating = 4, Type = "review", Title = "Perfect cookies every time", Description = "My family loves these.", CreatedAt = DateTime.UtcNow.AddDays(-4) },
+                new UserFeedback { UserId = dbUsers[4].UserId, CourseId = dbCourses[5].CourseId, Rating = 5, Type = "review", Title = "Best apple pie ever", Description = "Crust is flaky and filling is perfect.", CreatedAt = DateTime.UtcNow.AddDays(-1) },
+                new UserFeedback { UserId = dbUsers[1].UserId, CourseId = dbCourses[6].CourseId, Rating = 5, Type = "review", Title = "Authentic English scones", Description = "Exactly how they should be.", CreatedAt = DateTime.UtcNow.AddDays(-6) },
+                new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[7].CourseId, Rating = 4, Type = "review", Title = "Healthy bread that tastes great", Description = "Much better than store-bought.", CreatedAt = DateTime.UtcNow.AddDays(-2) },
+                new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[8].CourseId, Rating = 5, Type = "review", Title = "Macarons made easy", Description = "Beautiful and delicious results!", CreatedAt = DateTime.UtcNow.AddDays(-8) }
+            };
+
+            context.UserFeedbacks.AddRange(feedbacks);
+            context.SaveChanges();
         }
-        context.SaveChanges();
 
         // Help sessions with messages (users open sessions and admin/instructors reply)
-        var helpSessionBob = new HelpSession
+        // Only seed if no help sessions exist yet
+        if (!context.HelpSessions.Any())
         {
-            UserId = dbUsers[2].UserId, // bob
-            StartSession = DateTime.UtcNow.AddDays(-1),
-            EndSession = DateTime.UtcNow.AddHours(-20),
-            Messages = new List<Message>
+            var helpSessionBob = new HelpSession
             {
-                new Message { Content = "Hi, my dough isn't rising.", SentDate = DateTime.UtcNow.AddDays(-1).AddHours(1), SentByAdmin = false, ViewByAdmin = false, ViewByUser = true },
-                new Message { Content = "Can you tell me the temperature of your proofing area?", SentDate = DateTime.UtcNow.AddDays(-1).AddHours(2), SentByAdmin = true, ViewByAdmin = true, ViewByUser = true }
-            }
-        };
+                UserId = dbUsers[2].UserId, // bob
+                StartSession = DateTime.UtcNow.AddDays(-1),
+                EndSession = DateTime.UtcNow.AddHours(-20),
+                Messages = new List<Message>
+                {
+                    new Message { Content = "Hi, my dough isn't rising.", SentDate = DateTime.UtcNow.AddDays(-1).AddHours(1), SentByAdmin = false, ViewByAdmin = false, ViewByUser = true },
+                    new Message { Content = "Can you tell me the temperature of your proofing area?", SentDate = DateTime.UtcNow.AddDays(-1).AddHours(2), SentByAdmin = true, ViewByAdmin = true, ViewByUser = true }
+                }
+            };
 
-        var helpSessionAlice = new HelpSession
-        {
-            UserId = dbUsers[1].UserId, // alice (instructor user opened a session as a student in this seed)
-            StartSession = DateTime.UtcNow.AddDays(-3),
-            EndSession = DateTime.UtcNow.AddDays(-3).AddHours(1),
-            Messages = new List<Message>
+            var helpSessionAlice = new HelpSession
             {
-                new Message { Content = "I'm seeing inconsistent crumb structure when using wholemeal flour.", SentDate = DateTime.UtcNow.AddDays(-3).AddMinutes(10), SentByAdmin = false, ViewByAdmin = false, ViewByUser = true },
-                new Message { Content = "Try increasing hydration by 2-3% and mix a little longer to develop gluten.", SentDate = DateTime.UtcNow.AddDays(-3).AddHours(0).AddMinutes(45), SentByAdmin = true, ViewByAdmin = true, ViewByUser = true }
-            }
-        };
+                UserId = dbUsers[1].UserId, // alice (instructor user opened a session as a student in this seed)
+                StartSession = DateTime.UtcNow.AddDays(-3),
+                EndSession = DateTime.UtcNow.AddDays(-3).AddHours(1),
+                Messages = new List<Message>
+                {
+                    new Message { Content = "I'm seeing inconsistent crumb structure when using wholemeal flour.", SentDate = DateTime.UtcNow.AddDays(-3).AddMinutes(10), SentByAdmin = false, ViewByAdmin = false, ViewByUser = true },
+                    new Message { Content = "Try increasing hydration by 2-3% and mix a little longer to develop gluten.", SentDate = DateTime.UtcNow.AddDays(-3).AddHours(0).AddMinutes(45), SentByAdmin = true, ViewByAdmin = true, ViewByUser = true }
+                }
+            };
 
-        var helpSessionDave = new HelpSession
-        {
-            UserId = dbUsers[4].UserId, // dave
-            StartSession = DateTime.UtcNow.AddHours(-5),
-            EndSession = null, // still open
-            Messages = new List<Message>
+            var helpSessionDave = new HelpSession
             {
-                new Message { Content = "I started the dough 2 hours ago and it's still sticky. Is that normal?", SentDate = DateTime.UtcNow.AddHours(-4).AddMinutes(30), SentByAdmin = false, ViewByAdmin = false, ViewByUser = true }
-            }
-        };
+                UserId = dbUsers[4].UserId, // dave
+                StartSession = DateTime.UtcNow.AddHours(-5),
+                EndSession = null, // still open
+                Messages = new List<Message>
+                {
+                    new Message { Content = "I started the dough 2 hours ago and it's still sticky. Is that normal?", SentDate = DateTime.UtcNow.AddHours(-4).AddMinutes(30), SentByAdmin = false, ViewByAdmin = false, ViewByUser = true }
+                }
+            };
 
-        // Add help sessions only when there isn't an existing session for that user with the same start time
-        foreach (var hs in new[] { helpSessionBob, helpSessionAlice, helpSessionDave })
-        {
-            if (!context.HelpSessions.Any(s => s.UserId == hs.UserId && s.StartSession == hs.StartSession))
-            {
-                context.HelpSessions.Add(hs);
-            }
+            context.HelpSessions.AddRange(new[] { helpSessionBob, helpSessionAlice, helpSessionDave });
+            context.SaveChanges();
         }
-        context.SaveChanges();
 
         // Posts and likes
         var post = new UserPost

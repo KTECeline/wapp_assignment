@@ -36,7 +36,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-[#FAF6F1] font-inter">
       {/* Top Navigation Bar */}
-      <div className="sticky top-0 z-30 h-16 w-full bg-white/90 backdrop-blur shadow-sm border-b border-[#F2E6E0]">
+      <div className="fixed top-0 z-30 h-16 w-full bg-white/90 backdrop-blur shadow-sm border-b border-[#F2E6E0]">
         <div className="flex items-center justify-between px-6 h-full">
           {/* Left side - Logo and Menu */}
           <div className="flex items-center gap-4">
@@ -50,18 +50,6 @@ export default function AdminLayout() {
             </button>
             <img src="/images/WAPP_Logo.png" alt="WAPP Logo" className="h-10 w-50" />
             
-          </div>
-
-          {/* Center - Search Bar */}
-          <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search anything..."
-                className="w-full pl-12 pr-4 py-2 bg-white border border-[#EADCD2] rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200"
-              />
-            </div>
           </div>
 
           {/* Right side - Notifications and Profile */}
@@ -96,10 +84,10 @@ export default function AdminLayout() {
         </div>
       </div>
 
-      <div className="flex">
+      <div className="flex pt-16">
         {/* Sidebar */}
-        <div className={`fixed md:static inset-y-0 left-0 z-40 w-72 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 ease-in-out`}>
-          <div className="h-full bg-white border-r border-[#F2E6E0] shadow-sm">
+        <div className={`fixed top-16 bottom-0 left-0 z-40 w-72 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 ease-in-out`}>
+          <div className="h-full bg-white border-r border-[#F2E6E0] shadow-sm overflow-y-auto">
             {/* Mobile close button */}
             <div className="md:hidden flex items-center justify-between p-4 border-b border-[#F2E6E0]">
               <span className="font-ibarra text-lg font-bold text-[#D9433B]">Menu</span>
@@ -114,7 +102,7 @@ export default function AdminLayout() {
             </div>
 
             {/* Navigation */}
-            <nav className="p-4 overflow-y-auto h-[calc(100vh-80px)]">
+            <nav className="p-4">
               <div className="mb-6">
                 <h2 className="text-xs font-semibold text-[#D9433B] uppercase tracking-wider mb-3">Navigation</h2>
                 <div className="space-y-1">
@@ -172,7 +160,7 @@ export default function AdminLayout() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen">
+        <main className="flex-1 min-h-screen md:ml-72">
           <div className="p-6 md:p-8">
             <div className="max-w-7xl mx-auto">
              

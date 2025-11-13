@@ -141,10 +141,11 @@ export default function Users() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Search and Filter Bar */}
-      <Card>
-        <div className="flex flex-col md:flex-row gap-4">
+    <div className="flex flex-col h-[calc(100vh-120px)] overflow-hidden">
+      {/* Search and Filter Bar - Fixed at Top */}
+      <div className="flex-shrink-0 mb-6">
+        <Card>
+          <div className="flex flex-col md:flex-row gap-4">
           {/* Search Input */}
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -194,48 +195,53 @@ export default function Users() {
           )}
         </div>
       </Card>
+      </div>
 
-      {/* Users Table */}
-      <Card>
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="text-gray-500">Loading users...</div>
+      {/* Users Table - Scrollable */}
+      <div className="flex-1 overflow-hidden">
+        <Card className="h-full flex flex-col">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="text-gray-500">Loading users...</div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              <Table
+              columns={columns}
+              data={filteredRows}
+              actions={(row) => (
+                <div className="flex gap-2">
+                  <button 
+                    className="p-2 border border-[#D9433B] text-[#D9433B] hover:bg-[#FFF0EE] rounded-xl transition-all duration-200" 
+                    onClick={() => { setEditing(rows.indexOf(row)); setOpen(true); }}
+                    title="Edit user"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button 
+                    className="p-2 bg-[#D9433B] text-white hover:bg-[#B13A33] rounded-xl transition-all duration-200" 
+                    onClick={async () => { 
+                      if (await confirm({ title: 'Delete user?', body: 'This action cannot be undone.' })) { 
+                        try {
+                          await deleteUser(row.userId);
+                          setRows(prev => prev.filter(r => r.userId !== row.userId));
+                          add('User deleted');
+                        } catch(e) {
+                          add(`Delete failed: ${e.message}`, 'error');
+                        }
+                      } 
+                    }}
+                    title="Delete user"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            />
           </div>
-        ) : (
-          <Table
-            columns={columns}
-            data={filteredRows}
-            actions={(row) => (
-              <div className="flex gap-2">
-                <button 
-                  className="p-2 border border-[#D9433B] text-[#D9433B] hover:bg-[#FFF0EE] rounded-xl transition-all duration-200" 
-                  onClick={() => { setEditing(rows.indexOf(row)); setOpen(true); }}
-                  title="Edit user"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button 
-                  className="p-2 bg-[#D9433B] text-white hover:bg-[#B13A33] rounded-xl transition-all duration-200" 
-                  onClick={async () => { 
-                    if (await confirm({ title: 'Delete user?', body: 'This action cannot be undone.' })) { 
-                      try {
-                        await deleteUser(row.userId);
-                        setRows(prev => prev.filter(r => r.userId !== row.userId));
-                        add('User deleted');
-                      } catch(e) {
-                        add(`Delete failed: ${e.message}`, 'error');
-                      }
-                    } 
-                  }}
-                  title="Delete user"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          />
         )}
-      </Card>
+        </Card>
+      </div>
 
       {/* Add/Edit User Modal */}
       <Modal open={open} onClose={() => { setOpen(false); setEditing(null); }} title={editing != null ? 'Edit User' : 'Add User'}

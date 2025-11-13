@@ -40,6 +40,7 @@ const CustomTooltip = ({ active, payload }) => {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [hoveredStat, setHoveredStat] = useState(null);
+  const [enrollmentPeriod, setEnrollmentPeriod] = useState('week'); // 'week', 'month', 'year'
 
   const [stats, setStats] = useState(initialStats);
   const [enrollmentDataState, setEnrollmentDataState] = useState(defaultEnrollment);
@@ -48,12 +49,22 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [usersRes, coursesRes, feedbacksRes, completionRes, usersGrowth] = await Promise.all([
+        // Determine API parameters based on selected period
+        let growthEndpoint = '/api/Reports/UsersGrowth?weeks=6';
+        if (enrollmentPeriod === 'month') {
+          growthEndpoint = '/api/Reports/UsersGrowth?months=12';
+        } else if (enrollmentPeriod === 'year') {
+          growthEndpoint = '/api/Reports/UsersGrowth?years=5';
+        }
+
+        const [usersRes, coursesRes, feedbacksRes, completionRes, usersGrowth, courseActivitiesRes, postsRes] = await Promise.all([
           fetch('/api/Users').then(r => r.ok ? r.json() : []),
           fetch('/api/Courses').then(r => r.ok ? r.json() : []),
           fetch('/api/UserFeedbacks').then(r => r.ok ? r.json() : []),
           fetch('/api/Reports/CompletionRate?months=1').then(r => r.ok ? r.json() : []),
-          fetch('/api/Reports/UsersGrowth?weeks=6').then(r => r.ok ? r.json() : [])
+          fetch(growthEndpoint).then(r => r.ok ? r.json() : []),
+          fetch('/api/CourseUserActivities/all').then(r => r.ok ? r.json() : []),
+          fetch('/api/UserPosts').then(r => r.ok ? r.json() : [])
         ]);
 
         const totalUsers = Array.isArray(usersRes) ? usersRes.length : 0;
@@ -61,11 +72,46 @@ export default function Dashboard() {
         const feedbackPending = Array.isArray(feedbacksRes) ? feedbacksRes.length : 0;
         const completionVal = Array.isArray(completionRes) && completionRes.length ? completionRes[completionRes.length - 1].value : 0;
 
+        // Calculate enrollment trend from usersGrowth data
+        let enrollmentTrend = 'up';
+        let enrollmentChange = '';
+        let enrollmentChangeValue = '';
+        
+        if (Array.isArray(usersGrowth) && usersGrowth.length >= 2) {
+          const current = usersGrowth[usersGrowth.length - 1].value || 0;
+          const previous = usersGrowth[usersGrowth.length - 2].value || 0;
+          
+          if (previous > 0) {
+            const percentChange = ((current - previous) / previous) * 100;
+            enrollmentTrend = percentChange >= 0 ? 'up' : 'down';
+            enrollmentChange = `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}%`;
+            enrollmentChangeValue = `vs last period`;
+          } else if (current > 0) {
+            enrollmentTrend = 'up';
+            enrollmentChange = `+${current}`;
+            enrollmentChangeValue = 'new enrollments';
+          }
+        }
+
+        // Calculate completion rate trend (compare last two periods)
+        let completionTrend = 'up';
+        let completionChange = '';
+        let completionChangeValue = '';
+        
+        if (Array.isArray(completionRes) && completionRes.length >= 2) {
+          const currentComp = completionRes[completionRes.length - 1].value || 0;
+          const previousComp = completionRes[completionRes.length - 2].value || 0;
+          const diff = currentComp - previousComp;
+          completionTrend = diff >= 0 ? 'up' : 'down';
+          completionChange = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+          completionChangeValue = 'vs last month';
+        }
+
         setStats([
-          { title: 'Total Users', value: totalUsers, subtitle: 'Active pastry enthusiasts', icon: Users, change: '', changeValue: '', trend: 'up' },
-          { title: 'Active Courses', value: activeCourses, subtitle: 'Baking adventures available', icon: BookOpen, change: '', changeValue: '', trend: 'up' },
-          { title: 'Feedback Pending', value: feedbackPending, subtitle: 'Awaiting your attention', icon: MessageSquare, change: '', changeValue: '', trend: 'down' },
-          { title: 'Completion Rate', value: `${completionVal}%`, subtitle: 'Average course completion', icon: TrendingUp, change: '', changeValue: '', trend: 'up' }
+          { title: 'Total Users', value: totalUsers, subtitle: 'Active pastry enthusiasts', icon: Users, change: enrollmentChange, changeValue: enrollmentChangeValue, trend: enrollmentTrend },
+          { title: 'Active Courses', value: activeCourses, subtitle: 'Baking adventures available', icon: BookOpen, change: `${activeCourses}`, changeValue: 'courses live', trend: 'up' },
+          { title: 'Feedback Pending', value: feedbackPending, subtitle: 'Awaiting your attention', icon: MessageSquare, change: `${feedbackPending}`, changeValue: 'needs review', trend: feedbackPending > 0 ? 'down' : 'up' },
+          { title: 'Completion Rate', value: `${completionVal}%`, subtitle: 'Average course completion', icon: TrendingUp, change: completionChange || `${completionVal}%`, changeValue: completionChangeValue || 'current rate', trend: completionTrend }
         ]);
 
         // usersGrowth -> map to enrollmentDataState (use value + previous placeholder)
@@ -75,27 +121,100 @@ export default function Dashboard() {
           setEnrollmentDataState(mapped.length ? mapped : defaultEnrollment);
         }
 
-        // Recent activity: use latest feedbacks as activity entries
+        // Recent activity: combine feedbacks, course activities, and posts
+        const recentActivities = [];
+
+        // Add feedbacks
         if (Array.isArray(feedbacksRes)) {
-          const recent = feedbacksRes.slice(0, 8).map((f) => ({
-            id: f.id || f.feedbackId || f.FeedbackId,
-            type: 'feedback',
-            title: f.title || (f.courseTitle ? `Feedback on ${f.courseTitle}` : 'User feedback'),
-            description: `${f.userName || f.userEmail || ''}${f.courseTitle ? ' — ' + f.courseTitle : ''}`,
-            time: f.createdAt ? new Date(f.createdAt).toLocaleString() : '',
-            icon: MessageSquare,
-            color: 'var(--accent)',
-            bgColor: 'var(--surface)',
-            badge: ''
-          }));
-          setRecentActivityState(recent);
+          feedbacksRes.forEach((f) => {
+            // Parse date and ensure it's treated as UTC, then convert to local
+            let createdDate = new Date();
+            if (f.createdAt) {
+              createdDate = new Date(f.createdAt);
+              // If the date string doesn't have timezone info, treat it as UTC
+              if (!f.createdAt.includes('Z') && !f.createdAt.includes('+')) {
+                createdDate = new Date(f.createdAt + 'Z');
+              }
+            }
+            recentActivities.push({
+              id: `feedback-${f.id || f.feedbackId || f.FeedbackId}`,
+              type: 'feedback',
+              title: f.title || (f.courseTitle ? `Feedback on ${f.courseTitle}` : 'User feedback'),
+              description: `${f.userName || f.userEmail || ''}${f.courseTitle ? ' — ' + f.courseTitle : ''}`,
+              time: createdDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              timestamp: createdDate.getTime(),
+              icon: MessageSquare,
+              color: '#D9433B',
+              bgColor: 'var(--surface)',
+              badge: 'Feedback'
+            });
+          });
         }
+
+        // Add course activities (enrollments) - match with user and course data
+        if (Array.isArray(courseActivitiesRes) && Array.isArray(usersRes) && Array.isArray(coursesRes)) {
+          const registeredActivities = courseActivitiesRes.filter(a => a.registered);
+          
+          registeredActivities.forEach((a, index) => {
+            const user = usersRes.find(u => u.userId === a.userId);
+            const course = coursesRes.find(c => c.courseId === a.courseId);
+            
+            // Since we don't have a real timestamp, use ActivityId as proxy for recency
+            // Spread enrollments over the last 7 days so they mix with posts/feedbacks
+            const estimatedTime = new Date(Date.now() - (registeredActivities.length - index) * 60000);
+            
+            recentActivities.push({
+              id: `activity-${a.activityId}`,
+              type: 'enrollment',
+              title: `New enrollment${course?.title ? `: ${course.title}` : ''}`,
+              description: `${user?.username || user?.firstName || 'User'} enrolled in a course`,
+              time: estimatedTime.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              timestamp: estimatedTime.getTime(),
+              activityId: a.activityId, // Keep original ID for proper sorting
+              icon: BookOpen,
+              color: '#10b981',
+              bgColor: 'var(--surface)',
+              badge: 'Enrollment'
+            });
+          });
+        }
+
+        // Add posts
+        if (Array.isArray(postsRes)) {
+          postsRes.forEach((p) => {
+            // Parse date and ensure it's treated as UTC, then convert to local
+            let createdDate = new Date();
+            if (p.createdAt) {
+              createdDate = new Date(p.createdAt);
+              // If the date string doesn't have timezone info, treat it as UTC
+              if (!p.createdAt.includes('Z') && !p.createdAt.includes('+')) {
+                createdDate = new Date(p.createdAt + 'Z');
+              }
+            }
+            recentActivities.push({
+              id: `post-${p.postId || p.id}`,
+              type: 'post',
+              title: p.title || 'New post',
+              description: `${p.userName || 'User'} posted${p.courseTitle ? ' in ' + p.courseTitle : ''}`,
+              time: createdDate.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              timestamp: createdDate.getTime(),
+              icon: MessageSquare,
+              color: '#3b82f6',
+              bgColor: 'var(--surface)',
+              badge: p.type === 'question' ? 'Question' : 'Post'
+            });
+          });
+        }
+
+        // Sort by timestamp (most recent first) and take top 10
+        recentActivities.sort((a, b) => b.timestamp - a.timestamp);
+        setRecentActivityState(recentActivities.slice(0, 10));
       } catch (err) {
         console.error('Failed to load dashboard data', err);
       }
     };
     load();
-  }, []);
+  }, [enrollmentPeriod]);
 
   return (
   <div className="min-h-screen">
@@ -129,7 +248,7 @@ export default function Dashboard() {
                   <h3 className="text-sm font-medium text-gray-500">{stat.title}</h3>
                   <p className="text-3xl font-bold text-gray-900 tracking-tight">{typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}</p>
                   <p className="text-xs text-gray-400">{stat.subtitle}</p>
-                  <p className="text-xs font-medium text-gray-600 mt-2">{stat.changeValue} vs last month</p>
+                  {stat.changeValue && <p className="text-xs font-medium text-gray-600 mt-2">{stat.changeValue}</p>}
                 </div>
               </div>
             </div>
@@ -143,12 +262,46 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Enrollment Trend</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Comparing last 6 months performance</p>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {enrollmentPeriod === 'week' && 'Last 6 weeks performance'}
+                  {enrollmentPeriod === 'month' && 'Last 12 months performance'}
+                  {enrollmentPeriod === 'year' && 'Last 5 years performance'}
+                </p>
               </div>
-              <button className="px-3 py-1.5 text-sm font-medium text-[var(--accent-dark)] hover:bg-[var(--surface)] rounded-lg transition-colors flex items-center gap-1 border" style={{ borderColor: 'var(--border)' }}>
-                <BarChart3 className="w-4 h-4" />
-                View Report
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex rounded-lg border p-1" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
+                  <button
+                    onClick={() => setEnrollmentPeriod('week')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      enrollmentPeriod === 'week'
+                        ? 'bg-[#D9433B] text-white shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setEnrollmentPeriod('month')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      enrollmentPeriod === 'month'
+                        ? 'bg-[#D9433B] text-white shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Month
+                  </button>
+                  <button
+                    onClick={() => setEnrollmentPeriod('year')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                      enrollmentPeriod === 'year'
+                        ? 'bg-[#D9433B] text-white shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Year
+                  </button>
+                </div>
+              </div>
             </div>
             
             <ResponsiveContainer width="100%" height={280}>
@@ -183,33 +336,51 @@ export default function Dashboard() {
             </div>
             
               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                {recentActivityState.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="group flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer border"
-                    style={{ borderColor: 'transparent' }}
-                    onClick={() => {
-                      // navigate to feedback detail if id present
-                      if (activity.type === 'feedback' && activity.id) navigate(`/admin/feedback`);
-                    }}
-                  >
-                    <div className="p-2 rounded-lg group-hover:scale-110 transition-transform duration-200" style={{ backgroundColor: 'var(--surface)' }}>
-                      <activity.icon className="w-4 h-4" style={{ color: activity.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{activity.title}</p>
-                        {activity.badge && (
-                          <span className="px-1.5 py-0.5 text-xs font-medium rounded border" style={{ backgroundColor: 'var(--surface)', color: 'var(--accent-dark)', borderColor: 'var(--border)' }}>
-                            {activity.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-600 truncate">{activity.description}</p>
-                      <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
-                    </div>
+                {recentActivityState.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">No recent activity</p>
                   </div>
-                ))}
+                ) : (
+                  recentActivityState.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="group flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer border hover:border-gray-200 hover:shadow-sm"
+                      style={{ borderColor: 'transparent' }}
+                      onClick={() => {
+                        // Navigate based on activity type
+                        if (activity.type === 'feedback') {
+                          navigate(`/admin/feedback`);
+                        } else if (activity.type === 'post') {
+                          navigate(`/admin/posts`);
+                        } else if (activity.type === 'enrollment') {
+                          navigate(`/admin/course-management`);
+                        }
+                      }}
+                    >
+                      <div className="p-2 rounded-lg group-hover:scale-110 transition-transform duration-200" style={{ backgroundColor: activity.bgColor }}>
+                        <activity.icon className="w-4 h-4" style={{ color: activity.color }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{activity.title}</p>
+                          {activity.badge && (
+                            <span 
+                              className="px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0"
+                              style={{ 
+                                backgroundColor: activity.type === 'feedback' ? '#FEF3C7' : activity.type === 'enrollment' ? '#D1FAE5' : '#DBEAFE',
+                                color: activity.type === 'feedback' ? '#92400E' : activity.type === 'enrollment' ? '#065F46' : '#1E40AF'
+                              }}
+                            >
+                              {activity.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 truncate mt-0.5">{activity.description}</p>
+                        <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
           </div>
         </div>

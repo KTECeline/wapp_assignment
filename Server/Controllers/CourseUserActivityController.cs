@@ -23,7 +23,15 @@ public class CourseUserActivitiesController : ControllerBase
         return Ok(new { registered = activity.Registered, saved = activity.Bookmark });
     }
 
-    // GET status
+    // GET all activities
+    [HttpGet("all")]
+    public async Task<ActionResult<IEnumerable<CourseUserActivity>>> GetAllActivities()
+    {
+        var activities = await _context.CourseUserActivities.ToListAsync();
+        return Ok(activities);
+    }
+
+    // GET specific activity
     [HttpGet]
     public async Task<ActionResult<CourseUserActivity?>> GetActivity([FromQuery] int userId, [FromQuery] int courseId)
     {
