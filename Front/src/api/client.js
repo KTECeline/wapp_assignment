@@ -291,6 +291,12 @@ export async function getCourses() {
   return res.json();
 }
 
+export async function getCoursesWithStats() {
+  const res = await fetch('/api/Courses/withstats');
+  if (!res.ok) throw new Error(`Failed to fetch courses with stats: ${res.status}`);
+  return res.json();
+}
+
 export async function getCourse(id) {
   const res = await fetch(`/api/Courses/${id}`);
   if (!res.ok) throw new Error(`Failed to fetch course: ${res.status}`);
