@@ -1,7 +1,6 @@
 import { IoIosArrowBack, IoIosArrowForward, IoMdHeart } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
-import { CiBookmark, CiFilter } from "react-icons/ci";
-import { FaStar } from "react-icons/fa";
+import { CiFilter } from "react-icons/ci";
 import { IoAdd, IoShareSocialSharp } from "react-icons/io5";
 import { TbArrowsSort } from "react-icons/tb";
 
@@ -140,8 +139,8 @@ const RgUserCoursePost = () => {
 
                                         {/* Hashtage, Course Name and Category */}
                                         <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                            <a>#Small-Batch Brownies</a>
-                                            <a>#Cakes</a>
+                                            <span>#Small-Batch Brownies</span>
+                                            <span>#Cakes</span>
                                         </div>
 
                                         <div className="flex flex-col mt-[18px]">
@@ -204,8 +203,8 @@ const RgUserCoursePost = () => {
 
                                         {/* Hashtage, Course Name and Category */}
                                         <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                            <a>#Small-Batch Brownies</a>
-                                            <a>#Cakes</a>
+                                            <span>#Small-Batch Brownies</span>
+                                            <span>#Cakes</span>
                                         </div>
 
                                         <div className="flex flex-col mt-[18px]">
@@ -268,8 +267,8 @@ const RgUserCoursePost = () => {
 
                                         {/* Hashtage, Course Name and Category */}
                                         <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                            <a>#Small-Batch Brownies</a>
-                                            <a>#Cakes</a>
+                                            <span>#Small-Batch Brownies</span>
+                                            <span>#Cakes</span>
                                         </div>
 
                                         <div className="flex flex-col mt-[18px]">
@@ -332,8 +331,8 @@ const RgUserCoursePost = () => {
 
                                         {/* Hashtage, Course Name and Category */}
                                         <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                            <a>#Small-Batch Brownies</a>
-                                            <a>#Cakes</a>
+                                            <span>#Small-Batch Brownies</span>
+                                            <span>#Cakes</span>
                                         </div>
 
                                         <div className="flex flex-col mt-[18px]">
@@ -396,8 +395,8 @@ const RgUserCoursePost = () => {
 
                                         {/* Hashtage, Course Name and Category */}
                                         <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                            <a>#Small-Batch Brownies</a>
-                                            <a>#Cakes</a>
+                                            <span>#Small-Batch Brownies</span>
+                                            <span>#Cakes</span>
                                         </div>
 
                                         <div className="flex flex-col mt-[18px]">
@@ -460,8 +459,8 @@ const RgUserCoursePost = () => {
 
                                         {/* Hashtage, Course Name and Category */}
                                         <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                            <a>#Small-Batch Brownies</a>
-                                            <a>#Cakes</a>
+                                            <span>#Small-Batch Brownies</span>
+                                            <span>#Cakes</span>
                                         </div>
 
                                         <div className="flex flex-col mt-[18px]">

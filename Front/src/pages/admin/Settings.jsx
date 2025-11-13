@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Bell, Shield, Database, LogOut, Check, X, Eye, EyeOff, Download } from 'lucide-react';
 import { exportAllAdminData } from '../../api/client';
+import { useNavigate } from 'react-router-dom';
 
 // Mock Card component
 const Card = ({ title, subtitle, children, className = '' }) => (
@@ -14,6 +15,7 @@ const Card = ({ title, subtitle, children, className = '' }) => (
 );
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState({ username: '', email: '' });
   const [currentPasswordInput, setCurrentPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
@@ -36,7 +38,22 @@ export default function Settings() {
   };
 
   const onLogout = () => {
+    // Clear all user data from storage
+    localStorage.removeItem('user');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('auth');
+    localStorage.removeItem('account');
+    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('authToken');
+    sessionStorage.clear();
+    
     showToast('Logged out successfully');
+    
+    // Navigate to landing page after a short delay
+    setTimeout(() => {
+      navigate('/');
+    }, 1000);
   };
 
   const handleChangePassword = async () => {
@@ -57,13 +74,51 @@ export default function Settings() {
     if (failed) return showToast(failed.msg, 'error');
 
     setChangingPassword(true);
-    setTimeout(() => {
+
+    try {
+      // Get user ID from localStorage
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        showToast('User not found. Please log in again.', 'error');
+        setChangingPassword(false);
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const userId = user.userId || user.id;
+
+      if (!userId) {
+        showToast('User ID not found. Please log in again.', 'error');
+        setChangingPassword(false);
+        return;
+      }
+
+      // Call the backend API
+      const formData = new FormData();
+      formData.append('currentPassword', currentPasswordInput);
+      formData.append('newPassword', newPasswordInput);
+
+      const response = await fetch(`/api/Users/${userId}/change-password`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to change password');
+      }
+
       showToast('Password changed successfully!');
       setCurrentPasswordInput('');
       setNewPasswordInput('');
       setConfirmPasswordInput('');
+    } catch (error) {
+      console.error('Password change error:', error);
+      showToast(error.message || 'Failed to change password', 'error');
+    } finally {
       setChangingPassword(false);
-    }, 1000);
+    }
   };
 
   const handleExportData = async () => {

@@ -7,20 +7,6 @@ import VisitorLayout from "../components/VisitorLayout.tsx";
 import { Link, useNavigate } from "react-router-dom";
 import login, { testConnection } from "../services/authService.ts";
 
-type FormValues = {
-    fname: string;
-    lname: string;
-    gender: string;
-    DOB: string;
-    profileimage: globalThis.File | null;
-    plevel: string;
-    pcat: string;
-
-    username: string;
-    email: string;
-    password: string;
-};
-
 const Login: FC = () => {
     const navigate = useNavigate();
     // Test server connection on component mount

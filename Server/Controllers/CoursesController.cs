@@ -33,12 +33,41 @@ public class CoursesController : ControllerBase
             .Where(c => !c.Deleted)
             .ToListAsync();
 
-        var stats = await _context.CourseStats.ToListAsync();
+        // Calculate total enrollments from CourseUserActivities
+        var enrollmentCounts = await _context.CourseUserActivities
+            .Where(a => a.Registered)
+            .GroupBy(a => a.CourseId)
+            .Select(g => new
+            {
+                CourseId = g.Key,
+                TotalEnrollments = g.Count()
+            })
+            .ToListAsync();
 
-        var result = courses.Select(c => new
+        // Calculate average ratings from UserFeedbacks for each course
+        var courseRatings = await _context.UserFeedbacks
+            .Where(f => f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .GroupBy(f => f.CourseId)
+            .Select(g => new
+            {
+                CourseId = g.Key,
+                AverageRating = g.Average(f => f.Rating)
+            })
+            .ToListAsync();
+
+        var result = courses.Select(c =>
         {
-            course = c,
-            totalEnrollments = stats.FirstOrDefault(s => s.CourseId == c.CourseId)?.TotalEnrollments ?? 0
+            var enrollment = enrollmentCounts.FirstOrDefault(e => e.CourseId == c.CourseId);
+            var rating = courseRatings.FirstOrDefault(r => r.CourseId == c.CourseId);
+            
+            // Update the course rating property with calculated average
+            c.Rating = rating != null ? (float)rating.AverageRating : 0;
+            
+            return new
+            {
+                course = c,
+                totalEnrollments = enrollment?.TotalEnrollments ?? 0
+            };
         });
 
         return Ok(result);

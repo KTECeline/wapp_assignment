@@ -30,7 +30,7 @@ const RgUserQuizCp = () => {
             if (current) setUserRank(current);
         };
         fetchLeaderboard();
-    }, [id]);
+    }, [id, user.username]);
 
     return (
         <RgUserLayout>

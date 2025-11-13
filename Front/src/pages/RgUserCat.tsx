@@ -74,18 +74,20 @@ const RgUserCat = () => {
                 const withReviews = await Promise.all(
                     filtered.map(async (course: Course) => {
                         try {
-                            // Fetch total reviews
-                            const countRes = await fetch(`/api/UserFeedbacks/course/${course.courseId}`);
-                            const feedbackData = await countRes.json();
+                            // Fetch total reviews count
+                            const countRes = await fetch(`/api/UserFeedbacks/count/${course.courseId}`);
+                            const totalReviews = await countRes.json();
                             
                             // Fetch average rating
                             const avgRes = await fetch(`/api/UserFeedbacks/average/${course.courseId}`);
                             const avgText = await avgRes.text();
                             const averageRating = avgText ? parseFloat(avgText) : 0.0;
                             
+                            console.log(`Course ${course.courseId} - Reviews: ${totalReviews}, Avg Rating: ${averageRating}`);
+                            
                             return {
                                 ...course,
-                                totalReviews: feedbackData.totalReviews || 0,
+                                totalReviews: totalReviews || 0,
                                 averageRating: averageRating
                             };
                         } catch (err) {

@@ -174,7 +174,7 @@ export const logout = async () => {
   }
 };
 
-export default {
+const api = {
   courses: coursesAPI,
   categories: categoriesAPI,
   levels: levelsAPI,
@@ -185,3 +185,5 @@ export default {
   helpSessions: helpSessionsAPI,
   messages: messagesAPI,
 };
+
+export default api;

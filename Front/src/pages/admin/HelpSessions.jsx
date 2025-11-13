@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, X, User, Clock, CheckCircle, AlertCircle, Search, Filter } from 'lucide-react';
+import { MessageCircle, Send, Clock, CheckCircle, AlertCircle, Search, Filter } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import { getHelpSessions, createMessage, closeHelpSession, markMessageViewed } from '../../api/client';
 

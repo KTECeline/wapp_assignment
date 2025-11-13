@@ -140,7 +140,7 @@ public class UserFeedbacksController : ControllerBase
     public async Task<ActionResult<int>> GetFeedbackCountByCourse(int courseId)
     {
         var count = await _context.UserFeedbacks
-            .Where(f => f.CourseId == courseId && f.DeletedAt == null && f.Type == "review")
+            .Where(f => f.CourseId == courseId && f.DeletedAt == null && f.Type.ToLower() == "review")
             .CountAsync();
 
         return Ok(count);
@@ -150,7 +150,7 @@ public class UserFeedbacksController : ControllerBase
     public async Task<ActionResult<double>> GetAverageRatingByCourse(int courseId)
     {
         var feedbacks = await _context.UserFeedbacks
-            .Where(f => f.CourseId == courseId && f.DeletedAt == null && f.Type == "review")
+            .Where(f => f.CourseId == courseId && f.DeletedAt == null && f.Type.ToLower() == "review")
             .ToListAsync();
 
         if (!feedbacks.Any())
@@ -193,7 +193,7 @@ public class UserFeedbacksController : ControllerBase
     {
         var reviews = await _context.UserFeedbacks
             .Include(f => f.User)
-            .Where(f => f.CourseId == courseId && f.DeletedAt == null)
+            .Where(f => f.CourseId == courseId && f.DeletedAt == null && f.Type.ToLower() == "review")
             .OrderByDescending(f => f.CreatedAt)
             .ToListAsync();
 

@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload }) => {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [hoveredStat, setHoveredStat] = useState(null);
+  // const [hoveredStat, setHoveredStat] = useState(null);
   const [enrollmentPeriod, setEnrollmentPeriod] = useState('week'); // 'week', 'month', 'year'
 
   const [stats, setStats] = useState(initialStats);
@@ -225,8 +225,6 @@ export default function Dashboard() {
           {stats.map((stat, index) => (
             <div
               key={stat.title}
-              onMouseEnter={() => setHoveredStat(index)}
-              onMouseLeave={() => setHoveredStat(null)}
               className="group relative bg-white rounded-2xl p-5 border transition-all duration-300 hover:shadow-md hover:-translate-y-1 cursor-pointer overflow-hidden"
               style={{ borderColor: 'var(--border)' }}
             >

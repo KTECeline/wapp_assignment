@@ -15,7 +15,6 @@ export default function FeedbackV2() {
   const [rows, setRows] = useState([]);
   const [filteredRows, setFilteredRows] = useState([]);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [courseFilter, setCourseFilter] = useState('All');
@@ -390,7 +389,7 @@ export default function FeedbackV2() {
             </Card>
           ) : (
             paginatedRows.map((feedback) => (
-              <Card key={feedback.id} className="hover:shadow-lg transform hover:-translate-y-1 cursor-pointer group border-l-4" style={{ borderLeftColor: feedback.rating >= 4 ? '#10b981' : feedback.rating >= 3 ? '#f59e0b' : '#ef4444' }} onClick={() => setExpandedId(expandedId === feedback.id ? null : feedback.id)}>
+              <Card key={feedback.id} className="hover:shadow-lg transform hover:-translate-y-1 cursor-pointer group border-l-4" style={{ borderLeftColor: feedback.rating >= 4 ? '#10b981' : feedback.rating >= 3 ? '#f59e0b' : '#ef4444' }}>
                 <div className="flex items-start gap-4">
                   {/* Avatar + Eye (eye sits under avatar, beside description) */}
                   <div className="flex flex-col items-center flex-shrink-0">
@@ -433,12 +432,10 @@ export default function FeedbackV2() {
                       <h4 className="font-medium text-gray-900 mb-1 text-sm truncate">{feedback.title}</h4>
                     )}
                     
-                    {/* Message Preview with inline badges and inline expand */}
+                    {/* Message Preview with inline badges */}
                     <div className="mb-2">
                         <div className="flex items-start justify-between">
-                        <p
-                          className={`flex-1 text-gray-600 text-sm transition-all duration-200 ${expandedId === feedback.id ? 'max-h-[400px]' : 'max-h-6 overflow-hidden'}`}
-                        >
+                        <p className="flex-1 text-gray-600 text-sm line-clamp-2">
                           {feedback.message}
                         </p>
 
@@ -453,17 +450,6 @@ export default function FeedbackV2() {
                             <span className="inline-flex items-center text-xs px-2 py-1 rounded-full font-medium flex-shrink-0" style={{ backgroundColor: '#dbeafe', color: '#1e40af' }}>
                               Course
                             </span>
-                          )}
-
-                          {feedback.message && feedback.message.length > 140 && (
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setExpandedId(expandedId === feedback.id ? null : feedback.id); }}
-                              aria-expanded={expandedId === feedback.id}
-                              className="text-sm text-[#D9433B] hover:underline px-2 py-1"
-                            >
-                              {expandedId === feedback.id ? 'Hide' : 'Read more'}
-                            </button>
                           )}
                         </div>
                       </div>

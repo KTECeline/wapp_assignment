@@ -110,20 +110,20 @@ export default function CourseManagement() {
     }
   ];
 
-  const quickActions = [
-    {
-      label: 'New Course',
-      icon: Plus,
-      action: () => navigate('/admin/courses/edit', { state: { mode: 'create' } }),
-      primary: true
-    },
-    {
-      label: 'View All Courses',
-      icon: BookOpen,
-      action: () => navigate('/admin/courses')
-    },
-    
-  ];
+  // Quick actions for course management
+  // const quickActions = [
+  //   {
+  //     label: 'New Course',
+  //     icon: Plus,
+  //     action: () => navigate('/admin/courses/edit', { state: { mode: 'create' } }),
+  //     primary: true
+  //   },
+  //   {
+  //     label: 'View All Courses',
+  //     icon: BookOpen,
+  //     action: () => navigate('/admin/courses')
+  //   },
+  // ];
 
   return (
     <div className="min-h-screen p-6">

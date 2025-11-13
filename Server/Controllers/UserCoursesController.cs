@@ -29,7 +29,7 @@ public class UserCoursesController : ControllerBase
         var query = _context.CourseUserActivities
             .Where(a => a.UserId == userId && a.Registered)
             .Include(a => a.Course)
-            .Include(a => a.Course.Level)
+            .Include(a => a.Course!.Level)
             .AsQueryable();
 
         // Filter by status
@@ -52,7 +52,7 @@ public class UserCoursesController : ControllerBase
         var userCourses = await query
             .Select(a => new
             {
-                courseId = a.Course.CourseId,
+                courseId = a.Course!.CourseId,
                 title = a.Course.Title,
                 description = a.Course.Description,
                 rating = a.Course.Rating,
@@ -84,7 +84,7 @@ public class UserCoursesController : ControllerBase
         var activity = await _context.CourseUserActivities
             .Where(a => a.UserId == userId && a.CourseId == courseId)
             .Include(a => a.Course)
-            .Include(a => a.Course.Level)
+            .Include(a => a.Course!.Level)
             .FirstOrDefaultAsync();
 
         if (activity == null)

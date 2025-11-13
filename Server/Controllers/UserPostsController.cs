@@ -22,7 +22,7 @@ public class UserPostsController : ControllerBase
         var query = _context.UserPosts
             .Include(p => p.User)
             .Include(p => p.Course)
-                .ThenInclude(c => c.Category)
+                .ThenInclude(c => c!.Category)
             .Where(p => p.DeletedAt == null);
 
         // Apply filter: default to only approved posts for public consumption.
@@ -117,7 +117,7 @@ public class UserPostsController : ControllerBase
         var posts = await _context.UserPosts
             .Include(p => p.User)
             .Include(p => p.Course)
-                .ThenInclude(c => c.Category)
+                .ThenInclude(c => c!.Category)
             .Where(p => likedPostIds.Contains(p.PostId) && p.DeletedAt == null)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
@@ -158,7 +158,7 @@ public class UserPostsController : ControllerBase
         var post = await _context.UserPosts
             .Include(p => p.User)
             .Include(p => p.Course)
-                .ThenInclude(c => c.Category)
+                .ThenInclude(c => c!.Category)
             .Where(p => p.PostId == id && p.DeletedAt == null)
             .FirstOrDefaultAsync();
 

@@ -121,8 +121,8 @@ const RgUserDD = () => {
                                     onClick={() => setBoxes(prev => ({ ...prev, [bx]: { ...prev[bx], value: null } }))}
                                     className={`w-full h-full rounded-[10px] border-[10px] flex items-center justify-center text-black text-[14px] p-4 ${chosen ? "bg-white border-[#B9A9A1] cursor-pointer" : "bg-white border-[#F8F5F0]"}`}
                                 >
-                                    {chosen ? (isImage(chosen.content) ? <img src={chosen.content} className="max-w-full max-h-full object-contain rounded-[8px]" /> : <span>{chosen.content}</span>) :
-                                        (isImage(box.content) ? <img src={box.content} className="max-w-full max-h-full object-contain rounded-[8px]" /> : <span>{box.content}</span>)}
+                                    {chosen ? (isImage(chosen.content) ? <img src={chosen.content} alt="Chosen option" className="max-w-full max-h-full object-contain rounded-[8px]" /> : <span>{chosen.content}</span>) :
+                                        (isImage(box.content) ? <img src={box.content} alt="Option" className="max-w-full max-h-full object-contain rounded-[8px]" /> : <span>{box.content}</span>)}
                                 </div>
                             );
                         })}
@@ -144,7 +144,7 @@ const RgUserDD = () => {
                                 onDragStart={e => e.dataTransfer.setData("text", String(opt.id))}
                                 className="font-inter w-[203px] h-full bg-white flex justify-center items-center p-[24px] text-black text-[14px] text-center border-[3px] border-[#B9A9A1] rounded-[20px] cursor-grab active:cursor-grabbing shadow-[0px_5px_0px_rgba(185,169,161,1)] transition-all duration-[600ms] hover:-translate-y-2 hover:text-[#DA1A32] hover:border-[#DA1A32]"
                             >
-                                {isImage(opt.content) ? <img src={opt.content} className="max-w-full max-h-full object-contain rounded-[8px]" /> : <span>{opt.content}</span>}
+                                {isImage(opt.content) ? <img src={opt.content} alt="Draggable option" className="max-w-full max-h-full object-contain rounded-[8px]" /> : <span>{opt.content}</span>}
                             </div>
                         );
                     })}

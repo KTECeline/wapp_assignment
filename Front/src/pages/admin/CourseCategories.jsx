@@ -27,10 +27,6 @@ export default function CourseCategories() {
     catBanner: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -47,6 +43,11 @@ export default function CourseCategories() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Helper to resolve image URLs: prefer absolute backend URL in dev when given a relative '/uploads/...' path
   const resolveImage = (path) => {

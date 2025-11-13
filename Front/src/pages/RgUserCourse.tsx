@@ -223,7 +223,10 @@ const RgUserCourse = () => {
 
         fetch(`/api/UserFeedbacks/count/${id}`)
             .then(res => res.json())
-            .then(data => setTotalReviews(data))
+            .then(data => {
+                console.log("Review count response:", data);
+                setTotalReviews(data);
+            })
             .catch(err => console.error("Error fetching review count:", err));
     }, [id]);
 
@@ -254,7 +257,10 @@ const RgUserCourse = () => {
 
         fetch(`/api/UserFeedbacks/course/${id}/reviews`)
             .then(res => res.json())
-            .then((data: Review[]) => setReviews(data))
+            .then((data: Review[]) => {
+                console.log("Reviews list response:", data);
+                setReviews(data);
+            })
             .catch(err => console.error("Error fetching reviews:", err));
     }, [id]);
 
