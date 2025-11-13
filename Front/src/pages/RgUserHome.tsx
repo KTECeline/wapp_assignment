@@ -100,17 +100,11 @@ const RgUserHome = () => {
         const fetchPosts = async () => {
             try {
                 setPostsLoading(true);
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
                 
-                if (user?.userId) {
-                    const data = await getUserPosts(user.userId);
-                    setPosts(data.slice(0, 3));
-                    setPostsError(null);
-                } else {
-                    const data = await getUserPosts();
-                    setPosts(data.slice(0, 3));
-                    setPostsError(null);
-                }
+                // Fetch all posts (not just user's posts) for the home page discover section
+                const data = await getUserPosts();
+                setPosts(data.slice(0, 3));
+                setPostsError(null);
             } catch (err) {
                 console.error("Error fetching posts:", err);
                 setPostsError(err instanceof Error ? err.message : "Failed to fetch posts");
@@ -338,7 +332,7 @@ const RgUserHome = () => {
                 </button>
 
                 {/* Post Container */}
-                <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen overflow-x-auto">
+                <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
                     {postsLoading ? (
                         <div className="text-center py-8">Loading posts...</div>
                     ) : postsError ? (
@@ -351,12 +345,13 @@ const RgUserHome = () => {
                                 key={post.postId}
                                 onClick={() => setShowPostView(true)}
                                 className="text-left cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
-                                <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
-                                    <img src={post.postImg} alt={post.title} className="w-full h-full object-cover z-0" />
-                                    <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                                    <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                        <img src={post.postImg} alt={post.title} className="w-full object-cover" />
-                                    </div>
+                                <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden bg-gray-200">
+                                    <img 
+                                        src={post.postImg || "/images/Post.webp"} 
+                                        alt={post.title} 
+                                        className="w-full h-full object-cover" 
+                                        onError={(e) => { e.currentTarget.src = "/images/Post.webp"; }}
+                                    />
                                 </div>
 
                                 <div className="flex flex-col w-[142px] justify-between">
