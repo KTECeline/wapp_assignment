@@ -165,7 +165,7 @@ export default function CoursesEdit() {
           content: q.questionText ?? q.question_text ?? q.content ?? '',
           type: q.questionType ?? q.question_type ?? null,  // Use actual type from DB
           questionImg: q.questionImg ?? q.question_img ?? undefined,
-          correctAnswer: q.correctAnswer ?? q.question_answer ?? 0,
+          correctAnswer: q.correctAnswer ?? q.question_answer ?? 1,
           options: (q.options || q.optionsList || []).map((opt, idx) => ({
             id: opt.optionId ?? opt.option_id ?? `${q.questionId ?? q.question_id}-opt-${idx}`,
             text: opt.optionText ?? opt.option_text ?? opt.text ?? '',
@@ -336,7 +336,7 @@ export default function CoursesEdit() {
 
               // For MCQ questions, add correct answer
               if (q.type === 'mcq') {
-                payload.CorrectAnswer = q.correctAnswer || 0;
+                payload.CorrectAnswer = q.correctAnswer || 1;
                 console.log('[CoursesEdit] MCQ correct answer:', payload.CorrectAnswer);
               }
 
@@ -517,7 +517,7 @@ export default function CoursesEdit() {
 
               // For MCQ questions, add correct answer
               if (q.type === 'mcq') {
-                payload.CorrectAnswer = q.correctAnswer || 0;
+                payload.CorrectAnswer = q.correctAnswer || 1;
               }
 
               // For Drag & Drop questions, add items
@@ -637,7 +637,7 @@ export default function CoursesEdit() {
       content: '', 
       type: null, // Type will be selected in QuestionEditor
       questionImg: undefined, 
-      correctAnswer: 0,
+      correctAnswer: 1,
       options: [],
       items: []
     };

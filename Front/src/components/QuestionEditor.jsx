@@ -16,7 +16,7 @@ export default function QuestionEditor({ question, onSave, onDelete }) {
     title: '',
     content: '',
     questionImg: undefined,
-    correctAnswer: 0,
+    correctAnswer: 1,
     options: [],
     items: []
   });
@@ -29,7 +29,7 @@ export default function QuestionEditor({ question, onSave, onDelete }) {
         title: question.title || '',
         content: question.content || '',
         questionImg: question.questionImg || undefined,
-        correctAnswer: question.correctAnswer || 0,
+        correctAnswer: question.correctAnswer || 1,
         options: question.options || (question.type === 'mcq' ? Array(4).fill(null).map((_, idx) => ({
           id: `opt-${idx}`,
           text: '',
@@ -284,10 +284,10 @@ export default function QuestionEditor({ question, onSave, onDelete }) {
             className="w-full rounded-xl border px-4 py-3 focus:ring-2 focus:ring-[var(--accent)] outline-none"
             style={{ borderColor: 'var(--border)' }}
           >
-            <option value={0}>Option 1</option>
-            <option value={1}>Option 2</option>
-            <option value={2}>Option 3</option>
-            <option value={3}>Option 4</option>
+            <option value={1}>Option 1</option>
+            <option value={2}>Option 2</option>
+            <option value={3}>Option 3</option>
+            <option value={4}>Option 4</option>
           </select>
         </div>
 
@@ -300,12 +300,12 @@ export default function QuestionEditor({ question, onSave, onDelete }) {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      formData.correctAnswer === idx ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
+                      formData.correctAnswer === idx + 1 ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
                     }`}>
                       {idx + 1}
                     </div>
                     <span className="text-sm font-medium">Option {idx + 1}</span>
-                    {formData.correctAnswer === idx && (
+                    {formData.correctAnswer === idx + 1 && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
                         Correct Answer
                       </span>
@@ -397,7 +397,7 @@ export default function QuestionEditor({ question, onSave, onDelete }) {
 
         {/* Items (Draggable Content) */}
         <div>
-          <label className="block text-sm font-medium mb-3">Items (Draggable) *</label>
+          <label className="block text-sm font-medium mb-3">Items (Drop targets) *</label>
           <div className="space-y-3">
             {formData.items.map((item, idx) => (
               <div key={idx} className="border rounded-xl p-4 bg-blue-50" style={{ borderColor: 'var(--border)' }}>
@@ -435,7 +435,7 @@ export default function QuestionEditor({ question, onSave, onDelete }) {
 
         {/* Options (Drop Targets) */}
         <div>
-          <label className="block text-sm font-medium mb-3">Options (Drop Targets) *</label>
+          <label className="block text-sm font-medium mb-3">Options (Draggable) *</label>
           <div className="space-y-3">
             {formData.options.map((opt, idx) => (
               <div key={idx} className="border rounded-xl p-4 bg-purple-50" style={{ borderColor: 'var(--border)' }}>

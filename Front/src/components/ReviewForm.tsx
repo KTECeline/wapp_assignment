@@ -2,9 +2,7 @@ import { FC, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { RxCross2 } from "react-icons/rx";
-import { BsCheck } from "react-icons/bs";
 import IconLoading from "./IconLoading.tsx";
-import DropUpload from "./DropUpload.tsx";
 import { FaStar } from "react-icons/fa";
 import { getUserCourses } from "../api/client.js";
 
