@@ -7,7 +7,7 @@ import ReviewForm from "../components/ReviewForm.tsx";
 import { useState, useEffect } from "react";
 import DisplayPost from "../components/DisplayPost.tsx";
 import DisplayReview from "../components/DisplayReview.tsx";
-import { getUserCourses, getUserPosts } from "../api/client.js";
+import { getUserCourses, getUserPosts, getCoursesWithStats } from "../api/client.js";
 import { useNavigate } from "react-router-dom";
 
 interface Course {
@@ -85,17 +85,20 @@ const RgUserHome = () => {
     const [showPostView, setShowPostView] = useState(false);
     const [showReviewView, setShowReviewView] = useState(false);
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+    const [selectedReview, setSelectedReview] = useState<Review | null>(null);
 
     // Data state for courses, posts, reviews, and announcements
     const [courses, setCourses] = useState<Course[]>([]);
     const [posts, setPosts] = useState<Post[]>([]);
     const [reviews, setReviews] = useState<Review[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [topPicks, setTopPicks] = useState<any[]>([]);
     const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
     const [coursesLoading, setCoursesLoading] = useState(true);
     const [postsLoading, setPostsLoading] = useState(true);
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [announcementsLoading, setAnnouncementsLoading] = useState(true);
+    const [topPicksLoading, setTopPicksLoading] = useState(true);
     const [coursesError, setCoursesError] = useState<string | null>(null);
     const [postsError, setPostsError] = useState<string | null>(null);
     const [reviewsError, setReviewsError] = useState<string | null>(null);
@@ -175,6 +178,34 @@ const RgUserHome = () => {
         };
 
         fetchAnnouncements();
+    }, []);
+
+    // Fetch top picks (courses with most enrollments) on component mount
+    useEffect(() => {
+        const fetchTopPicks = async () => {
+            try {
+                setTopPicksLoading(true);
+                const data = await getCoursesWithStats();
+                
+                // Sort by total enrollments (descending) and get top 4
+                const sorted = data
+                    .sort((a: any, b: any) => (b.totalEnrollments || 0) - (a.totalEnrollments || 0))
+                    .slice(0, 4)
+                    .map((item: any) => ({
+                        ...item.course,
+                        totalEnrollments: item.totalEnrollments
+                    }));
+                
+                setTopPicks(sorted);
+            } catch (err) {
+                console.error("Error fetching top picks:", err);
+                setTopPicks([]);
+            } finally {
+                setTopPicksLoading(false);
+            }
+        };
+
+        fetchTopPicks();
     }, []);
 
     // Navigation functions for announcement carousel
@@ -384,9 +415,18 @@ const RgUserHome = () => {
             
             const data = await res.json();
             
-            // Filter for reviews only and format the data
+            // Filter for reviews only, sort by highest rating then most recent, and format the data
             const reviewsData = data
-                .filter((item: any) => item.type === "review" || item.type === "website")
+                .filter((item: any) => (item.type === "review" || item.type === "website") && !item.deletedAt)
+                .sort((a: any, b: any) => {
+                    // First sort by rating (highest first)
+                    if (b.rating !== a.rating) {
+                        return b.rating - a.rating;
+                    }
+                    // If ratings are equal, sort by date (most recent first)
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                })
+                .slice(0, 6) // Take only top 6 reviews
                 .map((item: any) => {
                     const userInitial = item.userName ? item.userName.charAt(0).toUpperCase() : 'U';
                     const timeAgo = getTimeAgo(new Date(item.createdAt));
@@ -451,7 +491,7 @@ const RgUserHome = () => {
             )}
 
             {showPostView && <DisplayPost onClose={() => setShowPostView(false)} post={selectedPost} onLikeUpdate={handlePostLikeUpdate} />}
-            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} />}
+            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} review={selectedReview || undefined} />}
 
             {/* Announcement */}
             <div className="w-full h-[400px] relative">
@@ -516,7 +556,7 @@ const RgUserHome = () => {
                 </div>
 
                 {/* My Collection Container */}
-                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen overflow-x-auto">
+                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen overflow-x-auto scrollbar-hide">
                     {coursesLoading ? (
                         <div className="text-center py-8">Loading courses...</div>
                     ) : coursesError ? (
@@ -608,12 +648,94 @@ const RgUserHome = () => {
                     <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                 </div>
 
-                {/* Top Picks Container - Placeholder */}
-                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen">
-                    <div className="text-center py-8">Top Picks coming soon...</div>
+                {/* Top Picks Container */}
+                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen overflow-x-auto scrollbar-hide">
+                    {topPicksLoading ? (
+                        <div className="text-center py-8">Loading top picks...</div>
+                    ) : topPicks.length === 0 ? (
+                        <div className="text-center py-8">No top picks available</div>
+                    ) : (
+                        topPicks.map((course: any) => (
+                            <button
+                                key={course.courseId}
+                                onClick={() => navigate(`/RgUserCourse/${course.courseId}`)}
+                                className="max-h-[297px] w-[262px] group cursor-pointer flex-shrink-0 text-left hover:scale-105 transition-all duration-300"
+                            >
+                                <img src={course.courseImg} alt={course.title} className="w-full h-[177px] object-cover" />
+
+                                {/* Review */}
+                                <div className="flex flex-row mt-[16px] items-center">
+                                    <div className="flex gap-[4px]">
+                                        {[...Array(5)].map((_, index) => {
+                                            const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
+
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className="relative"
+                                                    style={{ width: `18px`, height: `18px` }}
+                                                >
+                                                    <FaStar className="absolute top-0 left-0 text-gray-300" size="18px" />
+                                                    <div
+                                                        className="absolute top-0 left-0 overflow-hidden"
+                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                    >
+                                                        <FaStar className="text-[#DA1A32]" size="18px" />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
+                                        {course.rating} rating
+                                    </div>
+                                </div>
+
+                                {/* Title */}
+                                <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
+                                    {course.title}
+                                </div>
+
+                                {/* Details */}
+                                <div className="flex gap-[14px] mt-[14px]">
+                                    <div className="flex items-center">
+                                        <img src="/images/Time.png" alt="recipe" className="w-[12px] h-[12px] object-cover" />
+                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                            {course.cookingTimeMin} min
+                                        </div>
+                                    </div>
+
+                                    <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                    <div className="flex items-center">
+                                        <img src="/images/Profile.png" alt="recipe" className="w-[11px] h-[11px] object-cover" />
+                                        <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                            {course.servings} servings
+                                        </div>
+                                    </div>
+
+                                    <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                    <div className="flex items-center">
+                                        <img src="/images/Level.png" alt="recipe" className="w-[14px] h-[14px] object-cover" />
+                                        <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
+                                            {course.levelName}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Enrollments count */}
+                                <div className="font-inter mt-[8px] text-[#DA1A32] text-[11px] font-medium">
+                                    {course.totalEnrollments} enrollments
+                                </div>
+                            </button>
+                        ))
+                    )}
                 </div>
 
-                <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                <button 
+                    onClick={() => navigate('/RgUserCol')}
+                    className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
                     View More
                 </button>
             </div>
@@ -747,7 +869,14 @@ const RgUserHome = () => {
                         <div className="text-center py-8">No reviews yet. Be the first to review!</div>
                     ) : (
                         reviews.slice(0, 3).map((review) => (
-                            <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                            <button
+                                key={review.id}
+                                onClick={() => {
+                                    setSelectedReview(review);
+                                    setShowReviewView(true);
+                                }}
+                                className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0 cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left"
+                            >
                                 <div className="flex flex-row justify-between items-center">
                                     {/* Profile and time */}
                                     <div className="flex flex-row gap-[6px]">
@@ -804,7 +933,7 @@ const RgUserHome = () => {
                                         );
                                     })}
                                 </div>
-                            </div>
+                            </button>
                         ))
                     )}
                 </div>

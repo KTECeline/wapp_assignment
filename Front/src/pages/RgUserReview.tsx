@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import { IoAdd } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import ReviewForm from "../components/ReviewForm.tsx";
+import DisplayReview from "../components/DisplayReview.tsx";
 
 interface Review {
     id: number;
@@ -44,6 +45,8 @@ const RgUserReview = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [showReviewForm, setShowReviewForm] = useState(false);
+    const [showReviewView, setShowReviewView] = useState(false);
+    const [selectedReview, setSelectedReview] = useState<Review | null>(null);
     const [isReviewEdit, setIsReviewEdit] = useState(false);
     const [reviewId, setReviewId] = useState<number | null>(null);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -77,6 +80,7 @@ const RgUserReview = () => {
                 if (!res.ok) throw new Error("Failed to fetch reviews");
                 
                 const data = await res.json();
+                console.log("Fetched all feedback data:", data); // Debug log
                 
                 // Format the reviews data
                 const reviewsData = data
@@ -101,6 +105,7 @@ const RgUserReview = () => {
                         };
                     });
                 
+                console.log("Processed reviews:", reviewsData); // Debug log
                 setReviews(reviewsData);
             } catch (err) {
                 console.error("Error fetching reviews:", err);
@@ -178,14 +183,15 @@ const RgUserReview = () => {
 
             // Filter by tab
             if (active === "Website Reviews") {
-                filtered = reviews.filter(review => review.type === "website");
+                // Show all reviews (both "review" and "website" types)
+                filtered = reviews.filter(review => review.type === "review" || review.type === "website");
             } else if (active === "My Reviews") {
                 filtered = reviews.filter(review => review.userId === user?.userId);
             }
 
             // Filter by search term
             if (searchTerm) {
-                filtered = filtered.filter(review =>
+                filtered = filtered.filter(review => 
                     review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     review.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     review.userName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -382,6 +388,8 @@ const RgUserReview = () => {
                     />
                 </div>
             )}
+
+            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} review={selectedReview || undefined} />}
 
             <div className="max-w-screen overflow-x-hidden">
                 <div className="items-center text-black flex flex-col w-[1090px] mt-[50px] relative mx-auto">
@@ -603,64 +611,71 @@ const RgUserReview = () => {
                                     </div>
                                 ) : (
                                     filteredReviews.map((review) => (
-                                    <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                                        <div className="flex flex-row justify-between items-center">
-                                            <div className="flex flex-row gap-[6px]">
-                                                <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                    {review.userInitial}
-                                                </div>
-
-                                                <div className="flex flex-col">
-                                                    <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                        {review.userName}
+                                        <button
+                                            key={review.id}
+                                            onClick={() => {
+                                                setSelectedReview(review);
+                                                setShowReviewView(true);
+                                            }}
+                                            className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0 cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left"
+                                        >
+                                            <div className="flex flex-row justify-between items-center">
+                                                <div className="flex flex-row gap-[6px]">
+                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                                        {review.userInitial}
                                                     </div>
 
-                                                    <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
-                                                        {review.timeAgo}
+                                                    <div className="flex flex-col">
+                                                        <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                                            {review.userName}
+                                                        </div>
+
+                                                        <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
+                                                            {review.timeAgo}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
-                                            {review.title}
-                                        </div>
+                                            <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
+                                                {review.title}
+                                            </div>
 
-                                        <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
-                                            {review.description}
-                                        </div>
+                                            <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
+                                                {review.description}
+                                            </div>
 
-                                        <div className="flex gap-[4px]">
-                                            {[...Array(5)].map((_, index) => {
-                                                const fillPercentage = Math.min(Math.max(review.rating - index, 0), 1) * 100;
+                                            <div className="flex gap-[4px]">
+                                                {[...Array(5)].map((_, index) => {
+                                                    const fillPercentage = Math.min(Math.max(review.rating - index, 0), 1) * 100;
 
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="relative"
-                                                        style={{ width: `14px`, height: `14px` }}
-                                                    >
-                                                        <FaStar
-                                                            className="absolute top-0 left-0 text-gray-300"
-                                                            size="14px"
-                                                        />
+                                                    return (
                                                         <div
-                                                            className="absolute top-0 left-0 overflow-hidden"
-                                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                            key={index}
+                                                            className="relative"
+                                                            style={{ width: `14px`, height: `14px` }}
                                                         >
                                                             <FaStar
-                                                                className="text-[#DA1A32]"
+                                                                className="absolute top-0 left-0 text-gray-300"
                                                                 size="14px"
                                                             />
+                                                            <div
+                                                                className="absolute top-0 left-0 overflow-hidden"
+                                                                style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                            >
+                                                                <FaStar
+                                                                    className="text-[#DA1A32]"
+                                                                    size="14px"
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
                         )}
                     </div>
 
@@ -684,4 +699,3 @@ const RgUserReview = () => {
 };
 
 export default RgUserReview;
-
