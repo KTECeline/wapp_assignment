@@ -32,8 +32,8 @@ public class HelpSessionsController : ControllerBase
             {
                 id = session.SessionId,
                 userId = session.UserId,
-                userName = $"{session.User.FirstName} {session.User.LastName}".Trim(),
-                userEmail = session.User.Email,
+                userName = session.User != null ? $"{session.User.FirstName} {session.User.LastName}".Trim() : "Unknown User",
+                userEmail = session.User?.Email ?? "",
                 startSession = session.StartSession,
                 endSession = session.EndSession,
                 status = session.EndSession == null ? "active" : "closed",
@@ -70,8 +70,8 @@ public class HelpSessionsController : ControllerBase
         {
             id = session.SessionId,
             userId = session.UserId,
-            userName = $"{session.User.FirstName} {session.User.LastName}".Trim(),
-            userEmail = session.User.Email,
+            userName = session.User != null ? $"{session.User.FirstName} {session.User.LastName}".Trim() : "Unknown User",
+            userEmail = session.User?.Email ?? "",
             startSession = session.StartSession,
             endSession = session.EndSession,
             status = session.EndSession == null ? "active" : "closed",

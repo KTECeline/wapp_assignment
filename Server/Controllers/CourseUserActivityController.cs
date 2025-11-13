@@ -102,7 +102,7 @@ public class CourseUserActivitiesController : ControllerBase
             .Select(a => new
             {
                 a.UserId,
-                Name = a.User.Username,
+                Name = a.User?.Username ?? "Unknown",
                 Accuracy = a.QuizProgress > 0
                     ? (int)Math.Round((double)(a.QuizProgress - a.QuizMistake) / a.QuizProgress * 100)
                     : 0, 

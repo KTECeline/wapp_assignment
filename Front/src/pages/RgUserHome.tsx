@@ -605,8 +605,8 @@ const RgUserHome = () => {
                                         </div>
 
                                         <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                            <a className="hover:text-[#DA1A32] transition-all duration-300">#{post.courseName}</a>
-                                            <a className="hover:text-[#DA1A32] transition-all duration-300">#{post.categoryName}</a>
+                                            <span className="hover:text-[#DA1A32] transition-all duration-300">#{post.courseName}</span>
+                                            <span className="hover:text-[#DA1A32] transition-all duration-300">#{post.categoryName}</span>
                                         </div>
                                     </div>
 

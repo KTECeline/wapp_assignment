@@ -1,15 +1,24 @@
 import { FaStar } from "react-icons/fa";
-import { IoIosSend, IoMdArrowBack, IoMdArrowForward, IoMdHeart } from "react-icons/io";
-import RgUserLayout from "../components/RgUserLayout.tsx";
-import { IoAdd } from "react-icons/io5";
+import { IoMdHeart } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+interface Review {
+    id: number;
+    userName: string;
+    userInitial: string;
+    rating: number;
+    title: string;
+    description: string;
+    timeAgo: string;
+}
 
 const RgUserHome = () => {
     const [categories, setCategories] = useState<any[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviewsLoading, setReviewsLoading] = useState(true);
 
     useEffect(() => {
         fetch('/api/categories')
@@ -19,6 +28,68 @@ const RgUserHome = () => {
                 setCategories(data.slice(0, 3));
             })
             .catch(err => console.error("Error fetching categories:", err));
+    }, []);
+
+    // Helper function to calculate time ago
+    const getTimeAgo = (date: Date): string => {
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'min' : 'mins'} ago`;
+        if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+        return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    };
+
+    // Fetch reviews on component mount
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                setReviewsLoading(true);
+                const res = await fetch('/api/UserFeedbacks');
+                if (!res.ok) throw new Error("Failed to fetch reviews");
+                
+                const data = await res.json();
+                
+                // Filter for reviews and website feedback, sort by rating (desc) then by date (desc)
+                const reviewsData = data
+                    .filter((item: any) => (item.type === "review" || item.type === "website") && !item.deletedAt)
+                    .sort((a: any, b: any) => {
+                        // First sort by rating (highest first)
+                        if (b.rating !== a.rating) {
+                            return b.rating - a.rating;
+                        }
+                        // If ratings are equal, sort by date (most recent first)
+                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    })
+                    .slice(0, 3) // Take only top 3
+                    .map((item: any) => {
+                        const userInitial = item.userName ? item.userName.charAt(0).toUpperCase() : 'U';
+                        const timeAgo = getTimeAgo(new Date(item.createdAt));
+                        
+                        return {
+                            id: item.id,
+                            userName: item.userName || 'Anonymous',
+                            userInitial,
+                            rating: item.rating,
+                            title: item.title,
+                            description: item.description,
+                            timeAgo
+                        };
+                    });
+                
+                setReviews(reviewsData);
+            } catch (err) {
+                console.error("Error fetching reviews:", err);
+                setReviews([]);
+            } finally {
+                setReviewsLoading(false);
+            }
+        };
+
+        fetchReviews();
     }, []);
 
 
@@ -192,8 +263,8 @@ const RgUserHome = () => {
 
                                 {/* Hashtage, Course Name and Category */}
                                 <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                    <a>#Small-Batch Brownies</a>
-                                    <a>#Cakes</a>
+                                    <span>#Small-Batch Brownies</span>
+                                    <span>#Cakes</span>
                                 </div>
                             </div>
 
@@ -257,8 +328,8 @@ const RgUserHome = () => {
 
                                 {/* Hashtage, Course Name and Category */}
                                 <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                    <a>#Small-Batch Brownies</a>
-                                    <a>#Cakes</a>
+                                    <span>#Small-Batch Brownies</span>
+                                    <span>#Cakes</span>
                                 </div>
                             </div>
 
@@ -322,8 +393,8 @@ const RgUserHome = () => {
 
                                 {/* Hashtage, Course Name and Category */}
                                 <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                    <a>#Small-Batch Brownies</a>
-                                    <a>#Cakes</a>
+                                    <span>#Small-Batch Brownies</span>
+                                    <span>#Cakes</span>
                                 </div>
                             </div>
 
@@ -458,194 +529,75 @@ const RgUserHome = () => {
                 {/* Review Container */}
                 <div className="mt-[38px] flex flex-row gap-[20px] max-w-screen">
 
-                    {/* Review Card */}
-                    <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                        <div className="flex flex-row justify-between items-center">
-                            {/* Profile and time */}
-                            <div className="flex flex-row gap-[6px]">
-                                <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                    A
-                                </div>
 
-                                <div className="flex flex-col">
-                                    <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                        Amy Wong
+                {reviewsLoading ? (
+                    <div className="text-center py-8">Loading reviews...</div>
+                ) : reviews.length === 0 ? (
+                    <div className="text-center py-8">No reviews yet</div>
+                ) : (
+                    reviews.map((review) => (
+                        <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                            <div className="flex flex-row justify-between items-center">
+                                {/* Profile and time */}
+                                <div className="flex flex-row gap-[6px]">
+                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                        {review.userInitial}
                                     </div>
 
-                                    <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                        17 hours ago
+                                    <div className="flex flex-col">
+                                        <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                            {review.userName}
+                                        </div>
+
+                                        <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
+                                            {review.timeAgo}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Review title */}
-                        <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
-                            One of the best brownies ever!!!
-                        </div>
+                            {/* Review title */}
+                            <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
+                                {review.title}
+                            </div>
 
-                        {/* Review Description */}
-                        <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
-                            WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                        </div>
+                            {/* Review Description */}
+                            <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
+                                {review.description}
+                            </div>
 
-                        <div className="flex gap-[4px]">
-                            {[...Array(5)].map((_, index) => {
-                                // Fill in the ratings replace the 5
-                                const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
+                            <div className="flex gap-[4px]">
+                                {[...Array(5)].map((_, index) => {
+                                    const fillPercentage = Math.min(Math.max(review.rating - index, 0), 1) * 100;
 
-                                return (
-                                    <div
-                                        key={index}
-                                        className="relative"
-                                        style={{ width: `14px`, height: `14px` }}
-                                    >
-                                        {/* Gray star background */}
-                                        <FaStar
-                                            className="absolute top-0 left-0 text-gray-300"
-                                            size="14px"
-                                        />
-                                        {/* Red filled star */}
+                                    return (
                                         <div
-                                            className="absolute top-0 left-0 overflow-hidden"
-                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                            key={index}
+                                            className="relative"
+                                            style={{ width: `14px`, height: `14px` }}
                                         >
+                                            {/* Gray star background */}
                                             <FaStar
-                                                className="text-[#DA1A32]"
+                                                className="absolute top-0 left-0 text-gray-300"
                                                 size="14px"
                                             />
+                                            {/* Red filled star */}
+                                            <div
+                                                className="absolute top-0 left-0 overflow-hidden"
+                                                style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                            >
+                                                <FaStar
+                                                    className="text-[#DA1A32]"
+                                                    size="14px"
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Review Card */}
-                    <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                        <div className="flex flex-row justify-between items-center">
-                            {/* Profile and time */}
-                            <div className="flex flex-row gap-[6px]">
-                                <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                    A
-                                </div>
-
-                                <div className="flex flex-col">
-                                    <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                        Amy Wong
-                                    </div>
-
-                                    <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                        17 hours ago
-                                    </div>
-                                </div>
+                                    );
+                                })}
                             </div>
                         </div>
-
-                        {/* Review title */}
-                        <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
-                            One of the best brownies ever!!!
-                        </div>
-
-                        {/* Review Description */}
-                        <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
-                            WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                        </div>
-
-                        <div className="flex gap-[4px]">
-                            {[...Array(5)].map((_, index) => {
-                                // Fill in the ratings replace the 5
-                                const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                return (
-                                    <div
-                                        key={index}
-                                        className="relative"
-                                        style={{ width: `14px`, height: `14px` }}
-                                    >
-                                        {/* Gray star background */}
-                                        <FaStar
-                                            className="absolute top-0 left-0 text-gray-300"
-                                            size="14px"
-                                        />
-                                        {/* Red filled star */}
-                                        <div
-                                            className="absolute top-0 left-0 overflow-hidden"
-                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                        >
-                                            <FaStar
-                                                className="text-[#DA1A32]"
-                                                size="14px"
-                                            />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Review Card */}
-                    <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                        <div className="flex flex-row justify-between items-center">
-                            {/* Profile and time */}
-                            <div className="flex flex-row gap-[6px]">
-                                <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                    A
-                                </div>
-
-                                <div className="flex flex-col">
-                                    <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                        Amy Wong
-                                    </div>
-
-                                    <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                        17 hours ago
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Review title */}
-                        <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
-                            One of the best brownies ever!!!
-                        </div>
-
-                        {/* Review Description */}
-                        <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
-                            WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                        </div>
-
-                        <div className="flex gap-[4px]">
-                            {[...Array(5)].map((_, index) => {
-                                // Fill in the ratings replace the 5
-                                const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                return (
-                                    <div
-                                        key={index}
-                                        className="relative"
-                                        style={{ width: `14px`, height: `14px` }}
-                                    >
-                                        {/* Gray star background */}
-                                        <FaStar
-                                            className="absolute top-0 left-0 text-gray-300"
-                                            size="14px"
-                                        />
-                                        {/* Red filled star */}
-                                        <div
-                                            className="absolute top-0 left-0 overflow-hidden"
-                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                        >
-                                            <FaStar
-                                                className="text-[#DA1A32]"
-                                                size="14px"
-                                            />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    ))
+                )}
                 </div>
 
                 <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">

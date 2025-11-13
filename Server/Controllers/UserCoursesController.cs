@@ -61,7 +61,7 @@ public class UserCoursesController : ControllerBase
                 servings = a.Course.Servings,
                 video = a.Course.Video,
                 levelId = a.Course.LevelId,
-                levelName = a.Course.Level.Title,
+                levelName = a.Course.Level != null ? a.Course.Level.Title : "",
                 bookmark = a.Bookmark,
                 quizStatus = a.QuizStatus,
                 quizProgress = a.QuizProgress
@@ -88,16 +88,16 @@ public class UserCoursesController : ControllerBase
 
         var result = new
         {
-            courseId = activity.Course.CourseId,
-            title = activity.Course.Title,
-            description = activity.Course.Description,
-            rating = activity.Course.Rating,
-            courseImg = activity.Course.CourseImg,
-            cookingTimeMin = activity.Course.CookingTimeMin,
-            servings = activity.Course.Servings,
-            video = activity.Course.Video,
-            levelId = activity.Course.LevelId,
-            levelName = activity.Course.Level?.Title,
+            courseId = activity.Course?.CourseId ?? 0,
+            title = activity.Course?.Title ?? "",
+            description = activity.Course?.Description ?? "",
+            rating = activity.Course?.Rating ?? 0,
+            courseImg = activity.Course?.CourseImg ?? "",
+            cookingTimeMin = activity.Course?.CookingTimeMin,
+            servings = activity.Course?.Servings,
+            video = activity.Course?.Video ?? "",
+            levelId = activity.Course?.LevelId,
+            levelName = activity.Course?.Level?.Title ?? "",
             bookmark = activity.Bookmark,
             quizStatus = activity.QuizStatus,
             quizProgress = activity.QuizProgress

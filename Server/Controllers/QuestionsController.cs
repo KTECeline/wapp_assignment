@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+#pragma warning disable CS8601 // Possible null reference assignment
+
 [ApiController]
 [Route("api/[controller]")]
 public class QuestionsController : ControllerBase

@@ -2,6 +2,7 @@
 
 #nullable disable
 
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters
 namespace Server.Migrations
 {
     /// <inheritdoc />
