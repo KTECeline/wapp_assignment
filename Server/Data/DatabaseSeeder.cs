@@ -205,6 +205,96 @@ public static class DatabaseSeeder
                 QuizBadgeImg = "",
                 LevelId = dbLevels[0].LevelId, // Level 1
                 CategoryId = dbCategories.First(c => c.Title == "Cake").CategoryId
+            },
+            new Course
+            {
+                Title = "Croissant Mastery",
+                Description = "Master the art of lamination and create flaky, buttery croissants from scratch.",
+                Rating = 4.8f,
+                CourseImg = "croissant.jpg",
+                CookingTimeMin = 480,
+                Servings = 12,
+                Video = "",
+                Deleted = false,
+                BadgeImg = "",
+                QuizBadgeImg = "",
+                LevelId = dbLevels[2].LevelId, // Level 3
+                CategoryId = dbCategories.First(c => c.Title == "Pastry").CategoryId
+            },
+            new Course
+            {
+                Title = "Chocolate Chip Cookies",
+                Description = "Perfect chocolate chip cookies every time: chewy, crispy, and delicious.",
+                Rating = 4.3f,
+                CourseImg = "cookies.jpg",
+                CookingTimeMin = 30,
+                Servings = 24,
+                Video = "",
+                Deleted = false,
+                BadgeImg = "",
+                QuizBadgeImg = "",
+                LevelId = dbLevels[0].LevelId, // Level 1
+                CategoryId = dbCategories.First(c => c.Title == "Cookies").CategoryId
+            },
+            new Course
+            {
+                Title = "Apple Pie Fundamentals",
+                Description = "Learn to make a perfect apple pie with flaky crust and spiced filling.",
+                Rating = 4.4f,
+                CourseImg = "apple-pie.jpg",
+                CookingTimeMin = 150,
+                Servings = 8,
+                Video = "",
+                Deleted = false,
+                BadgeImg = "",
+                QuizBadgeImg = "",
+                LevelId = dbLevels[1].LevelId, // Level 2
+                CategoryId = dbCategories.First(c => c.Title == "Pie & Tarts").CategoryId
+            },
+            new Course
+            {
+                Title = "English Scones & Clotted Cream",
+                Description = "Authentic English scones that are light, fluffy, and perfect for afternoon tea.",
+                Rating = 4.6f,
+                CourseImg = "scones.jpg",
+                CookingTimeMin = 45,
+                Servings = 6,
+                Video = "",
+                Deleted = false,
+                BadgeImg = "",
+                QuizBadgeImg = "",
+                LevelId = dbLevels[0].LevelId, // Level 1
+                CategoryId = dbCategories.First(c => c.Title == "Scones & Muffins").CategoryId
+            },
+            new Course
+            {
+                Title = "Whole Wheat Bread",
+                Description = "Healthy and delicious whole wheat bread that doesn't taste heavy.",
+                Rating = 4.1f,
+                CourseImg = "wheat-bread.jpg",
+                CookingTimeMin = 180,
+                Servings = 1,
+                Video = "",
+                Deleted = false,
+                BadgeImg = "",
+                QuizBadgeImg = "",
+                LevelId = dbLevels[1].LevelId, // Level 2
+                CategoryId = dbCategories.First(c => c.Title == "Bread").CategoryId
+            },
+            new Course
+            {
+                Title = "Macarons for Beginners",
+                Description = "Create elegant and colorful French macarons with this beginner-friendly guide.",
+                Rating = 4.9f,
+                CourseImg = "macarons.jpg",
+                CookingTimeMin = 120,
+                Servings = 30,
+                Video = "",
+                Deleted = false,
+                BadgeImg = "",
+                QuizBadgeImg = "",
+                LevelId = dbLevels[2].LevelId, // Level 3
+                CategoryId = dbCategories.First(c => c.Title == "Pastry").CategoryId
             }
         };
 
@@ -217,11 +307,9 @@ public static class DatabaseSeeder
             if (context.Courses.Any(x => x.Title == c.Title))
                 continue;
 
-            // Ensure level_id and category_id resolve to existing rows
-            var levelId = c.LevelId;
-            var categoryId = c.CategoryId;
-            context.Database.ExecuteSqlInterpolated($"INSERT INTO Courses (title, description, rating, course_img, cooking_time_min, servings, video, deleted, badge_img, quiz_badge_img, level_id, category_id, course_type) VALUES ({c.Title}, {c.Description}, {c.Rating}, {c.CourseImg}, {c.CookingTimeMin}, {c.Servings}, {c.Video}, {c.Deleted}, {c.BadgeImg}, {c.QuizBadgeImg}, {levelId}, {categoryId}, '')");
+            context.Courses.Add(c);
         }
+        context.SaveChanges();
 
         // Reload EF-tracked course entities so we can reference their generated IDs below
         var dbCourses = courses.Select(cc => context.Courses.First(x => x.Title == cc.Title)).ToArray();
@@ -229,27 +317,168 @@ public static class DatabaseSeeder
         // Add course child items (prep items, steps, tips)
         var prepItems = new List<CoursePrepItem>
         {
+            // Sourdough Basics
             new CoursePrepItem { Title = "Flour", Amount = 500, Metric = "g", Type = "ingredient", CourseId = dbCourses[0].CourseId },
             new CoursePrepItem { Title = "Water", Amount = 350, Metric = "g", Type = "ingredient", CourseId = dbCourses[0].CourseId },
+            new CoursePrepItem { Title = "Salt", Amount = 10, Metric = "g", Type = "ingredient", CourseId = dbCourses[0].CourseId },
+            new CoursePrepItem { Title = "Sourdough Starter", Amount = 100, Metric = "g", Type = "ingredient", CourseId = dbCourses[0].CourseId },
+            
+            // Perfect Pizza Dough
             new CoursePrepItem { Title = "Yeast", Amount = 7, Metric = "g", Type = "ingredient", CourseId = dbCourses[1].CourseId },
             new CoursePrepItem { Title = "Strong Bread Flour", Amount = 600, Metric = "g", Type = "ingredient", CourseId = dbCourses[1].CourseId },
-            new CoursePrepItem { Title = "Butter", Amount = 200, Metric = "g", Type = "ingredient", CourseId = dbCourses[2].CourseId }
+            new CoursePrepItem { Title = "Water", Amount = 400, Metric = "ml", Type = "ingredient", CourseId = dbCourses[1].CourseId },
+            new CoursePrepItem { Title = "Olive Oil", Amount = 30, Metric = "ml", Type = "ingredient", CourseId = dbCourses[1].CourseId },
+            
+            // Basic Cake Decorating
+            new CoursePrepItem { Title = "Butter", Amount = 200, Metric = "g", Type = "ingredient", CourseId = dbCourses[2].CourseId },
+            new CoursePrepItem { Title = "Powdered Sugar", Amount = 300, Metric = "g", Type = "ingredient", CourseId = dbCourses[2].CourseId },
+            new CoursePrepItem { Title = "Cake Layers", Amount = 2, Metric = "count", Type = "ingredient", CourseId = dbCourses[2].CourseId },
+            new CoursePrepItem { Title = "Piping Bag", Amount = 1, Metric = "count", Type = "equipment", CourseId = dbCourses[2].CourseId },
+            
+            // Croissant Mastery
+            new CoursePrepItem { Title = "Flour", Amount = 400, Metric = "g", Type = "ingredient", CourseId = dbCourses[3].CourseId },
+            new CoursePrepItem { Title = "Butter", Amount = 300, Metric = "g", Type = "ingredient", CourseId = dbCourses[3].CourseId },
+            new CoursePrepItem { Title = "Milk", Amount = 250, Metric = "ml", Type = "ingredient", CourseId = dbCourses[3].CourseId },
+            new CoursePrepItem { Title = "Sugar", Amount = 50, Metric = "g", Type = "ingredient", CourseId = dbCourses[3].CourseId },
+            
+            // Chocolate Chip Cookies
+            new CoursePrepItem { Title = "Flour", Amount = 280, Metric = "g", Type = "ingredient", CourseId = dbCourses[4].CourseId },
+            new CoursePrepItem { Title = "Butter", Amount = 225, Metric = "g", Type = "ingredient", CourseId = dbCourses[4].CourseId },
+            new CoursePrepItem { Title = "Chocolate Chips", Amount = 200, Metric = "g", Type = "ingredient", CourseId = dbCourses[4].CourseId },
+            new CoursePrepItem { Title = "Brown Sugar", Amount = 200, Metric = "g", Type = "ingredient", CourseId = dbCourses[4].CourseId },
+            
+            // Apple Pie
+            new CoursePrepItem { Title = "Pie Crust Flour", Amount = 300, Metric = "g", Type = "ingredient", CourseId = dbCourses[5].CourseId },
+            new CoursePrepItem { Title = "Butter", Amount = 150, Metric = "g", Type = "ingredient", CourseId = dbCourses[5].CourseId },
+            new CoursePrepItem { Title = "Apples", Amount = 1500, Metric = "g", Type = "ingredient", CourseId = dbCourses[5].CourseId },
+            new CoursePrepItem { Title = "Cinnamon", Amount = 10, Metric = "g", Type = "ingredient", CourseId = dbCourses[5].CourseId },
+            
+            // English Scones
+            new CoursePrepItem { Title = "Flour", Amount = 225, Metric = "g", Type = "ingredient", CourseId = dbCourses[6].CourseId },
+            new CoursePrepItem { Title = "Butter", Amount = 100, Metric = "g", Type = "ingredient", CourseId = dbCourses[6].CourseId },
+            new CoursePrepItem { Title = "Baking Powder", Amount = 10, Metric = "g", Type = "ingredient", CourseId = dbCourses[6].CourseId },
+            new CoursePrepItem { Title = "Milk", Amount = 125, Metric = "ml", Type = "ingredient", CourseId = dbCourses[6].CourseId },
+            
+            // Whole Wheat Bread
+            new CoursePrepItem { Title = "Whole Wheat Flour", Amount = 500, Metric = "g", Type = "ingredient", CourseId = dbCourses[7].CourseId },
+            new CoursePrepItem { Title = "Water", Amount = 350, Metric = "ml", Type = "ingredient", CourseId = dbCourses[7].CourseId },
+            new CoursePrepItem { Title = "Yeast", Amount = 7, Metric = "g", Type = "ingredient", CourseId = dbCourses[7].CourseId },
+            new CoursePrepItem { Title = "Honey", Amount = 15, Metric = "ml", Type = "ingredient", CourseId = dbCourses[7].CourseId },
+            
+            // Macarons
+            new CoursePrepItem { Title = "Almond Flour", Amount = 100, Metric = "g", Type = "ingredient", CourseId = dbCourses[8].CourseId },
+            new CoursePrepItem { Title = "Powdered Sugar", Amount = 100, Metric = "g", Type = "ingredient", CourseId = dbCourses[8].CourseId },
+            new CoursePrepItem { Title = "Egg Whites", Amount = 80, Metric = "ml", Type = "ingredient", CourseId = dbCourses[8].CourseId },
+            new CoursePrepItem { Title = "Food Coloring", Amount = 1, Metric = "drop", Type = "ingredient", CourseId = dbCourses[8].CourseId }
         };
 
         var steps = new List<CourseStep>
         {
+            // Sourdough Basics
             new CourseStep { Step = 1, Description = "Mix starter with water and flour.", CourseId = dbCourses[0].CourseId },
             new CourseStep { Step = 2, Description = "Bulk ferment for 4 hours.", CourseId = dbCourses[0].CourseId },
+            new CourseStep { Step = 3, Description = "Shape and rest for 1 hour.", CourseId = dbCourses[0].CourseId },
+            new CourseStep { Step = 4, Description = "Bake in preheated Dutch oven at 450°F for 25 minutes.", CourseId = dbCourses[0].CourseId },
+            
+            // Perfect Pizza Dough
             new CourseStep { Step = 1, Description = "Mix flour, water and yeast.", CourseId = dbCourses[1].CourseId },
             new CourseStep { Step = 2, Description = "Knead for 10 minutes and rest.", CourseId = dbCourses[1].CourseId },
-            new CourseStep { Step = 1, Description = "Make buttercream with butter and sugar.", CourseId = dbCourses[2].CourseId }
+            new CourseStep { Step = 3, Description = "Stretch to desired thickness.", CourseId = dbCourses[1].CourseId },
+            new CourseStep { Step = 4, Description = "Add toppings and bake at 500°F.", CourseId = dbCourses[1].CourseId },
+            
+            // Basic Cake Decorating
+            new CourseStep { Step = 1, Description = "Make buttercream with butter and sugar.", CourseId = dbCourses[2].CourseId },
+            new CourseStep { Step = 2, Description = "Frost between cake layers.", CourseId = dbCourses[2].CourseId },
+            new CourseStep { Step = 3, Description = "Crumb coat and chill.", CourseId = dbCourses[2].CourseId },
+            new CourseStep { Step = 4, Description = "Apply final coat and decorate with piping.", CourseId = dbCourses[2].CourseId },
+            
+            // Croissant Mastery
+            new CourseStep { Step = 1, Description = "Make croissant dough.", CourseId = dbCourses[3].CourseId },
+            new CourseStep { Step = 2, Description = "Laminate with butter through 4 folds.", CourseId = dbCourses[3].CourseId },
+            new CourseStep { Step = 3, Description = "Rest between folds for 30 minutes.", CourseId = dbCourses[3].CourseId },
+            new CourseStep { Step = 4, Description = "Shape and proof overnight.", CourseId = dbCourses[3].CourseId },
+            new CourseStep { Step = 5, Description = "Bake at 400°F for 20 minutes.", CourseId = dbCourses[3].CourseId },
+            
+            // Chocolate Chip Cookies
+            new CourseStep { Step = 1, Description = "Cream butter and sugars together.", CourseId = dbCourses[4].CourseId },
+            new CourseStep { Step = 2, Description = "Add eggs and vanilla extract.", CourseId = dbCourses[4].CourseId },
+            new CourseStep { Step = 3, Description = "Fold in flour and chocolate chips.", CourseId = dbCourses[4].CourseId },
+            new CourseStep { Step = 4, Description = "Drop on sheet and bake at 375°F.", CourseId = dbCourses[4].CourseId },
+            
+            // Apple Pie
+            new CourseStep { Step = 1, Description = "Prepare pie crust.", CourseId = dbCourses[5].CourseId },
+            new CourseStep { Step = 2, Description = "Slice and season apples.", CourseId = dbCourses[5].CourseId },
+            new CourseStep { Step = 3, Description = "Layer apples in crust.", CourseId = dbCourses[5].CourseId },
+            new CourseStep { Step = 4, Description = "Top with crust and seal edges.", CourseId = dbCourses[5].CourseId },
+            new CourseStep { Step = 5, Description = "Bake at 350°F for 45 minutes.", CourseId = dbCourses[5].CourseId },
+            
+            // English Scones
+            new CourseStep { Step = 1, Description = "Mix flour, butter, and baking powder.", CourseId = dbCourses[6].CourseId },
+            new CourseStep { Step = 2, Description = "Add milk and form dough.", CourseId = dbCourses[6].CourseId },
+            new CourseStep { Step = 3, Description = "Cut into round shapes.", CourseId = dbCourses[6].CourseId },
+            new CourseStep { Step = 4, Description = "Bake at 400°F for 12-15 minutes.", CourseId = dbCourses[6].CourseId },
+            
+            // Whole Wheat Bread
+            new CourseStep { Step = 1, Description = "Mix whole wheat flour with water and yeast.", CourseId = dbCourses[7].CourseId },
+            new CourseStep { Step = 2, Description = "Knead for 10 minutes.", CourseId = dbCourses[7].CourseId },
+            new CourseStep { Step = 3, Description = "Bulk ferment for 3 hours.", CourseId = dbCourses[7].CourseId },
+            new CourseStep { Step = 4, Description = "Shape and proof for 1 hour.", CourseId = dbCourses[7].CourseId },
+            new CourseStep { Step = 5, Description = "Bake at 425°F for 30 minutes.", CourseId = dbCourses[7].CourseId },
+            
+            // Macarons
+            new CourseStep { Step = 1, Description = "Whip egg whites to stiff peaks.", CourseId = dbCourses[8].CourseId },
+            new CourseStep { Step = 2, Description = "Fold in almond flour and powdered sugar.", CourseId = dbCourses[8].CourseId },
+            new CourseStep { Step = 3, Description = "Pipe onto silicone mat.", CourseId = dbCourses[8].CourseId },
+            new CourseStep { Step = 4, Description = "Let rest for 30 minutes.", CourseId = dbCourses[8].CourseId },
+            new CourseStep { Step = 5, Description = "Bake at 320°F for 15 minutes.", CourseId = dbCourses[8].CourseId }
         };
 
         var tips = new List<CourseTip>
         {
+            // Sourdough
             new CourseTip { Description = "Use a digital scale for consistent results.", CourseId = dbCourses[0].CourseId },
+            new CourseTip { Description = "Keep your starter at room temperature and feed regularly.", CourseId = dbCourses[0].CourseId },
+            new CourseTip { Description = "Score the loaf before baking for better expansion.", CourseId = dbCourses[0].CourseId },
+            
+            // Pizza
             new CourseTip { Description = "Preheat your oven with a baking stone.", CourseId = dbCourses[1].CourseId },
-            new CourseTip { Description = "Chill the cake layers before stacking.", CourseId = dbCourses[2].CourseId }
+            new CourseTip { Description = "Don't overload toppings or the crust will be soggy.", CourseId = dbCourses[1].CourseId },
+            new CourseTip { Description = "Use high-quality flour for better gluten development.", CourseId = dbCourses[1].CourseId },
+            
+            // Cake
+            new CourseTip { Description = "Chill the cake layers before stacking.", CourseId = dbCourses[2].CourseId },
+            new CourseTip { Description = "Use an offset spatula for smooth frosting.", CourseId = dbCourses[2].CourseId },
+            new CourseTip { Description = "Keep buttercream at room temperature for best consistency.", CourseId = dbCourses[2].CourseId },
+            
+            // Croissants
+            new CourseTip { Description = "Keep butter and dough at the same temperature.", CourseId = dbCourses[3].CourseId },
+            new CourseTip { Description = "Laminate with precision for the best layers.", CourseId = dbCourses[3].CourseId },
+            new CourseTip { Description = "Proof overnight in the refrigerator for flakier croissants.", CourseId = dbCourses[3].CourseId },
+            
+            // Cookies
+            new CourseTip { Description = "Don't overmix once flour is added.", CourseId = dbCourses[4].CourseId },
+            new CourseTip { Description = "Use quality chocolate chips for better flavor.", CourseId = dbCourses[4].CourseId },
+            new CourseTip { Description = "Slightly underbake cookies for chewier texture.", CourseId = dbCourses[4].CourseId },
+            
+            // Apple Pie
+            new CourseTip { Description = "Use a mix of apple varieties for better flavor.", CourseId = dbCourses[5].CourseId },
+            new CourseTip { Description = "Toss apples with lemon juice to prevent browning.", CourseId = dbCourses[5].CourseId },
+            new CourseTip { Description = "Cover crust with foil if browning too fast.", CourseId = dbCourses[5].CourseId },
+            
+            // Scones
+            new CourseTip { Description = "Handle the dough as little as possible for tender scones.", CourseId = dbCourses[6].CourseId },
+            new CourseTip { Description = "Keep all ingredients cold for best results.", CourseId = dbCourses[6].CourseId },
+            new CourseTip { Description = "Serve warm with jam and clotted cream.", CourseId = dbCourses[6].CourseId },
+            
+            // Whole Wheat Bread
+            new CourseTip { Description = "Whole wheat flour absorbs more water, adjust hydration.", CourseId = dbCourses[7].CourseId },
+            new CourseTip { Description = "Add a touch of honey to balance the nutty flavor.", CourseId = dbCourses[7].CourseId },
+            new CourseTip { Description = "Score the loaf to help it rise evenly.", CourseId = dbCourses[7].CourseId },
+            
+            // Macarons
+            new CourseTip { Description = "Ensure bowls are completely grease-free.", CourseId = dbCourses[8].CourseId },
+            new CourseTip { Description = "Rest macarons on the mat to develop feet.", CourseId = dbCourses[8].CourseId },
+            new CourseTip { Description = "Use Italian or Swiss meringue for best results.", CourseId = dbCourses[8].CourseId }
         };
 
         // Only add prep items/steps/tips if they don't already exist for the course
@@ -269,8 +498,14 @@ public static class DatabaseSeeder
         {
             new CourseUserActivity { UserId = dbUsers[1].UserId, CourseId = dbCourses[0].CourseId, Registered = true, Bookmark = true }, // alice registered to sourdough
             new CourseUserActivity { UserId = dbUsers[2].UserId, CourseId = dbCourses[0].CourseId, Registered = true }, // bob
-            new CourseUserActivity { UserId = dbUsers[3].UserId, CourseId = dbCourses[1].CourseId, Registered = true }, // carol
-            new CourseUserActivity { UserId = dbUsers[4].UserId, CourseId = dbCourses[2].CourseId, Registered = true }  // dave
+            new CourseUserActivity { UserId = dbUsers[3].UserId, CourseId = dbCourses[1].CourseId, Registered = true }, // carol to pizza
+            new CourseUserActivity { UserId = dbUsers[4].UserId, CourseId = dbCourses[2].CourseId, Registered = true }, // dave to cake
+            new CourseUserActivity { UserId = dbUsers[1].UserId, CourseId = dbCourses[3].CourseId, Registered = true, Bookmark = true }, // alice to croissants
+            new CourseUserActivity { UserId = dbUsers[2].UserId, CourseId = dbCourses[4].CourseId, Registered = true }, // bob to cookies
+            new CourseUserActivity { UserId = dbUsers[3].UserId, CourseId = dbCourses[5].CourseId, Registered = true }, // carol to apple pie
+            new CourseUserActivity { UserId = dbUsers[4].UserId, CourseId = dbCourses[6].CourseId, Registered = true }, // dave to scones
+            new CourseUserActivity { UserId = dbUsers[1].UserId, CourseId = dbCourses[7].CourseId, Registered = true }, // alice to wheat bread
+            new CourseUserActivity { UserId = dbUsers[2].UserId, CourseId = dbCourses[8].CourseId, Registered = true } // bob to macarons
         };
 
         // Add activities only if the specific (UserId,CourseId) pair doesn't already exist
@@ -288,7 +523,13 @@ public static class DatabaseSeeder
         {
             new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[0].CourseId, Rating = 5, Type = "review", Title = "Great starter guide", Description = "Followed the steps and my starter came to life.", CreatedAt = DateTime.UtcNow.AddDays(-7) },
             new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[0].CourseId, Rating = 4, Type = "review", Title = "Good, long proofs", Description = "Takes time, but worth it.", CreatedAt = DateTime.UtcNow.AddDays(-3) },
-            new UserFeedback { UserId = dbUsers[4].UserId, CourseId = dbCourses[1].CourseId, Rating = 4, Type = "review", Title = "Tasty dough", Description = "Crispy crust at home.", CreatedAt = DateTime.UtcNow.AddDays(-2) }
+            new UserFeedback { UserId = dbUsers[4].UserId, CourseId = dbCourses[1].CourseId, Rating = 4, Type = "review", Title = "Tasty dough", Description = "Crispy crust at home.", CreatedAt = DateTime.UtcNow.AddDays(-2) },
+            new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[3].CourseId, Rating = 5, Type = "review", Title = "Life-changing croissants", Description = "Finally mastered lamination!", CreatedAt = DateTime.UtcNow.AddDays(-5) },
+            new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[4].CourseId, Rating = 4, Type = "review", Title = "Perfect cookies every time", Description = "My family loves these.", CreatedAt = DateTime.UtcNow.AddDays(-4) },
+            new UserFeedback { UserId = dbUsers[4].UserId, CourseId = dbCourses[5].CourseId, Rating = 5, Type = "review", Title = "Best apple pie ever", Description = "Crust is flaky and filling is perfect.", CreatedAt = DateTime.UtcNow.AddDays(-1) },
+            new UserFeedback { UserId = dbUsers[1].UserId, CourseId = dbCourses[6].CourseId, Rating = 5, Type = "review", Title = "Authentic English scones", Description = "Exactly how they should be.", CreatedAt = DateTime.UtcNow.AddDays(-6) },
+            new UserFeedback { UserId = dbUsers[2].UserId, CourseId = dbCourses[7].CourseId, Rating = 4, Type = "review", Title = "Healthy bread that tastes great", Description = "Much better than store-bought.", CreatedAt = DateTime.UtcNow.AddDays(-2) },
+            new UserFeedback { UserId = dbUsers[3].UserId, CourseId = dbCourses[8].CourseId, Rating = 5, Type = "review", Title = "Macarons made easy", Description = "Beautiful and delicious results!", CreatedAt = DateTime.UtcNow.AddDays(-8) }
         };
 
         // Add feedbacks only if the user hasn't already left feedback for the course
@@ -393,7 +634,13 @@ public static class DatabaseSeeder
         {
             new CourseStats { CourseId = dbCourses[0].CourseId, TotalEnrollments = 2, CompletionRate = 20, AverageRating = 5, TotalReviews = 2, UpdatedAt = DateTime.UtcNow },
             new CourseStats { CourseId = dbCourses[1].CourseId, TotalEnrollments = 1, CompletionRate = 0, AverageRating = 4, TotalReviews = 1, UpdatedAt = DateTime.UtcNow },
-            new CourseStats { CourseId = dbCourses[2].CourseId, TotalEnrollments = 1, CompletionRate = 0, AverageRating = 0, TotalReviews = 0, UpdatedAt = DateTime.UtcNow }
+            new CourseStats { CourseId = dbCourses[2].CourseId, TotalEnrollments = 1, CompletionRate = 0, AverageRating = 0, TotalReviews = 0, UpdatedAt = DateTime.UtcNow },
+            new CourseStats { CourseId = dbCourses[3].CourseId, TotalEnrollments = 1, CompletionRate = 50, AverageRating = 5, TotalReviews = 1, UpdatedAt = DateTime.UtcNow },
+            new CourseStats { CourseId = dbCourses[4].CourseId, TotalEnrollments = 1, CompletionRate = 25, AverageRating = 4, TotalReviews = 1, UpdatedAt = DateTime.UtcNow },
+            new CourseStats { CourseId = dbCourses[5].CourseId, TotalEnrollments = 1, CompletionRate = 30, AverageRating = 5, TotalReviews = 1, UpdatedAt = DateTime.UtcNow },
+            new CourseStats { CourseId = dbCourses[6].CourseId, TotalEnrollments = 1, CompletionRate = 40, AverageRating = 5, TotalReviews = 1, UpdatedAt = DateTime.UtcNow },
+            new CourseStats { CourseId = dbCourses[7].CourseId, TotalEnrollments = 1, CompletionRate = 15, AverageRating = 4, TotalReviews = 1, UpdatedAt = DateTime.UtcNow },
+            new CourseStats { CourseId = dbCourses[8].CourseId, TotalEnrollments = 1, CompletionRate = 60, AverageRating = 5, TotalReviews = 1, UpdatedAt = DateTime.UtcNow }
         };
 
         // Add or update course stats: if stats exist for the course, update; otherwise insert

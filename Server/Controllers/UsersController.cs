@@ -74,8 +74,8 @@ public class UsersController : ControllerBase
 
             // Check if login is email or username
             var user = await _context.Users
-                .Where(u => u.DeletedAt == null && 
-                    (u.Email.ToLower() == request.LoginId.ToLower() || 
+                .Where(u => u.DeletedAt == null &&
+                    (u.Email.ToLower() == request.LoginId.ToLower() ||
                      u.Username.ToLower() == request.LoginId.ToLower()))
                 .FirstOrDefaultAsync();
 
@@ -118,7 +118,7 @@ public class UsersController : ControllerBase
 
     // Add [HttpPost], [HttpPut], [HttpDelete] for full CRUD
     [HttpPost]
-    public async Task<ActionResult<User>> CreateUser([FromForm] string username, [FromForm] string email, 
+    public async Task<ActionResult<User>> CreateUser([FromForm] string username, [FromForm] string email,
         [FromForm] string password, [FromForm] string firstName, [FromForm] string lastName,
         [FromForm] string gender, [FromForm] string DOB, [FromForm] int? levelId,
         [FromForm] int? categoryId, [FromForm] string userType, IFormFile? profileimage)
@@ -177,8 +177,8 @@ public class UsersController : ControllerBase
             Console.WriteLine($"UserType: {userType}");
             Console.WriteLine($"Has Profile Image: {profileimage != null}");
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(username) || 
-                string.IsNullOrWhiteSpace(email) || 
+            if (string.IsNullOrWhiteSpace(username) ||
+                string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(password))
             {
                 return BadRequest("Username, email and password are required.");
@@ -243,17 +243,17 @@ public class UsersController : ControllerBase
                 var fileName = $"{Guid.NewGuid()}_{profileimage.FileName}";
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
                 var path = Path.Combine(uploadsFolder, fileName);
-                
+
                 if (!Directory.Exists(uploadsFolder))
                 {
                     Directory.CreateDirectory(uploadsFolder);
                 }
-                
+
                 using (var stream = new FileStream(path, FileMode.Create))
                 {
                     await profileimage.CopyToAsync(stream);
                 }
-                
+
                 user.ProfileImg = $"/uploads/{fileName}";
             }
 
@@ -263,7 +263,7 @@ public class UsersController : ControllerBase
 
             // Remove password from response
             user.Password = string.Empty; // Using empty string instead of null for non-nullable string
-            
+
             return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, user);
         }
         catch (Exception ex)
@@ -274,12 +274,46 @@ public class UsersController : ControllerBase
 
     [HttpPut("{id}")]
     // Accept a dedicated DTO for updates so we don't require fields like Password on every update
-    public async Task<IActionResult> UpdateUser(int id, [FromForm] UserUpdateDto update, IFormFile? profileimage, [FromForm] string? adminLogin = null, [FromForm] string? adminPassword = null)
+    public async Task<IActionResult> UpdateUser(int id, [FromForm] UserUpdateDto update, IFormFile? profileimage, [FromForm] string? adminLogin = null, [FromForm] string? adminPassword = null, [FromForm] bool? removeProfileImage = false)
     {
         try
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
+
+            // Username uniqueness check
+            if (!string.IsNullOrWhiteSpace(update.Username) && update.Username != user.Username)
+            {
+                bool usernameExists = await _context.Users
+                    .AnyAsync(u => u.Username == update.Username && u.UserId != id);
+                if (usernameExists)
+                {
+                    return BadRequest("Username already exists.");
+                }
+            }
+
+            // Email uniqueness check
+            if (!string.IsNullOrWhiteSpace(update.Email) && update.Email != user.Email)
+            {
+                bool emailExists = await _context.Users
+                    .AnyAsync(u => u.Email == update.Email && u.UserId != id);
+                if (emailExists)
+                {
+                    return BadRequest("Email already exists.");
+                }
+            }
+
+            // Handle profile image removal
+            if (removeProfileImage == true)
+            {
+                if (!string.IsNullOrEmpty(user.ProfileImg))
+                {
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.ProfileImg.TrimStart('/'));
+                    if (System.IO.File.Exists(filePath))
+                        System.IO.File.Delete(filePath);
+                }
+                user.ProfileImg = string.Empty;
+            }
 
             // Handle profile image upload
             if (profileimage != null)
@@ -308,7 +342,7 @@ public class UsersController : ControllerBase
             user.DOB = update.DOB ?? user.DOB;
             user.LevelId = update.LevelId ?? user.LevelId;
             user.CategoryId = update.CategoryId ?? user.CategoryId;
-            
+
             // If the request includes a change to UserType, require admin validation
             if (!string.IsNullOrWhiteSpace(update.UserType) && !string.Equals(update.UserType, user.UserType, StringComparison.OrdinalIgnoreCase))
             {
@@ -399,11 +433,11 @@ public class UsersController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-       // if (update.CategoryId.HasValue) user.CategoryId = update.CategoryId;
+        // if (update.CategoryId.HasValue) user.CategoryId = update.CategoryId;
 
         //await _context.SaveChangesAsync();
         //return Ok(user);
-   
+
     }
 
     [HttpDelete("{id}")]

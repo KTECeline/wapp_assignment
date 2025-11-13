@@ -19,8 +19,8 @@ type Profile = {
     gender: string;
     DOB: string;
     profileimage: globalThis.File | null;
-    plevel: string;
-    pcat: string;
+    plevel: number;
+    pcat: number;
     username: string;
     email: string;
     userId: number;
@@ -58,16 +58,16 @@ const RgUserCat = () => {
 
                 // Fetch full user data from backend
                 const user = await getUser(userId);
-                
+
                 setUserData({
                     id: user.userId?.toString() || userId?.toString(),
                     fname: user.firstName || '',
                     lname: user.lastName || '',
                     gender: user.gender || '',
                     DOB: user.dob || '',
-                    profileimage: null,
-                    plevel: user.level || 'Not set',
-                    pcat: user.category || 'Not set',
+                    profileimage: user.profileImg || null,
+                    plevel: user.levelId || 0,
+                    pcat: user.categoryId || 0,
                     username: user.username || '',
                     email: user.email || '',
                     userId: user.userId || userId
@@ -84,6 +84,48 @@ const RgUserCat = () => {
         fetchUserData();
     }, [navigate]);
 
+    const [levels, setLevels] = useState<{ value: number; label: string }[]>([]);
+    const [categories, setCategories] = useState<{ value: number; label: string }[]>([]);
+
+    // Fetch Levels
+    useEffect(() => {
+        fetch("/api/levels")
+            .then((res) => res.json())
+            .then((data) => {
+                const formatted = data.map((lvl: any) => ({
+                    value: lvl.levelId,
+                    label: lvl.title,
+                }));
+                setLevels(formatted);
+            })
+            .catch((err) => console.error("Error fetching levels:", err));
+    }, []);
+
+    // Fetch Categories
+    useEffect(() => {
+        fetch("/api/categories")
+            .then((res) => res.json())
+            .then((data) => {
+                const formatted = data.map((cat: any) => ({
+                    value: cat.categoryId,
+                    label: cat.title,
+                }));
+                setCategories(formatted);
+            })
+            .catch((err) => console.error("Error fetching categories:", err));
+    }, []);
+
+    // Helper to match IDs to titles
+    const getLevelTitle = (id: number | undefined) => {
+        const level = levels.find((l) => l.value === id);
+        return level ? level.label : "Not set";
+    };
+
+    const getCategoryTitle = (id: number | undefined) => {
+        const category = categories.find((c) => c.value === id);
+        return category ? category.label : "Not set";
+    };
+
     const handleOpenProfileModal = () => {
         setShowProfileForm(true);
     };
@@ -93,9 +135,9 @@ const RgUserCat = () => {
     };
 
     const handleProfileSave = (updatedProfile: Profile, isEdit: boolean) => {
-        console.log("✅ Profile updated:", updatedProfile);
+        console.log("Profile updated:", updatedProfile);
         setShowProfileForm(false);
-        // 🧠 Later: call Supabase or API to update profile
+        window.location.reload();
     };
 
     const handleLogout = async () => {
@@ -160,13 +202,26 @@ const RgUserCat = () => {
                         <div className="flex flex-col">
                             <div className="flex flex-row justify-between">
                                 <div className="flex flex-row gap-[28px] h-full">
-                                    <div className="w-[112px] h-[112px] rounded-full bg-[#DA1A32] text-[54px] font-inter text-white flex justify-center items-center ">
-                                        {userData.fname?.charAt(0).toUpperCase() || 'A'}
+                                    <div className="w-[112px] h-[112px] rounded-full bg-[#DA1A32] text-[54px] font-inter text-white flex justify-center items-center overflow-hidden">
+                                        {userData.profileimage ? (
+                                            <img
+                                                src={
+                                                    typeof userData.profileimage === 'string'
+                                                        ? userData.profileimage
+                                                        : URL.createObjectURL(userData.profileimage)
+                                                }
+                                                alt="Profile"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span>{userData.fname?.charAt(0).toUpperCase() || 'A'}</span>
+                                        )}
                                     </div>
+
 
                                     <div className="flex flex-col my-auto gap-[6px] pb-4">
                                         <div className="font-ibarra font-bold text-[32px]">
-                                            {userData.fname} {userData.lname}
+                                            {userData.username}
                                         </div>
                                         <div className="font-inter font-light text-[16px] underline">
                                             {userData.email}
@@ -175,7 +230,7 @@ const RgUserCat = () => {
                                 </div>
 
                                 <button onClick={handleOpenProfileModal}
-                                className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                                    className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                     <div className="font-inter text-[16px] font-light text-black">
                                         Edit
                                     </div>
@@ -222,7 +277,11 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        {userData.DOB}
+                                        {new Date(userData.DOB).toLocaleDateString('en-GB', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric'
+                                        })}
                                     </div>
                                 </div>
 
@@ -232,7 +291,7 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        {userData.pcat}
+                                        {getCategoryTitle(userData.pcat)}
                                     </div>
                                 </div>
 
@@ -242,13 +301,13 @@ const RgUserCat = () => {
                                     </div>
 
                                     <div className="text-[14px] font-inter">
-                                        {userData.plevel}
+                                        {getLevelTitle(userData.plevel)}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ) : null}
-                    
+
                     {active === "Change Password" && (
                         <div className="flex flex-col min-h-[518px]">
                             <p className="font-ibarra font-bold text-black text-[36px]">
@@ -813,8 +872,6 @@ const RgUserCat = () => {
                                     {tab}
                                 </span>
 
-                                {/* Animated rounded highlight */}
-
                                 <span className={`absolute inset-0 border border-[#DA1A32] rounded-[15px] transition-all duration-[300ms] bg-white ${active === tab ? "opacity-100" : "opacity-0"}`} />
 
                             </button>
@@ -823,7 +880,7 @@ const RgUserCat = () => {
 
                     <div className="mt-[36px] w-[270px] h-[1px] bg-black mx-auto" />
 
-                    <button 
+                    <button
                         onClick={handleLogout}
                         className="mt-[6px] w-full h-[47px] flex justify-center items-center hover:bg-[#f7eee2]/60 transition-all duration-300 rounded-[15px]"
                     >
