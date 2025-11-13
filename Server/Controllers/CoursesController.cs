@@ -92,6 +92,116 @@ public class CoursesController : ControllerBase
             .Where(q => q.CourseId == id && !q.Deleted)
             .ToListAsync();
 
+        // Load MCQ and DragDrop details for each question
+        var questionsWithDetails = new List<object>();
+        foreach (var q in questions)
+        {
+            var questionType = (q.QuestionType ?? "").ToLowerInvariant();
+            
+            if (questionType == "mcq")
+            {
+                var mcq = await _context.McqQuestions.FindAsync(q.QuestionId);
+                if (mcq != null)
+                {
+                    // Helper to determine if a value is an image URL or text
+                    var isImageUrl = (string val) => !string.IsNullOrEmpty(val) && (val.StartsWith("http://") || val.StartsWith("https://") || val.StartsWith("/uploads/"));
+                    
+                    questionsWithDetails.Add(new
+                    {
+                        questionId = q.QuestionId,
+                        questionText = q.QuestionText,
+                        questionType = q.QuestionType,
+                        questionImg = mcq.QuestionMedia,
+                        correctAnswer = int.TryParse(mcq.QuestionAnswer, out var answer) ? answer : 0,
+                        options = new[]
+                        {
+                            new { 
+                                optionText = isImageUrl(mcq.Option1) ? string.Empty : mcq.Option1, 
+                                optionImg = isImageUrl(mcq.Option1) ? mcq.Option1 : string.Empty 
+                            },
+                            new { 
+                                optionText = isImageUrl(mcq.Option2) ? string.Empty : mcq.Option2, 
+                                optionImg = isImageUrl(mcq.Option2) ? mcq.Option2 : string.Empty 
+                            },
+                            new { 
+                                optionText = isImageUrl(mcq.Option3) ? string.Empty : mcq.Option3, 
+                                optionImg = isImageUrl(mcq.Option3) ? mcq.Option3 : string.Empty 
+                            },
+                            new { 
+                                optionText = isImageUrl(mcq.Option4) ? string.Empty : mcq.Option4, 
+                                optionImg = isImageUrl(mcq.Option4) ? mcq.Option4 : string.Empty 
+                            }
+                        }
+                    });
+                }
+            }
+            else if (questionType == "dragdrop")
+            {
+                var dd = await _context.DragDropQuestions.FindAsync(q.QuestionId);
+                if (dd != null)
+                {
+                    // Helper to determine if a value is an image URL or text
+                    var isImageUrl = (string val) => !string.IsNullOrEmpty(val) && (val.StartsWith("http://") || val.StartsWith("https://") || val.StartsWith("/uploads/"));
+                    
+                    questionsWithDetails.Add(new
+                    {
+                        questionId = q.QuestionId,
+                        questionText = q.QuestionText,
+                        questionType = q.QuestionType,
+                        items = new[]
+                        {
+                            new { 
+                                itemText = isImageUrl(dd.Item1) ? string.Empty : dd.Item1, 
+                                itemImg = isImageUrl(dd.Item1) ? dd.Item1 : string.Empty 
+                            },
+                            new { 
+                                itemText = isImageUrl(dd.Item2) ? string.Empty : dd.Item2, 
+                                itemImg = isImageUrl(dd.Item2) ? dd.Item2 : string.Empty 
+                            },
+                            new { 
+                                itemText = isImageUrl(dd.Item3) ? string.Empty : dd.Item3, 
+                                itemImg = isImageUrl(dd.Item3) ? dd.Item3 : string.Empty 
+                            },
+                            new { 
+                                itemText = isImageUrl(dd.Item4) ? string.Empty : dd.Item4, 
+                                itemImg = isImageUrl(dd.Item4) ? dd.Item4 : string.Empty 
+                            }
+                        },
+                        options = new[]
+                        {
+                            new { 
+                                optionText = isImageUrl(dd.Option1) ? string.Empty : dd.Option1, 
+                                optionImg = isImageUrl(dd.Option1) ? dd.Option1 : string.Empty 
+                            },
+                            new { 
+                                optionText = isImageUrl(dd.Option2) ? string.Empty : dd.Option2, 
+                                optionImg = isImageUrl(dd.Option2) ? dd.Option2 : string.Empty 
+                            },
+                            new { 
+                                optionText = isImageUrl(dd.Option3) ? string.Empty : dd.Option3, 
+                                optionImg = isImageUrl(dd.Option3) ? dd.Option3 : string.Empty 
+                            },
+                            new { 
+                                optionText = isImageUrl(dd.Option4) ? string.Empty : dd.Option4, 
+                                optionImg = isImageUrl(dd.Option4) ? dd.Option4 : string.Empty 
+                            }
+                        }
+                    });
+                }
+            }
+            else
+            {
+                // Unknown type or no details, just return basic question
+                questionsWithDetails.Add(new
+                {
+                    questionId = q.QuestionId,
+                    questionText = q.QuestionText,
+                    questionType = q.QuestionType,
+                    options = new object[0]
+                });
+            }
+        }
+
         var registered = false;
         if (userId.HasValue)
         {
@@ -106,7 +216,7 @@ public class CoursesController : ControllerBase
             tips,
             prepItems,
             steps,
-            questions,
+            questions = questionsWithDetails,
             registered
         });
     }

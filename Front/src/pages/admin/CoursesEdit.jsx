@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Card from '../../components/Card';
@@ -6,12 +5,10 @@ import { motion } from 'framer-motion';
 import { Save, ChevronRight, ImagePlus, Video, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Trash2, Clock, Users as UsersIcon, ArrowLeft } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import DropUpload from '../../components/DropUpload';
+import QuestionEditor from '../../components/QuestionEditor';
 import { createCourse, updateCourse, getCategories, getLevels, getCourseWithDetails } from '../../api/client.js';
 import { tipsAPI, prepItemsAPI, stepsAPI, questionsAPI } from '../../services/api';
-const seedQuestions = [
-  { id: 1, title: 'What is gluten?', content: 'Explain how gluten forms and its role in bread structure.', type: 'mcq', options: ['Protein', 'Sugar', 'Fat', 'Water'], correctAnswer: 0 },
-  { id: 2, title: 'Ideal dough temperature', content: 'What is the ideal dough temperature for sourdough bulk fermentation?', type: 'mcq', options: ['18°C', '22–24°C', '28°C', '35°C'], correctAnswer: 1 }
-];
+
 export default function CoursesEdit() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,7 +36,7 @@ export default function CoursesEdit() {
       }
     };
     fetchData();
-  }, []);
+  }, [add]);
   // Active section management
   const [activeSection, setActiveSection] = useState('basic');
   // Course Meta
@@ -89,46 +86,17 @@ export default function CoursesEdit() {
   ]);
   const [selectedStep, setSelectedStep] = useState(null);
   const [stepForm, setStepForm] = useState({ step: '', description: '', stepImg: undefined });
-  // Questions (Drag & Drop only). Each option may include text and/or an optional image.
-  const [questions, setQuestions] = useState(() => (mode === 'create' ? [] : seedQuestions.map(q => ({
-    ...q,
-    type: 'dragdrop',
-    questionImg: q.questionImg || undefined,
-    // each option now has an explicit type: 'text' or 'image'
-    options: (q.options || []).map((opt, idx) => ({ id: `${q.id}-opt-${idx}`, text: opt, image: undefined, type: 'text' }))
-  }))));
-  const [selectedQuestion, setSelectedQuestion] = useState(() => (mode === 'create' ? null : (questions[0]?.id ?? null)));
-  const [questionForm, setQuestionForm] = useState({ title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [] });
+  // Questions - supports both MCQ and Drag & Drop types
+  const [questions, setQuestions] = useState([]);
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+
   const selectedQuestionObj = useMemo(() => questions.find(q => q.id === selectedQuestion) || null, [questions, selectedQuestion]);
-  // Collapsed sections state
-  const [collapsedSections, setCollapsedSections] = useState({
-    tips: false,
-    prepItems: false,
-    steps: false,
-    questions: false
-  });
+
   // Keep original server-side IDs so we can detect deletes on update
   const [originalTipIds, setOriginalTipIds] = useState([]);
   const [originalPrepItemIds, setOriginalPrepItemIds] = useState([]);
   const [originalStepIds, setOriginalStepIds] = useState([]);
   const [originalQuestionIds, setOriginalQuestionIds] = useState([]);
-  const toggleSection = (section) => {
-    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-  useEffect(() => {
-    if (selectedQuestionObj) setQuestionForm({
-      title: selectedQuestionObj.title,
-      content: selectedQuestionObj.content,
-      type: 'dragdrop',
-      questionImg: selectedQuestionObj.questionImg || undefined,
-      options: (selectedQuestionObj.options || []).map((opt, idx) => {
-        // infer option type from server data: if image exists and text empty -> image, otherwise text
-        const existing = (typeof opt === 'string') ? { id: `${selectedQuestionObj.id}-opt-${idx}`, text: opt, image: undefined } : { id: opt.id ?? `${selectedQuestionObj.id}-opt-${idx}`, text: opt.text ?? opt.optionText ?? '', image: opt.image ?? opt.optionImg ?? undefined };
-        const inferredType = existing.image ? 'image' : 'text';
-        return { ...existing, type: inferredType };
-      })
-    });
-  }, [selectedQuestionObj]);
 
   // If we're editing an existing course, fetch full details (tips, prep items, steps, questions)
   useEffect(() => {
@@ -195,12 +163,20 @@ export default function CoursesEdit() {
           id: q.questionId ?? q.question_id,
           title: q.questionText ?? q.question_text ?? q.title ?? '',
           content: q.questionText ?? q.question_text ?? q.content ?? '',
-          type: 'dragdrop',
+          type: q.questionType ?? q.question_type ?? null,  // Use actual type from DB
           questionImg: q.questionImg ?? q.question_img ?? undefined,
+          correctAnswer: q.correctAnswer ?? q.question_answer ?? 0,
           options: (q.options || q.optionsList || []).map((opt, idx) => ({
             id: opt.optionId ?? opt.option_id ?? `${q.questionId ?? q.question_id}-opt-${idx}`,
             text: opt.optionText ?? opt.option_text ?? opt.text ?? '',
-            image: opt.optionImg ?? opt.option_img ?? opt.image ?? undefined
+            image: opt.optionImg ?? opt.option_img ?? opt.image ?? undefined,
+            useImage: !!(opt.optionImg ?? opt.option_img ?? opt.image)
+          })),
+          items: (q.items || q.itemsList || []).map((item, idx) => ({
+            id: item.itemId ?? item.item_id ?? `${q.questionId ?? q.question_id}-item-${idx}`,
+            text: item.itemText ?? item.item_text ?? item.text ?? '',
+            image: item.itemImg ?? item.item_img ?? item.image ?? undefined,
+            useImage: !!(item.itemImg ?? item.item_img ?? item.image)
           }))
         })));
         setOriginalQuestionIds(serverQuestions.map(q => q.questionId ?? q.question_id).filter(Boolean));
@@ -236,8 +212,8 @@ export default function CoursesEdit() {
     setCourseMeta(prev => ({ ...prev, [name]: value }));
   };
   const onSaveCourse = async () => {
-    // Build a stable copy of questions to persist. If an editor is open, merge its form into the copy
-    const questionsToPersist = (questions || []).map(q => (q.id === selectedQuestionObj?.id ? { ...q, ...questionForm } : q));
+    // Questions are now managed by QuestionEditor - no need to merge form state
+    const questionsToPersist = questions || [];
     try {
       // Validate required fields
       if (!courseMeta.title || !courseMeta.categoryId || !courseMeta.levelId) {
@@ -326,26 +302,58 @@ export default function CoursesEdit() {
             await stepsAPI.create({ Description: s.description || '', Step: stepNumber, CourseStepImg: stepImgUrl, CourseId: courseId });
           }));
 
-          // Questions (create). Upload question and option images and include them in payload.
+          // Questions (create). Upload question and option/item images and include them in payload.
           await Promise.all(questionsToPersist.map(async (q) => {
-            if (!q) return;
+            if (!q || !q.type) {
+              console.log('[CoursesEdit] Skipping question without type:', q);
+              return; // Skip questions without a type selected
+            }
             try {
+              console.log('[CoursesEdit] Processing question:', q);
               const questionImgUrl = await uploadMaybe(q.questionImg);
+              
+              // Handle options - upload images for options that use images
               const optionsPayload = await Promise.all((q.options || []).map(async (opt) => {
-                // Respect option type: send only text or image (not both)
-                if ((opt.type || 'text') === 'image') {
+                if (opt.useImage) {
                   const optImg = await uploadMaybe(opt.image);
                   return { OptionText: '', OptionImg: optImg || '' };
                 }
                 return { OptionText: opt.text || '', OptionImg: '' };
               }));
+
+              // Build base payload
               const payload = {
                 QuestionText: q.content || q.title || '',
-                QuestionType: q.type || 'dragdrop',
+                QuestionType: q.type,
                 QuestionImg: questionImgUrl || '',
                 Options: optionsPayload,
                 CourseId: courseId
               };
+
+              console.log('[CoursesEdit] Question type:', q.type);
+              console.log('[CoursesEdit] Options payload:', optionsPayload);
+              console.log('[CoursesEdit] Options payload detailed:', JSON.stringify(optionsPayload, null, 2));
+
+              // For MCQ questions, add correct answer
+              if (q.type === 'mcq') {
+                payload.CorrectAnswer = q.correctAnswer || 0;
+                console.log('[CoursesEdit] MCQ correct answer:', payload.CorrectAnswer);
+              }
+
+              // For Drag & Drop questions, add items
+              if (q.type === 'dragdrop') {
+                const itemsPayload = await Promise.all((q.items || []).map(async (item) => {
+                  if (item.useImage) {
+                    const itemImg = await uploadMaybe(item.image);
+                    return { ItemText: '', ItemImg: itemImg || '' };
+                  }
+                  return { ItemText: item.text || '', ItemImg: '' };
+                }));
+                payload.Items = itemsPayload;
+                console.log('[CoursesEdit] DragDrop items payload:', itemsPayload);
+              }
+
+              console.log('[CoursesEdit] Final payload:', payload);
               await questionsAPI.create(payload);
             } catch (err) {
               console.error('Failed to create question:', q, err);
@@ -483,18 +491,47 @@ export default function CoursesEdit() {
           const currentQuestionIds = questionsToPersist.map(q => extractId(q, ['questionId', 'question_id', 'id'])).filter(Boolean);
           console.log('Processing questions:', { questions: questionsToPersist, currentQuestionIds, originalQuestionIds });
           await Promise.all(questionsToPersist.map(async (q) => {
+            if (!q.type) return; // Skip questions without a type selected
             const id = extractId(q, ['questionId', 'question_id', 'id']);
             try {
               // Upload question image and option images where provided
               const questionImgUrl = await uploadMaybe(q.questionImg);
+              
+              // Handle options - upload images for options that use images
               const optionsPayload = await Promise.all((q.options || []).map(async (opt) => {
-                if ((opt.type || 'text') === 'image') {
+                if (opt.useImage) {
                   const optImg = await uploadMaybe(opt.image);
                   return { OptionText: '', OptionImg: optImg || '' };
                 }
                 return { OptionText: opt.text || '', OptionImg: '' };
               }));
-              const payload = { QuestionText: q.content || q.title || '', QuestionType: q.type || 'dragdrop', QuestionImg: questionImgUrl || '', Options: optionsPayload, CourseId: courseId };
+
+              // Build base payload
+              const payload = { 
+                QuestionText: q.content || q.title || '', 
+                QuestionType: q.type, 
+                QuestionImg: questionImgUrl || '', 
+                Options: optionsPayload, 
+                CourseId: courseId 
+              };
+
+              // For MCQ questions, add correct answer
+              if (q.type === 'mcq') {
+                payload.CorrectAnswer = q.correctAnswer || 0;
+              }
+
+              // For Drag & Drop questions, add items
+              if (q.type === 'dragdrop') {
+                const itemsPayload = await Promise.all((q.items || []).map(async (item) => {
+                  if (item.useImage) {
+                    const itemImg = await uploadMaybe(item.image);
+                    return { ItemText: '', ItemImg: itemImg || '' };
+                  }
+                  return { ItemText: item.text || '', ItemImg: '' };
+                }));
+                payload.Items = itemsPayload;
+              }
+
               if (id) {
                 console.log('Updating question:', id, payload);
                 await questionsAPI.update(id, payload);
@@ -594,19 +631,25 @@ export default function CoursesEdit() {
   // Questions handlers
   const onAddQuestion = () => {
     const newId = Date.now();
-    const newQ = { id: newId, title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [
-      { id: `${newId}-opt-0`, text: '', image: undefined, type: 'text' },
-      { id: `${newId}-opt-1`, text: '', image: undefined, type: 'text' }
-    ] };
+    const newQ = { 
+      id: newId, 
+      title: '', 
+      content: '', 
+      type: null, // Type will be selected in QuestionEditor
+      questionImg: undefined, 
+      correctAnswer: 0,
+      options: [],
+      items: []
+    };
     setQuestions(prev => [...prev, newQ]);
     setSelectedQuestion(newId);
-    setQuestionForm({ title: '', content: '', type: 'dragdrop', questionImg: undefined, options: [{ id: `${newId}-opt-0`, text: '', image: undefined, type: 'text' }, { id: `${newId}-opt-1`, text: '', image: undefined, type: 'text' }] });
   };
-  const onSaveQuestion = () => {
-    if (!selectedQuestionObj) return;
-    setQuestions(prev => prev.map(q => q.id === selectedQuestionObj.id ? { ...q, ...questionForm } : q));
+  
+  const onSaveQuestion = (questionData) => {
+    setQuestions(prev => prev.map(q => q.id === questionData.id ? questionData : q));
     add('Question saved');
   };
+  
   const onDeleteQuestion = (id) => {
     setQuestions(prev => prev.filter(q => q.id !== id));
     if (selectedQuestion === id) setSelectedQuestion(null);
@@ -1171,8 +1214,9 @@ export default function CoursesEdit() {
                         <div className="font-medium truncate" style={{ color: active ? 'var(--accent-dark)' : 'inherit' }}>
                           {q.title || 'Untitled question'}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">Drag &amp; Drop</div>
-              <div className="text-xs text-gray-500 mt-1">{q.type === 'mcq' ? 'MCQ' : 'Drag & Drop'}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {!q.type ? 'Type not selected' : q.type === 'mcq' ? 'MCQ' : 'Drag & Drop'}
+                        </div>
                       </motion.div>
                     );
                   })
@@ -1180,128 +1224,18 @@ export default function CoursesEdit() {
               </div>
             </Card>
             <Card className="lg:col-span-8">
-              <h2 className="text-lg font-bold mb-4">
-                {selectedQuestionObj ? 'Edit Question' : 'Select or Create a Question'}
-              </h2>
               {selectedQuestionObj ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Question Title *</label>
-                    <input
-                      value={questionForm.title}
-                      onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full rounded-xl border px-4 py-3 focus:ring-2 focus:ring-[var(--accent)] outline-none"
-                      style={{ borderColor: 'var(--border)' }}
-                      placeholder="Question title"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Question Content</label>
-                    <textarea
-                      value={questionForm.content}
-                      onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
-                      className="w-full min-h-24 rounded-xl border p-3 focus:ring-2 focus:ring-[var(--accent)] outline-none"
-                      style={{ borderColor: 'var(--border)' }}
-                      placeholder="Describe the question..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">{questionForm.type === 'mcq' ? 'Question Media (optional)' : 'Question Image (optional)'}</label>
-                    <DropUpload
-                      value={questionForm.questionImg}
-                      onChange={(fileOrDataUrl) => setQuestionForm(prev => ({ ...prev, questionImg: fileOrDataUrl }))}
-                      description={questionForm.type === 'mcq' ? 'Upload optional media for MCQ question' : 'Upload optional image for the question'}
-                      className="bg-white h-40"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Question Type</label>
-                    <select
-                      value={questionForm.type}
-                      onChange={(e) => setQuestionForm(prev => ({ ...prev, type: e.target.value }))}
-                      className="rounded-lg border px-3 py-2"
-                      style={{ borderColor: 'var(--border)' }}
-                    >
-                      <option value="dragdrop">Drag & Drop</option>
-                      <option value="mcq">MCQ</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium">Answer Options</label>
-                      <button
-                        onClick={() => {
-                          const newOpt = { id: `opt-${Date.now()}`, text: '', image: undefined, type: 'text' };
-                          setQuestionForm(prev => ({ ...prev, options: [...(prev.options || []), newOpt] }));
-                        }}
-                        className="btn btn-outline btn-sm"
-                      >
-                        <Plus className="w-4 h-4" /> Add Option
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {(questionForm.options || []).map((opt, idx) => (
-                        <div key={opt.id || idx} className="space-y-2 border rounded-xl p-3" style={{ borderColor: 'var(--border)' }}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="text-sm text-gray-600">Option {idx + 1}</div>
-                              <select
-                                value={opt.type || 'text'}
-                                onChange={(e) => setQuestionForm(prev => ({ ...prev, options: prev.options.map(o => o.id === opt.id ? { ...o, type: e.target.value, /* clear opposite field */ ...(e.target.value === 'text' ? { image: undefined } : { text: '' }) } : o) }))}
-                                className="rounded-lg border px-2 py-1 text-sm"
-                                style={{ borderColor: 'var(--border)' }}
-                              >
-                                <option value="text">Text</option>
-                                <option value="image">Image</option>
-                              </select>
-                            </div>
-                            <button
-                              onClick={() => setQuestionForm(prev => ({ ...prev, options: prev.options.filter(o => o.id !== opt.id) }))}
-                              className="btn btn-danger btn-sm"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-
-                          {opt.type === 'image' ? (
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Option Image</label>
-                              <DropUpload
-                                value={opt.image}
-                                onChange={(fileOrDataUrl) => setQuestionForm(prev => ({ ...prev, options: prev.options.map(o => o.id === opt.id ? { ...o, image: fileOrDataUrl, text: '' } : o) }))}
-                                description="Upload image for this option"
-                                className="bg-white h-32"
-                              />
-                            </div>
-                          ) : (
-                            <div>
-                              <input
-                                value={opt.text}
-                                onChange={(e) => setQuestionForm(prev => ({ ...prev, options: prev.options.map((o) => o.id === opt.id ? { ...o, text: e.target.value, image: undefined } : o) }))}
-                                className="w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-[var(--accent)] outline-none"
-                                style={{ borderColor: 'var(--border)' }}
-                                placeholder={`Option ${idx + 1} (text)`}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <button onClick={() => onDeleteQuestion(selectedQuestionObj.id)} className="btn btn-danger">
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
-                    <button onClick={onSaveQuestion} className="btn btn-primary">
-                      <Save className="w-4 h-4" /> Save Question
-                    </button>
-                  </div>
-                </div>
+                <QuestionEditor
+                  question={selectedQuestionObj}
+                  onSave={onSaveQuestion}
+                  onDelete={onDeleteQuestion}
+                />
               ) : (
-                <div className="text-sm text-gray-500 bg-[var(--surface)] border rounded-xl p-6 text-center" style={{ borderColor: 'var(--border)' }}>
-                  Select a question or click "Add" to create one.
+                <div>
+                  <h2 className="text-lg font-bold mb-4">Select or Create a Question</h2>
+                  <div className="text-sm text-gray-500 bg-[var(--surface)] border rounded-xl p-6 text-center" style={{ borderColor: 'var(--border)' }}>
+                    Select a question from the list or click "Add" to create a new one.
+                  </div>
                 </div>
               )}
             </Card>
