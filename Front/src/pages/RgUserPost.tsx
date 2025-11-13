@@ -207,14 +207,24 @@ const RgUserPost = () => {
             }
 
             // Step 2: Create post with image URL
-            const postPayload = {
-                userId: user.userId,
-                title: postData.title,
-                description: postData.description,
-                type: postData.posttype,
-                courseId: postData.posttype === "course" ? (postData.course_id || null) : null,
-                postImg: imageUrl,
+            const courseId = postData.posttype === "course" && postData.course_id 
+                ? parseInt(postData.course_id) 
+                : null;
+
+            const postPayload: any = {
+                UserId: user.userId,
+                Title: postData.title,
+                Description: postData.description,
+                Type: postData.posttype,
+                PostImg: imageUrl,
             };
+
+            // Only include CourseId if it's a course post
+            if (courseId !== null) {
+                postPayload.CourseId = courseId;
+            }
+
+            console.log("Sending post payload:", postPayload);
 
             const res = await fetch('/api/UserPosts', {
                 method: 'POST',

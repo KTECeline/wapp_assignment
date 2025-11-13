@@ -202,8 +202,81 @@ const RgUserHome = () => {
         return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
     };
 
-    const handlePostSave = (post: any, isEdit: boolean) => {
-        console.log("✅ Mock Save:", post, "isEdit:", isEdit);
+    const handlePostSave = async (postData: any, isEdit: boolean) => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!user?.userId) {
+                alert("Please login to submit a post");
+                return;
+            }
+
+            let imageUrl = "";
+
+            // Step 1: Upload image if provided
+            if (postData.postimage instanceof File) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', postData.postimage);
+
+                const uploadRes = await fetch('/api/Uploads', {
+                    method: 'POST',
+                    body: uploadFormData,
+                });
+
+                if (!uploadRes.ok) {
+                    const errorText = await uploadRes.text();
+                    throw new Error("Image upload failed: " + (errorText || `${uploadRes.status}`));
+                }
+
+                const uploadedData = await uploadRes.json();
+                imageUrl = uploadedData.path || uploadedData.url || "";
+            }
+
+            // Step 2: Create post with image URL
+            const courseId = postData.posttype === "course" && postData.course_id 
+                ? parseInt(postData.course_id) 
+                : null;
+
+            const postPayload: any = {
+                UserId: user.userId,
+                Title: postData.title,
+                Description: postData.description,
+                Type: postData.posttype,
+                PostImg: imageUrl,
+            };
+
+            // Only include CourseId if it's a course post
+            if (courseId !== null) {
+                postPayload.CourseId = courseId;
+            }
+
+            console.log("Sending post payload:", postPayload);
+
+            const res = await fetch('/api/UserPosts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postPayload),
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText || `Failed to create post: ${res.status}`);
+            }
+
+            // Refresh the posts list
+            handleClosePostModal();
+            
+            // Refetch posts
+            const data = await getUserPosts();
+            setPosts(data.slice(0, 3));
+            
+            alert("Post created successfully!");
+        } catch (err) {
+            console.error("Error saving post:", err);
+            alert("Failed to create post: " + (err instanceof Error ? err.message : "Unknown error"));
+        }
     };
 
     const handleClosePostModal = () => {
