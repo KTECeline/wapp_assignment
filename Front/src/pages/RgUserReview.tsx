@@ -1,7 +1,5 @@
 import { IoIosArrowBack, IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
-import { CiFilter } from "react-icons/ci";
-import { TbArrowsSort } from "react-icons/tb";
 import { FaStar } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import { IoAdd } from "react-icons/io5";
@@ -23,11 +21,25 @@ interface Review {
     timeAgo: string;
 }
 
+interface Course {
+    courseId: number;
+    title: string;
+    description: string;
+    courseImg: string;
+    cookingTimeMin: number;
+    servings: number;
+    levelName: string;
+    averageRating: number;
+    reviewCount: number;
+}
+
 const RgUserReview = () => {
     const navigate = useNavigate();
     const [active, setActive] = useState("Website Reviews");
     const [reviews, setReviews] = useState<Review[]>([]);
     const [filteredReviews, setFilteredReviews] = useState<Review[]>([]);
+    const [coursesWithRatings, setCoursesWithRatings] = useState<Course[]>([]);
+    const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [showReviewForm, setShowReviewForm] = useState(false);
@@ -39,7 +51,7 @@ const RgUserReview = () => {
     const [reviewtype] = useState<string>("website");
     const [courses, setCourses] = useState<any[]>([]);
 
-    const tabs = ["Website Reviews", "My Reviews"];
+    const tabs = ["All Courses", "Website Reviews", "My Reviews"];
 
     // Helper function to calculate time ago
     const getTimeAgo = (date: Date): string => {
@@ -115,31 +127,105 @@ const RgUserReview = () => {
         fetchCourses();
     }, []);
 
+    // Calculate average ratings for all courses
+    useEffect(() => {
+        if (courses.length > 0 && reviews.length > 0) {
+            const coursesWithAvgRating = courses.map((course: any) => {
+                // Only include course reviews (type === "review"), not website reviews
+                const courseReviews = reviews.filter(review => 
+                    review.courseId === course.courseId && review.type === "review"
+                );
+                const avgRating = courseReviews.length > 0
+                    ? courseReviews.reduce((sum, review) => sum + review.rating, 0) / courseReviews.length
+                    : 0;
+
+                return {
+                    courseId: course.courseId,
+                    title: course.title,
+                    description: course.description,
+                    courseImg: course.courseImg,
+                    cookingTimeMin: course.cookingTimeMin,
+                    servings: course.servings,
+                    levelName: course.levelName || 'Beginner',
+                    averageRating: Number(avgRating.toFixed(1)),
+                    reviewCount: courseReviews.length
+                };
+            });
+
+            setCoursesWithRatings(coursesWithAvgRating);
+        }
+    }, [courses, reviews]);
+
     // Filter reviews based on active tab and search
     useEffect(() => {
-        let filtered = reviews;
+        if (active === "All Courses") {
+            // Filter courses by search term
+            let filtered = coursesWithRatings;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(course =>
+                    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    course.description.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            
+            setFilteredCourses(filtered);
+        } else {
+            // Filter reviews
+            let filtered = reviews;
 
-        // Filter by tab
-        if (active === "Website Reviews") {
-            filtered = reviews.filter(review => review.type === "website");
-        } else if (active === "My Reviews") {
-            filtered = reviews.filter(review => review.userId === user?.userId);
+            // Filter by tab
+            if (active === "Website Reviews") {
+                filtered = reviews.filter(review => review.type === "website");
+            } else if (active === "My Reviews") {
+                filtered = reviews.filter(review => review.userId === user?.userId);
+            }
+
+            // Filter by search term
+            if (searchTerm) {
+                filtered = filtered.filter(review =>
+                    review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    review.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    review.userName.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+
+            setFilteredReviews(filtered);
         }
-
-        // Filter by search term
-        if (searchTerm) {
-            filtered = filtered.filter(review => 
-                review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                review.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                review.userName.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
-        setFilteredReviews(filtered);
-    }, [active, reviews, searchTerm, user?.userId]);
+    }, [active, reviews, searchTerm, user?.userId, coursesWithRatings]);
 
     // Calculate rating statistics
     const calculateStats = () => {
+        // For "All Courses" tab, calculate stats from all course ratings
+        if (active === "All Courses") {
+            if (filteredCourses.length === 0) {
+                return {
+                    totalReviews: 0,
+                    averageRating: 0,
+                    ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+                };
+            }
+
+            // Get all course reviews (type === "review") to calculate distribution
+            const courseReviews = reviews.filter(review => review.type === "review");
+            const ratingDistribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+            let totalRating = 0;
+
+            courseReviews.forEach(review => {
+                totalRating += review.rating;
+                ratingDistribution[review.rating as keyof typeof ratingDistribution]++;
+            });
+
+            const averageRating = courseReviews.length > 0 ? totalRating / courseReviews.length : 0;
+
+            return {
+                totalReviews: courseReviews.length,
+                averageRating: Number(averageRating.toFixed(1)),
+                ratingDistribution
+            };
+        }
+
+        // For other tabs, calculate from filtered reviews
         if (filteredReviews.length === 0) {
             return {
                 totalReviews: 0,
@@ -403,7 +489,7 @@ const RgUserReview = () => {
                         ))}
                     </div>
 
-                    <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px] justify-between w-full">
+                    <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px] w-full">
                         <div className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px]">
                             <input
                                 type="text"
@@ -416,39 +502,103 @@ const RgUserReview = () => {
                                 <IoIosSearch className="text-white w-[24px] h-[24px] " />
                             </div>
                         </div>
-
-                        <div className="flex flex-row gap-[10px]">
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                                <div className="font-inter text-[16px] font-light">
-                                    Filter
-                                </div>
-                                <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                                    <CiFilter className="text-white w-[20px] h-[20px]" />
-                                </div>
-                            </button>
-
-                            <button className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                                <div className="font-inter text-[16px] font-light">
-                                    Sort
-                                </div>
-                                <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                                    <TbArrowsSort className="text-white w-[18px] h-[18px] " />
-                                </div>
-                            </button>
-                        </div>
                     </div>
 
-                    {/* Review Container */}
+                    {/* Content Container */}
                     <div className="mt-[22px] w-screen max-h-[522px] overflow-y-scroll no-scrollbar pb-[64px] pt-[10px]">
-                        <div className="grid grid-cols-3 gap-[20px] w-[1090px] mx-auto">
-                            {loading ? (
-                                <div className="col-span-3 text-center py-8">Loading reviews...</div>
-                            ) : filteredReviews.length === 0 ? (
-                                <div className="col-span-3 text-center py-8">
-                                    {searchTerm ? 'No reviews found matching your search' : 'No reviews yet. Be the first to review!'}
-                                </div>
-                            ) : (
-                                filteredReviews.map((review) => (
+                        {active === "All Courses" ? (
+                            /* Courses Grid */
+                            <div className="grid grid-cols-4 gap-[14px] w-[1090px] mx-auto">
+                                {loading ? (
+                                    <div className="col-span-4 text-center py-8">Loading courses...</div>
+                                ) : filteredCourses.length === 0 ? (
+                                    <div className="col-span-4 text-center py-8">
+                                        {searchTerm ? 'No courses found matching your search' : 'No courses available'}
+                                    </div>
+                                ) : (
+                                    filteredCourses.map((course) => (
+                                        <div 
+                                            key={course.courseId} 
+                                            onClick={() => navigate(`/RgUserCourseReview/${course.courseId}`)}
+                                            className="max-h-[297px] w-[262px] group cursor-pointer flex-shrink-0 hover:scale-105 transition-all duration-300"
+                                        >
+                                            <img src={course.courseImg} alt={course.title} className="w-full h-[177px] object-cover rounded-lg" />
+
+                                            {/* Review */}
+                                            <div className="flex flex-row mt-[16px] items-center">
+                                                <div className="flex gap-[4px]">
+                                                    {[...Array(5)].map((_, index) => {
+                                                        const fillPercentage = Math.min(Math.max(course.averageRating - index, 0), 1) * 100;
+
+                                                        return (
+                                                            <div
+                                                                key={index}
+                                                                className="relative"
+                                                                style={{ width: `18px`, height: `18px` }}
+                                                            >
+                                                                <FaStar className="absolute top-0 left-0 text-gray-300" size="18px" />
+                                                                <div
+                                                                    className="absolute top-0 left-0 overflow-hidden"
+                                                                    style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                                >
+                                                                    <FaStar className="text-[#DA1A32]" size="18px" />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
+                                                    {course.averageRating} ({course.reviewCount} {course.reviewCount === 1 ? 'review' : 'reviews'})
+                                                </div>
+                                            </div>
+
+                                            {/* Title */}
+                                            <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
+                                                {course.title}
+                                            </div>
+
+                                            {/* Details */}
+                                            <div className="flex gap-[14px] mt-[14px]">
+                                                <div className="flex items-center">
+                                                    <img src="/images/Time.png" alt="time" className="w-[12px] h-[12px] object-cover" />
+                                                    <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                                        {course.cookingTimeMin} min
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                                <div className="flex items-center">
+                                                    <img src="/images/Profile.png" alt="servings" className="w-[11px] h-[11px] object-cover" />
+                                                    <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                                        {course.servings} servings
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                                <div className="flex items-center">
+                                                    <img src="/images/Level.png" alt="level" className="w-[14px] h-[14px] object-cover" />
+                                                    <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
+                                                        {course.levelName}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        ) : (
+                            /* Reviews Grid */
+                            <div className="grid grid-cols-3 gap-[20px] w-[1090px] mx-auto">
+                                {loading ? (
+                                    <div className="col-span-3 text-center py-8">Loading reviews...</div>
+                                ) : filteredReviews.length === 0 ? (
+                                    <div className="col-span-3 text-center py-8">
+                                        {searchTerm ? 'No reviews found matching your search' : 'No reviews yet. Be the first to review!'}
+                                    </div>
+                                ) : (
+                                    filteredReviews.map((review) => (
                                     <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
                                         <div className="flex flex-row justify-between items-center">
                                             <div className="flex flex-row gap-[6px]">
@@ -507,6 +657,7 @@ const RgUserReview = () => {
                                 ))
                             )}
                         </div>
+                        )}
                     </div>
 
 

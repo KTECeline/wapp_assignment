@@ -84,6 +84,7 @@ const RgUserHome = () => {
     const [reviewtype] = useState<string>("website");
     const [showPostView, setShowPostView] = useState(false);
     const [showReviewView, setShowReviewView] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
     // Data state for courses, posts, reviews, and announcements
     const [courses, setCourses] = useState<Course[]>([]);
@@ -363,6 +364,17 @@ const RgUserHome = () => {
         setReviewId(null);
     };
 
+    const handlePostLikeUpdate = (postId: number, likeCount: number, isLiked: boolean) => {
+        // Update the post in the posts array
+        setPosts(prevPosts => 
+            prevPosts.map(post => 
+                post.postId === postId 
+                    ? { ...post, likeCount, isLiked }
+                    : post
+            )
+        );
+    };
+
     // Extract review fetching logic for reuse
     const fetchReviewsData = async () => {
         try {
@@ -438,7 +450,7 @@ const RgUserHome = () => {
                 </div>
             )}
 
-            {showPostView && <DisplayPost onClose={() => setShowPostView(false)} />}
+            {showPostView && <DisplayPost onClose={() => setShowPostView(false)} post={selectedPost} onLikeUpdate={handlePostLikeUpdate} />}
             {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} />}
 
             {/* Announcement */}
@@ -636,7 +648,10 @@ const RgUserHome = () => {
                         posts.map((post) => (
                             <button
                                 key={post.postId}
-                                onClick={() => setShowPostView(true)}
+                                onClick={() => {
+                                    setSelectedPost(post);
+                                    setShowPostView(true);
+                                }}
                                 className="text-left cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
                                 <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden bg-gray-200">
                                     <img 

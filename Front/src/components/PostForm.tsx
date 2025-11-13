@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { RxCross2 } from "react-icons/rx";
-import { BsCheck } from "react-icons/bs";
 import IconLoading from "./IconLoading.tsx";
 import DropUpload from "./DropUpload.tsx";
 import { getCourses } from "../api/client.js";
@@ -235,7 +234,7 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
                                         >
                                             <option value="">Select Course</option>
                                             {courses.map((c) => (
-                                                <option key={c.id} value={c.id}>{c.title}</option>
+                                                <option key={c.courseId} value={c.courseId}>{c.title}</option>
                                             ))}
                                         </Field>
 

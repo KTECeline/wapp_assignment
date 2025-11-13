@@ -1,13 +1,12 @@
-import { IoIosArrowBack, IoIosSearch, IoMdHeart } from "react-icons/io";
+import { IoIosSearch, IoMdHeart } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { CiFilter } from "react-icons/ci";
 import { TbArrowsSort } from "react-icons/tb";
-import { FaStar } from "react-icons/fa";
 import React, { useState, useEffect } from "react";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import { IoAdd, IoShareSocialSharp } from "react-icons/io5";
 import { RxCross2 } from "react-icons/rx";
-import { getUserPosts, getLikedPosts, togglePostLike, createUserPost } from "../api/client.js";
+import { getUserPosts, getLikedPosts, togglePostLike } from "../api/client.js";
 import PostForm from "../components/PostForm.tsx";
 
 interface Post {
@@ -54,6 +53,7 @@ const RgUserPost = () => {
 
     useEffect(() => {
         fetchPosts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [active, user?.userId]);
 
     const fetchPosts = async () => {
@@ -157,6 +157,7 @@ const RgUserPost = () => {
     // Apply filters and sort whenever any filter changes or posts are updated
     useEffect(() => {
         applyFiltersAndSort(posts);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedTypes, selectedCourses, sortBy, posts]);
 
     // Handle filter clear
@@ -402,7 +403,7 @@ const RgUserPost = () => {
                                                 {post.description}
                                             </div>
                                             <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                                <a>#{post.courseName}</a> <a>#{post.categoryName}</a>
+                                                <span>#{post.courseName}</span> <span>#{post.categoryName}</span>
                                             </div>
                                             <div className="flex flex-col mt-[18px]">
                                                 <div className="bg-black w-full h-[1px]" />
