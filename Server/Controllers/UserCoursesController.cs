@@ -64,7 +64,11 @@ public class UserCoursesController : ControllerBase
                 levelName = a.Course.Level != null ? a.Course.Level.Title : "",
                 bookmark = a.Bookmark,
                 quizStatus = a.QuizStatus,
-                quizProgress = a.QuizProgress
+                quizProgress = a.QuizProgress,
+                badgeImg = a.Course.BadgeImg,
+                quizBadgeImg = a.Course.QuizBadgeImg,
+                completed = a.Completed,
+                quizTotalTime = a.QuizTotalTime
             })
             .ToListAsync();
 
@@ -100,7 +104,11 @@ public class UserCoursesController : ControllerBase
             levelName = activity.Course?.Level?.Title ?? "",
             bookmark = activity.Bookmark,
             quizStatus = activity.QuizStatus,
-            quizProgress = activity.QuizProgress
+            quizProgress = activity.QuizProgress,
+            badgeImg = activity.Course?.BadgeImg ?? "",
+            quizBadgeImg = activity.Course?.QuizBadgeImg ?? "",
+            completed = activity.Completed,
+            quizTotalTime = activity.QuizTotalTime
         };
 
         return Ok(result);
