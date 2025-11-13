@@ -10,7 +10,7 @@ public class HelpSession
     [Column("user_id")]
     [ForeignKey("User")]
     public int UserId { get; set; }
-    public User User { get; set; } = null!;
+    public User? User { get; set; } = null!;
 
     [Column("start_session")]
     public DateTime StartSession { get; set; }

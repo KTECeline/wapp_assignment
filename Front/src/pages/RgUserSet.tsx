@@ -1,8 +1,7 @@
-import { IoIosSearch, IoIosSend } from "react-icons/io";
+import { IoIosSend } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
-import { CiEdit, CiFilter } from "react-icons/ci";
-import { TbArrowsSort } from "react-icons/tb";
-import { FaEye, FaEyeSlash, FaStar } from "react-icons/fa";
+import { CiEdit } from "react-icons/ci";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import IconLoading from "../components/IconLoading.tsx";
@@ -26,7 +25,7 @@ type Profile = {
     userId: number;
 };
 
-const RgUserCat = () => {
+const RgUserSet = () => {
     const navigate = useNavigate();
     const [userData, setUserData] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -40,6 +39,8 @@ const RgUserCat = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [showProfileForm, setShowProfileForm] = useState(false);
+
+    const [sessionId, setSessionId] = useState<number | null>(null);
 
     // Fetch user data from localStorage and database
     useEffect(() => {
@@ -115,7 +116,208 @@ const RgUserCat = () => {
             .catch((err) => console.error("Error fetching categories:", err));
     }, []);
 
-    // Helper to match IDs to titles
+    // Fetch User
+    useEffect(() => {
+        const fetchUser = async () => {
+            const storedUser = localStorage.getItem("user");
+            if (!storedUser) return setError("User not logged in");
+            const user = JSON.parse(storedUser);
+            setUserData(user);
+            setLoading(false);
+        };
+        fetchUser();
+    }, []);
+
+    const [sessions, setSessions] = useState<any[]>([]);
+    const [selectedSession, setSelectedSession] = useState<any>(null);
+    const [messageInput, setMessageInput] = useState<string>("");
+
+    // Fetch sessions for the logged-in user
+    const fetchSessions = async () => {
+        if (!userData) return;
+
+        try {
+            const res = await fetch("/api/HelpSessions");
+            const data: any[] = await res.json();
+
+            // Filter sessions for this user and map messages
+            const userSessions = data
+                .filter(s => s.userId === userData.userId)
+                .map(s => {
+                    const messages = Array.isArray(s.messages) ? s.messages : [];
+                    const firstUserMessage = messages.find((m: any) => !m.sentByAdmin);
+                    const lastAdminMessage = [...messages].reverse().find((m: any) => m.sentByAdmin);
+
+                    return {
+                        ...s,
+                        firstUserMessage: firstUserMessage?.content || "No messages yet",
+                        firstMessageTime: firstUserMessage?.sentDate,
+                        isSessionEnded: s.endSession !== null,
+                        newReplyAvailable: lastAdminMessage ? !lastAdminMessage.viewedByUser : false,
+                        messages: messages.map((m: any) => ({
+                            id: m.id, // already mapped from MessageId in controller
+                            content: m.content,
+                            sentDate: m.sentDate,
+                            sentByAdmin: m.sentByAdmin,
+                            viewedByUser: m.viewedByUser,
+                            viewedByAdmin: m.viewedByAdmin,
+                        }))
+                    };
+                });
+
+            setSessions(userSessions);
+        } catch (err: any) {
+            console.error(err);
+            setError("Failed to fetch sessions.");
+        }
+    };
+
+    useEffect(() => {
+        fetchSessions();
+    }, [userData]);
+
+    // Select a session and mark admin messages as viewed
+    const handleSelectSession = async (session: any) => {
+        setSelectedSession(session);
+
+        try {
+            const res = await fetch(`/api/Messages/session/${session.id}`);
+            let messages: any[] = await res.json();
+
+            // Map MessageId → id for frontend
+            messages = messages.map((m: any) => ({
+                id: m.id ?? m.messageId,
+                content: m.content,
+                sentDate: m.sentDate,
+                sentByAdmin: m.sentByAdmin,
+                viewedByUser: m.viewedByUser,
+                viewedByAdmin: m.viewedByAdmin,
+            }));
+
+            // Mark admin messages as viewed
+            const updatedMessages = await Promise.all(
+                messages.map(async (m) => {
+                    if (m.sentByAdmin && !m.viewedByUser) {
+                        await fetch(`/api/Messages/${m.id}/mark-viewed`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(false) // byAdmin=false
+                        });
+                        return { ...m, viewedByUser: true };
+                    }
+                    return m;
+                })
+            );
+
+            setSelectedSession((prev: any) => ({ ...prev, messages: updatedMessages }));
+
+            // Update session list to remove "newReplyAvailable" badge
+            setSessions(prev =>
+                prev.map(s => s.id === session.id ? { ...s, newReplyAvailable: false } : s)
+            );
+
+        } catch (err: any) {
+            console.error(err);
+            setError("Failed to load session messages.");
+        }
+    };
+
+    // Send new message (creates session if not exists)
+    const createNewSession = async (): Promise<number> => {
+        if (!userData) throw new Error("User not logged in");
+
+        const sessionRes = await fetch("/api/HelpSessions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId: userData.userId,
+                startSession: new Date().toISOString(), // timestamp
+            })
+        });
+
+        if (!sessionRes.ok) {
+            const errorText = await sessionRes.text();
+            throw new Error(`Failed to create help session: ${errorText}`);
+        }
+
+        const sessionData = await sessionRes.json();
+        return sessionData.sessionId;
+    };
+
+    // Send first message (creates session if needed)
+    const handleSendMessage = async () => {
+        if (!messageInput.trim() || !userData) return;
+
+        try {
+            let currentSessionId = sessionId;
+
+            // Create session if none exists
+            if (!currentSessionId) {
+                currentSessionId = await createNewSession();
+                setSessionId(currentSessionId);
+            }
+
+            // Send message
+            const messageRes = await fetch("/api/Messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sessionId: currentSessionId,
+                    content: messageInput,
+                    sentByAdmin: false,
+                    viewedByUser: true,  // user sees their own message
+                    viewedByAdmin: false // admin hasn’t seen it yet
+                })
+            });
+
+            if (!messageRes.ok) {
+                const errorText = await messageRes.text();
+                throw new Error(`Failed to send message: ${errorText}`);
+            }
+
+            // Clear input
+            setMessageInput("");
+
+            // Refresh session list
+            await fetchSessions();
+
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message || "Failed to send message.");
+        }
+    };
+
+    // Send follow-up message in existing session
+    const handleSendFollowup = async () => {
+        if (!messageInput.trim() || !selectedSession) return;
+
+        try {
+            const res = await fetch('/api/Messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId: selectedSession.id,
+                    content: messageInput,
+                    sentByAdmin: false,
+                    viewedByUser: true,
+                    viewedByAdmin: false,
+                })
+            });
+
+            const newMessage = await res.json();
+
+            setSelectedSession((prev: any) => ({
+                ...prev,
+                messages: [...(prev.messages || []), newMessage]
+            }));
+
+            setMessageInput("");
+        } catch (err: any) {
+            console.error(err);
+            setError("Failed to send follow-up message.");
+        }
+    };
+
     const getLevelTitle = (id: number | undefined) => {
         const level = levels.find((l) => l.value === id);
         return level ? level.label : "Not set";
@@ -807,9 +1009,17 @@ const RgUserCat = () => {
                                     type="text"
                                     placeholder="Type your question, feedback, or request here..."
                                     className="font-inter flex-1 bg-transparent outline-none text-black text-[16px] font-light"
+                                    value={messageInput}
+                                    onChange={(e) => setMessageInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleSendMessage();
+                                    }}
                                 />
-                                <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
-                                    <IoIosSend className="text-white w-[24px] h-[24px] " />
+                                <div
+                                    className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]"
+                                    onClick={handleSendMessage}
+                                >
+                                    <IoIosSend className="text-white w-[24px] h-[24px]" />
                                 </div>
                             </div>
 
@@ -817,42 +1027,120 @@ const RgUserCat = () => {
                                 Past Chats/Requests
                             </p>
 
-                            <div className="pt-[20px] pb-[64px] min-h-[332px] spr-[6px] flex flex-col gap-[16px]">
-
-                                <div className="cursor-pointer relative p-4 border border-gray-200 rounded-xl shadow-md bg-[#FFF6F7] hover:border-[#DA1A32]/40 transition-all duration-[300ms]">
-                                    <div className="absolute -top-2 -right-1 bg-[#DA1A32] text-white text-[10px] px-2 py-1 rounded-full">
-                                        Replied
+                            <div className="pt-[20px] pb-[64px] min-h-[332px] flex flex-col gap-[16px]">
+                                {/* Session Item */}
+                                {sessions.map((s) => (
+                                    <div
+                                        key={s.id}
+                                        className={`cursor-pointer relative p-4 border rounded-xl shadow-sm ${s.newReplyAvailable ? "bg-[#FFF6F7]" : "bg-white"
+                                            } hover:border-[#DA1A32]/40 transition-all duration-[300ms]`}
+                                        onClick={() => handleSelectSession(s)}
+                                    >
+                                        {s.newReplyAvailable && (
+                                            <div className="absolute -top-2 -right-1 bg-[#DA1A32] text-white text-[10px] px-2 py-1 rounded-full">
+                                                Replied
+                                            </div>
+                                        )}
+                                        <p className="text-[14px] text-gray-800 font-medium truncate">{s.firstUserMessage}</p>
+                                        <p className="text-[12px] text-gray-500 mt-1">
+                                            Submitted on {new Date(s.firstMessageTime).toLocaleString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                hour12: true
+                                            })}
+                                            {s.isSessionEnded && (
+                                                <span className="text-red-500 ml-2">
+                                                    (Session ended on {new Date(s.endSession).toLocaleString('en-US', {
+                                                        month: 'short', 
+                                                        day: 'numeric',
+                                                        hour: 'numeric',
+                                                        minute: '2-digit',
+                                                        hour12: true
+                                                    })})
+                                                </span>
+                                            )}
+                                        </p>
                                     </div>
-                                    <p className="text-[14px] text-gray-800 font-medium truncate whitespace-nowrap overflow-hidden">
-                                        Why when I use mobile data connections, the video keep on lagging, how to solve.
-                                    </p>
-                                    <p className="text-[12px] text-gray-500 mt-1">Submitted on Sept 21, 2025</p>
-                                    <p className="text-[12px] text-[#DA1A32] mt-2 font-semibold">New reply available →</p>
-                                </div>
+                                ))}
 
-                                <div className="cursor-pointer p-4 border border-gray-200 rounded-xl shadow-sm bg-white  hover:border-[#DA1A32]/40 transition-all duration-[300ms]">
-                                    <p className="text-[14px] text-gray-800 font-medium">“How do I reset my password?”</p>
-                                    <p className="text-[12px] text-gray-500 mt-1">Submitted on Sept 12, 2025</p>
-                                </div>
+                                {/* Popup Modal */}
+                                {selectedSession && (
+                                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                                        <div className="bg-white w-full max-w-3xl rounded-xl shadow-xl flex flex-col h-[80vh]">
 
-                                <div className="cursor-pointer p-4 border border-gray-200 rounded-xl shadow-sm bg-white  hover:border-[#DA1A32]/40 transition-all duration-[300ms]">
-                                    <p className="text-[14px] text-gray-800 font-medium">“Can I download the lessons for offline use?”</p>
-                                    <p className="text-[12px] text-gray-500 mt-1">Submitted on Sept 18, 2025</p>
-                                </div>
-                                <div className="cursor-pointer p-4 border border-gray-200 rounded-xl shadow-sm bg-white  hover:border-[#DA1A32]/40 transition-all duration-[300ms]">
-                                    <p className="text-[14px] text-gray-800 font-medium">“Can I download the lessons for offline use?”</p>
-                                    <p className="text-[12px] text-gray-500 mt-1">Submitted on Sept 18, 2025</p>
-                                </div>
-                                <div className="cursor-pointer p-4 border border-gray-200 rounded-xl shadow-sm bg-white  hover:border-[#DA1A32]/40 transition-all duration-[300ms]">
-                                    <p className="text-[14px] text-gray-800 font-medium">“Can I download the lessons for offline use?”</p>
-                                    <p className="text-[12px] text-gray-500 mt-1">Submitted on Sept 18, 2025</p>
-                                </div>
-                                <div className="cursor-pointer p-4 border border-gray-200 rounded-xl shadow-sm bg-white  hover:border-[#DA1A32]/40 transition-all duration-[300ms]">
-                                    <p className="text-[14px] text-gray-800 font-medium">“Can I download the lessons for offline use?”</p>
-                                    <p className="text-[12px] text-gray-500 mt-1">Submitted on Sept 18, 2025</p>
-                                </div>
+                                            {/* Header */}
+                                            <div className="flex items-center justify-between p-4 border-b">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold bg-[#DA1A32]">
+                                                        {(selectedSession.userName?.charAt(0) ?? "U")}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-bold text-gray-900">{selectedSession.userName ?? "User"}</h3>
+                                                        <p className="text-sm text-gray-500">{selectedSession.userEmail ?? "No email"}</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => setSelectedSession(null)}
+                                                    className="px-4 py-2 border rounded-lg hover:bg-gray-100"
+                                                >
+                                                    Close
+                                                </button>
+                                            </div>
+
+                                            {/* Messages */}
+                                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                                {selectedSession.messages?.map((m: any) => (
+                                                    <div
+                                                        key={m.id}
+                                                        className={`flex ${m.sentByAdmin ? 'justify-start' : 'justify-end'}`}
+                                                    >
+                                                        <div
+                                                            className={`max-w-[70%] p-3 rounded-2xl ${m.sentByAdmin
+                                                                ? 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                                                                : 'bg-[#DA1A32] text-white rounded-br-sm'
+                                                                }`}
+                                                        >
+                                                            <p className="text-sm">{m.content}</p>
+                                                            <p className={`text-xs mt-1 ${m.sentByAdmin ? 'text-gray-500' : 'text-white/70'}`}>
+                                                                {new Date(m.sentDate).toLocaleString('en-US', {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    hour: 'numeric',
+                                                                    minute: '2-digit',
+                                                                    hour12: true
+                                                                })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Input */}
+                                            {selectedSession.status === 'active' ? (
+                                                <div className="p-4 border-t flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={messageInput}
+                                                        onChange={(e) => setMessageInput(e.target.value)}
+                                                        placeholder="Type your message..."
+                                                        className="flex-1 px-4 py-3 rounded-xl border focus:ring-2 focus:ring-[#DA1A32] outline-none"
+                                                    />
+                                                    <button
+                                                        onClick={handleSendFollowup}
+                                                        className="px-6 py-3 bg-[#DA1A32] hover:bg-red-700 text-white rounded-xl font-medium"
+                                                    >
+                                                        Send
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-4 text-gray-500 border-t">This session is closed</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-
                         </div>
                     )}
                 </div>
@@ -892,4 +1180,4 @@ const RgUserCat = () => {
     );
 };
 
-export default RgUserCat;
+export default RgUserSet;
