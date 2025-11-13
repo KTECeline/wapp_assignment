@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, MessageSquare, MessagesSquare, Megaphone, BarChart3, Settings, Search, Bell, User, FolderTree, Layers, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, MessagesSquare, Megaphone, BarChart3, Settings, User, Layers, LifeBuoy } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { logout } from '../services/api';
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/course-management', label: 'Course Management', icon: Layers },
+  { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/posts', label: 'Posts', icon: MessageSquare },
   { to: '/admin/feedback', label: 'Feedback', icon: MessagesSquare },
   { to: '/admin/help-sessions', label: 'Help Sessions', icon: LifeBuoy },
   { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
-  { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

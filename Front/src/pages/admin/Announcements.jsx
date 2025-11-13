@@ -51,6 +51,10 @@ export default function Announcements() {
   const [toast, setToast] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editText, setEditText] = useState('');
+  const [editBanner, setEditBanner] = useState();
 
   // fetch announcements from backend on mount
   useEffect(() => {
@@ -105,6 +109,38 @@ export default function Announcements() {
     } catch (err) {
       console.error(err);
       setToast('Failed to create announcement');
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const onUpdate = async () => {
+    if (!editingItem) return;
+    if (!editTitle.trim() && !editText.trim()) return;
+
+    try {
+      const updated = await updateAnnouncement(editingItem.id, {
+        title: (editTitle || editText).slice(0, 80),
+        body: editText,
+        annFile: editBanner instanceof File ? editBanner : undefined
+      });
+
+      const uiItem = {
+        ...editingItem,
+        title: updated.title,
+        body: updated.body,
+        banner: updated.annImg || editingItem.banner
+      };
+
+      setItems(prev => prev.map(x => x.id === editingItem.id ? uiItem : x));
+      setEditingItem(null);
+      setEditTitle('');
+      setEditText('');
+      setEditBanner(undefined);
+      setToast('Announcement updated successfully!');
+      setTimeout(() => setToast(null), 3000);
+    } catch (err) {
+      console.error(err);
+      setToast('Failed to update announcement');
       setTimeout(() => setToast(null), 3000);
     }
   };
@@ -217,6 +253,109 @@ export default function Announcements() {
           </Card>
         )}
 
+        {/* Edit Form */}
+        {editingItem && (
+          <Card className="border-blue-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Announcement</h2>
+              <button
+                onClick={() => {
+                  setEditingItem(null);
+                  setEditTitle('');
+                  setEditText('');
+                  setEditBanner(undefined);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Title (optional)</label>
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300 transition-all"
+                  placeholder="Enter a catchy title..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="w-full min-h-32 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300 transition-all resize-none"
+                  placeholder="What would you like to announce?"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Banner Image (3:1 ratio)</label>
+                <DropUpload
+                  className="bg-white h-48"
+                  value={editBanner}
+                  onChange={setEditBanner}
+                  title="Upload banner"
+                  description="Recommended: 1200x400 pixels (3:1 ratio)"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                />
+              </div>
+              <div className="flex justify-between items-center pt-2">
+                <button
+                  onClick={() => {
+                    setConfirm({
+                      title: 'Delete announcement?',
+                      body: 'This action cannot be undone.',
+                      onConfirm: async () => {
+                        try {
+                          await deleteAnnouncement(editingItem.id);
+                          setItems(prev => prev.filter(x => x.id !== editingItem.id));
+                          setEditingItem(null);
+                          setEditTitle('');
+                          setEditText('');
+                          setEditBanner(undefined);
+                          setToast('Announcement deleted');
+                          setTimeout(() => setToast(null), 3000);
+                          setConfirm(null);
+                        } catch (err) {
+                          console.error(err);
+                          setToast('Failed to delete announcement');
+                          setTimeout(() => setToast(null), 3000);
+                          setConfirm(null);
+                        }
+                      },
+                    });
+                  }}
+                  className="px-5 py-2.5 rounded-xl text-red-600 hover:bg-red-50 font-medium transition-colors flex items-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setEditingItem(null);
+                      setEditTitle('');
+                      setEditText('');
+                      setEditBanner(undefined);
+                    }}
+                    className="px-5 py-2.5 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={onUpdate}
+                    disabled={!editTitle.trim() && !editText.trim()}
+                    className="px-5 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed font-medium transition-colors shadow-sm hover:shadow-md"
+                  >
+                    Update Announcement
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Announcements List */}
         <div className="space-y-4">
           {filtered.length === 0 && (
@@ -249,19 +388,12 @@ export default function Announcements() {
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <button
-                    onClick={async () => {
-                      const newTitle = prompt('Edit title:', a.title);
-                      if (newTitle == null) return;
-                      try {
-                        const updated = await updateAnnouncement(a.id, { title: newTitle });
-                        setItems(prev => prev.map(x => x.id === a.id ? { ...x, title: updated.title } : x));
-                        setToast('Announcement updated');
-                        setTimeout(() => setToast(null), 3000);
-                      } catch (err) {
-                        console.error(err);
-                        setToast('Failed to update announcement');
-                        setTimeout(() => setToast(null), 3000);
-                      }
+                    onClick={() => {
+                      setEditingItem(a);
+                      setEditTitle(a.title || '');
+                      setEditText(a.body || '');
+                      setEditBanner(a.banner || undefined);
+                      setIsCreating(false);
                     }}
                     className="p-2 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-red-500 transition-colors"
                     title="Edit"
