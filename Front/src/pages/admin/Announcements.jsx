@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, Plus, Image as ImageIcon, Edit2, Trash2, Calendar, X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Search, Plus, Edit2, Trash2, Calendar, X } from 'lucide-react';
 import { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement } from '../../api/client';
+import DropUpload from '../../components/DropUpload';
 
 const Card = ({ children, className = '' }) => (
   <div className={`bg-white rounded-2xl shadow-sm border p-6 ${className}`} style={{ borderColor: 'var(--border)' }}>
@@ -47,24 +48,9 @@ export default function Announcements() {
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [banner, setBanner] = useState();
-  const [bannerPreview, setBannerPreview] = useState();
-  const [imgMeta, setImgMeta] = useState({ width: 0, height: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [offsetX, setOffsetX] = useState(0);
-  const [offsetY, setOffsetY] = useState(0);
   const [toast, setToast] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
-  const TARGET_W = 1200;
-  const TARGET_H = 400;
-  const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    if (!banner || !(banner instanceof File)) return setBannerPreview(undefined);
-    const reader = new FileReader();
-    reader.readAsDataURL(banner);
-    reader.onloadend = () => setBannerPreview(reader.result);
-  }, [banner]);
 
   // fetch announcements from backend on mount
   useEffect(() => {
@@ -89,48 +75,14 @@ export default function Announcements() {
     return () => { mounted = false; };
   }, []);
 
-  useEffect(() => {
-    if (!bannerPreview) { setImgMeta({ width: 0, height: 0 }); return; }
-    const img = new Image();
-    img.onload = () => setImgMeta({ width: img.naturalWidth, height: img.naturalHeight });
-    img.src = bannerPreview;
-  }, [bannerPreview]);
-
-  const cropBanner = async () => {
-    if (!bannerPreview) return undefined;
-    const img = await new Promise((resolve) => {
-      const im = new Image();
-      im.onload = () => resolve(im);
-      im.src = bannerPreview;
-    });
-    const canvas = document.createElement('canvas');
-    canvas.width = TARGET_W;
-    canvas.height = TARGET_H;
-    const ctx = canvas.getContext('2d');
-    const baseScale = Math.max(TARGET_W / img.width, TARGET_H / img.height);
-    const scale = baseScale * Math.max(1, zoom);
-    const drawW = img.width * scale;
-    const drawH = img.height * scale;
-    const extraX = Math.max(0, drawW - TARGET_W);
-    const extraY = Math.max(0, drawH - TARGET_H);
-    const x = -extraX / 2 + (offsetX * extraX) / 2;
-    const y = -extraY / 2 + (offsetY * extraY) / 2;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, TARGET_W, TARGET_H);
-    ctx.drawImage(img, x, y, drawW, drawH);
-    return canvas.toDataURL('image/jpeg', 0.9);
-  };
-
   const onCreate = async () => {
     if (!title.trim() && !text.trim()) return;
-    const finalBanner = await cropBanner();
 
     try {
       const created = await createAnnouncement({
         title: (title || text).slice(0, 80),
         body: text,
         annFile: banner instanceof File ? banner : undefined,
-        annDataUrl: !(banner instanceof File) && finalBanner ? finalBanner : undefined,
         visible: true
       });
 
@@ -147,10 +99,6 @@ export default function Announcements() {
       setTitle('');
       setText('');
       setBanner(undefined);
-      setZoom(1);
-      setOffsetX(0);
-      setOffsetY(0);
-      setImgMeta({ width: 0, height: 0 });
       setIsCreating(false);
       setToast('Announcement posted successfully!');
       setTimeout(() => setToast(null), 3000);
@@ -235,120 +183,15 @@ export default function Announcements() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <ImageIcon size={16} />
-                  Banner Image (3:1 ratio)
-                </label>
-                <div
-                  className="rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors"
-                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const f = e.dataTransfer?.files?.[0];
-                    if (f) setBanner(f);
-                  }}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setBanner(e.target.files?.[0])}
-                    className="hidden"
-                    id="banner-upload"
-                    ref={fileInputRef}
-                  />
-                  <label htmlFor="banner-upload" className="cursor-pointer block text-center">
-                    {!bannerPreview ? (
-                      <div className="space-y-2">
-                        <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface)' }}>
-                          <ImageIcon style={{ color: 'var(--accent)' }} size={20} />
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium" style={{ color: 'var(--accent)' }}>Click to upload</span> or drag and drop
-                        </div>
-                        <div className="text-xs text-gray-500">Recommended: 1200x400 pixels</div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="text-xs text-gray-600 text-left">
-                          Image: {imgMeta.width} × {imgMeta.height}px • Target: {TARGET_W} × {TARGET_H}px
-                        </div>
-                        <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--surface)' }}>
-                          <div className="relative w-full" style={{ aspectRatio: '3 / 1' }}>
-                            <img
-                              src={bannerPreview}
-                              alt="Preview"
-                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none"
-                              style={{
-                                width: 'auto',
-                                height: 'auto',
-                                transform: `translate(-50%, -50%) scale(${Math.max(1, zoom) * Math.max(TARGET_W / Math.max(1, imgMeta.width), TARGET_H / Math.max(1, imgMeta.height))}) translate(${offsetX * 50}%, ${offsetY * 50}%)`,
-                              }}
-                              draggable={false}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-3 text-left">
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <label className="text-xs font-medium text-gray-700">Zoom</label>
-                              <span className="text-xs text-gray-600">{zoom.toFixed(2)}x</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="1"
-                              max="3"
-                              step="0.01"
-                              value={zoom}
-                              onChange={(e) => setZoom(parseFloat(e.target.value))}
-                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Horizontal</label>
-                              <input
-                                type="range"
-                                min="-1"
-                                max="1"
-                                step="0.01"
-                                value={offsetX}
-                                onChange={(e) => setOffsetX(parseFloat(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Vertical</label>
-                              <input
-                                type="range"
-                                min="-1"
-                                max="1"
-                                step="0.01"
-                                value={offsetY}
-                                onChange={(e) => setOffsetY(parseFloat(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setBanner(undefined);
-                            setBannerPreview(undefined);
-                          }}
-                          className="text-xs font-medium"
-                          style={{ color: 'var(--accent)' }}
-                        >
-                          Remove image
-                        </button>
-                      </div>
-                    )}
-                  </label>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Banner Image (3:1 ratio)</label>
+                <DropUpload
+                  className="bg-white h-48"
+                  value={banner}
+                  onChange={setBanner}
+                  title="Upload banner"
+                  description="Recommended: 1200x400 pixels (3:1 ratio)"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button

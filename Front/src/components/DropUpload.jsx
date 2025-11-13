@@ -17,6 +17,9 @@ export default function DropUpload({
   const ref = useRef(null);
   const inputRef = useRef(null);
   const [focus, setFocus] = useState(false);
+  const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 }); // Center by default
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
 
   const dragenter = useCallback((event) => {
     event.preventDefault();
@@ -42,6 +45,50 @@ export default function DropUpload({
       onChange?.(files[0]);
     }
   }, [onChange]);
+
+  // Image repositioning handlers
+  const handleImageMouseDown = useCallback((e) => {
+    e.stopPropagation(); // Prevent container click (file upload)
+    setIsDraggingImage(true);
+    dragStartPos.current = {
+      x: e.clientX,
+      y: e.clientY,
+      startX: imagePosition.x,
+      startY: imagePosition.y,
+    };
+  }, [imagePosition]);
+
+  const handleImageMouseMove = useCallback((e) => {
+    if (!isDraggingImage || !ref.current) return;
+    
+    const deltaX = e.clientX - dragStartPos.current.x;
+    const deltaY = e.clientY - dragStartPos.current.y;
+    
+    const containerRect = ref.current.getBoundingClientRect();
+    const deltaXPercent = (deltaX / containerRect.width) * 100;
+    const deltaYPercent = (deltaY / containerRect.height) * 100;
+    
+    setImagePosition({
+      x: Math.max(0, Math.min(100, dragStartPos.current.startX + deltaXPercent)),
+      y: Math.max(0, Math.min(100, dragStartPos.current.startY + deltaYPercent)),
+    });
+  }, [isDraggingImage]);
+
+  const handleImageMouseUp = useCallback(() => {
+    setIsDraggingImage(false);
+  }, []);
+
+  // Add/remove mousemove and mouseup listeners
+  useEffect(() => {
+    if (isDraggingImage) {
+      document.addEventListener('mousemove', handleImageMouseMove);
+      document.addEventListener('mouseup', handleImageMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleImageMouseMove);
+        document.removeEventListener('mouseup', handleImageMouseUp);
+      };
+    }
+  }, [isDraggingImage, handleImageMouseMove, handleImageMouseUp]);
 
   const onInputChange = (event) => {
     event.preventDefault();
@@ -112,11 +159,11 @@ export default function DropUpload({
 
   return (
     <div
-      className={`${className} flex justify-center rounded-xl border-2 border-dashed`}
+      className={`${className} flex justify-center rounded-xl border-2 border-dashed overflow-hidden relative`}
       style={{ borderColor: focus ? '#D9433B' : '#F2E6E0', boxShadow: focus ? '0 0 0 2px rgba(217, 67, 59, 0.15)' : 'none' }}
       ref={ref}
-      onClick={() => {
-        if (!disabled) inputRef.current?.click();
+      onClick={(e) => {
+        if (!disabled && !isDraggingImage) inputRef.current?.click();
       }}
       role="button"
       tabIndex={0}
@@ -127,35 +174,48 @@ export default function DropUpload({
         }
       }}
     >
-      <div className="space-y-1 text-center px-6 pt-5 pb-6 flex flex-col items-center justify-center">
-        {previewURL ? (
-          <div className="relative">
-            <img src={previewURL} alt="Preview" className="mx-auto w-40 h-40 object-contain max-w-full mb-4" draggable={false} />
-            {value ? (
-              <AiFillCloseCircle
-                className="w-5 h-5 text-[#B13A33] absolute right-0 top-0 cursor-pointer rounded-full"
-                onClick={() => onChange?.(undefined)}
-              />
-            ) : null}
-          </div>
-        ) : (
-          placeholder ?? (
+      {previewURL ? (
+        <>
+          <img 
+            src={previewURL} 
+            alt="Preview" 
+            className="w-full h-full object-cover rounded-lg cursor-move select-none" 
+            style={{ 
+              objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
+              userSelect: 'none',
+            }}
+            draggable={false}
+            onMouseDown={handleImageMouseDown}
+          />
+          {value ? (
+            <AiFillCloseCircle
+              className="w-7 h-7 text-[#B13A33] absolute right-2 top-2 cursor-pointer bg-white rounded-full shadow-lg hover:scale-110 transition-transform z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange?.(undefined);
+              }}
+            />
+          ) : null}
+        </>
+      ) : (
+        <div className="space-y-1 text-center px-6 pt-5 pb-6 flex flex-col items-center justify-center w-full">
+          {placeholder ?? (
             <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
             </svg>
-          )
-        )}
-        <div className="flex text-sm text-gray-600 flex-row items-center">
-          <label className="font-inter relative cursor-pointer bg-white rounded-md text-[#B13A33] px-2 py-1 border transition-all duration-200 hover:bg-[#FFF8F2]"
-            style={{ borderColor: '#D9433B' }}
-          >
-            <span>{title}</span>
-            <input ref={inputRef} type="file" accept={accept || 'image/*'} className="sr-only" onChange={onInputChange} disabled={disabled} />
-          </label>
-          <p className="pl-[6px] text-gray-500">or drag and drop</p>
+          )}
+          <div className="flex text-sm text-gray-600 flex-row items-center">
+            <label className="font-inter relative cursor-pointer bg-white rounded-md text-[#B13A33] px-2 py-1 border transition-all duration-200 hover:bg-[#FFF8F2]"
+              style={{ borderColor: '#D9433B' }}
+            >
+              <span>{title}</span>
+              <input ref={inputRef} type="file" accept={accept || 'image/*'} className="sr-only" onChange={onInputChange} disabled={disabled} />
+            </label>
+            <p className="pl-[6px] text-gray-500">or drag and drop</p>
+          </div>
+          <p className="text-xs text-gray-500">{description}</p>
         </div>
-        <p className="text-xs text-gray-500">{description}</p>
-      </div>
+      )}
     </div>
   );
 }

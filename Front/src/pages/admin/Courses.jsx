@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, BookOpen, Users, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, BookOpen, Users, BarChart3, Star } from 'lucide-react';
 import { deleteCourse, getCategories } from '../../api/client';
 import { useToast } from '../../components/Toast';
 
@@ -208,46 +208,78 @@ export default function CoursesSwiper() {
                 const current = filteredCourses[currentIndex] ?? filteredCourses[0];
                 return (
                   <div
-                    className="bg-white rounded-2xl shadow-md p-6 md:p-8 border min-h-[420px] flex flex-col justify-between"
+                    className="bg-white rounded-2xl shadow-md border min-h-[550px] flex flex-col justify-between relative overflow-hidden"
                     style={{ borderColor: '#F2E6E0' }}
                     key={current.courseId}
                   >
-                    {/* Course Number Badge */}
-                    <div className="absolute top-5 right-5 bg-[#D9433B] text-white px-3 py-1.5 rounded-full font-medium text-xs shadow-sm">
-                      {currentIndex + 1} / {filteredCourses.length}
-                    </div>
-
-                    {/* Content */}
-                    {/* Banner Image */}
+                    {/* Background Image with Overlay */}
                     {current.courseImg && (
-                      <div className="w-full h-48 mb-4 overflow-hidden rounded-xl">
-                        <img src={resolveImage(current.courseImg)} alt={current.title} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 z-0">
+                        <img 
+                          src={resolveImage(current.courseImg)} 
+                          alt={current.title} 
+                          className="w-full h-full object-cover "
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/55 to-white/100"></div>
                       </div>
                     )}
 
-                    <div className="space-y-6">
+                    {/* Course Number Badge */}
+                    <div className="absolute top-5 right-5 bg-[#D9433B] text-white px-3 py-1.5 rounded-full font-medium text-xs shadow-sm z-20">
+                      {currentIndex + 1} / {filteredCourses.length}
+                    </div>
+
+                    {/* Content - positioned above background */}
+                    <div className="relative z-10 p-6 md:p-8 space-y-6 flex-1 flex flex-col justify-between">
                       {/* Category Badge */}
                       <div className="inline-block">
-                        <span className="bg-[#FFF8F2] text-[#B13A33] px-3 py-1 rounded-full text-xs font-medium border" style={{ borderColor: '#F2E6E0' }}>
+                        <span className="bg-[#FFF8F2] text-[#B13A33] px-3 py-1 rounded-full text-xs font-medium border shadow-sm" style={{ borderColor: '#F2E6E0' }}>
                           {current.category?.title || 'Uncategorized'}
                         </span>
                       </div>
 
                       {/* Title */}
-                      <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-snug">
+                      <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 leading-snug drop-shadow-sm">
                         {current.title}
                       </h2>
 
+                      {/* Rating Stars */}
+                      <div className="flex items-center gap-2">
+                        <div className="inline-flex items-center gap-1 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
+                          {[1, 2, 3, 4, 5].map((star) => {
+                            const rating = current.rating || 0;
+                            const fillPercentage = Math.max(0, Math.min(100, (rating - (star - 1)) * 100));
+                            
+                            return (
+                              <div key={star} className="relative">
+                                {/* Empty star background */}
+                                <Star size={18} className="fill-gray-300 text-gray-300" />
+                                {/* Filled star overlay with clip */}
+                                <div 
+                                  className="absolute inset-0 overflow-hidden" 
+                                  style={{ width: `${fillPercentage}%` }}
+                                >
+                                  <Star size={18} className="fill-[#D9433B] text-[#D9433B]" />
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <span className="text-sm font-medium text-gray-700 ml-1">
+                            {(current.rating || 0).toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+
                       {/* Description */}
                       {current.description && (
-                        <p className="text-gray-600 text-sm line-clamp-2">
+                        <p className="text-gray-700 text-sm line-clamp-2 drop-shadow-sm">
                           {current.description}
                         </p>
                       )}
 
                       {/* Stats Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                        <div className="flex items-center gap-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl border shadow-sm" style={{ borderColor: '#F2E6E0' }}>
                           <div className="bg-[#D9433B] p-2.5 rounded-lg">
                             <BarChart3 className="text-white" size={24} />
                           </div>
@@ -257,7 +289,7 @@ export default function CoursesSwiper() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                        <div className="flex items-center gap-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl border shadow-sm" style={{ borderColor: '#F2E6E0' }}>
                           <div className="bg-[#D9433B] p-2.5 rounded-lg">
                             <Users className="text-white" size={24} />
                           </div>
@@ -267,7 +299,7 @@ export default function CoursesSwiper() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                        <div className="flex items-center gap-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl border shadow-sm" style={{ borderColor: '#F2E6E0' }}>
                           <div className="bg-[#D9433B] p-2.5 rounded-lg">
                             <BookOpen className="text-white" size={24} />
                           </div>
@@ -277,7 +309,7 @@ export default function CoursesSwiper() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 bg-[#FFF8F2] p-4 rounded-xl border" style={{ borderColor: '#F2E6E0' }}>
+                        <div className="flex items-center gap-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl border shadow-sm" style={{ borderColor: '#F2E6E0' }}>
                           <div className="bg-[#D9433B] p-2.5 rounded-lg">
                             <Users className="text-white" size={24} />
                           </div>
@@ -291,7 +323,7 @@ export default function CoursesSwiper() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 mt-6">
+                    <div className="flex gap-3 mt-6 relative z-10 px-6 md:px-8 pb-6 md:pb-8">
                       <button
                         onClick={handleEdit}
                         className="flex-1 flex items-center justify-center gap-2 border text-[#D9433B] hover:bg-[#FFF8F2] text-sm font-medium rounded-xl py-2.5 transition-all active:scale-95"
@@ -369,13 +401,6 @@ export default function CoursesSwiper() {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Keyboard Hint */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-500 text-xs">
-            💡 Use arrow keys ← → to navigate between courses
-          </p>
         </div>
       </div>
       )}

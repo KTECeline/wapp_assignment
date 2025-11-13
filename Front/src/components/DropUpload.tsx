@@ -70,19 +70,23 @@ const DropUpload: FC<Props> = ({
   }
 
   useLayoutEffect(() => {
-    if (ref.current) {
-      ref.current.addEventListener('dragenter', dragenter, false)
-      ref.current.addEventListener('dragleave', dragleave, false)
-      ref.current.addEventListener('dragover', dragover, false)
-      ref.current.addEventListener('drop', drop, false)
+    const element = ref.current;
+    if (element) {
+      element.addEventListener('dragenter', dragenter, false)
+      element.addEventListener('dragleave', dragleave, false)
+      element.addEventListener('dragover', dragover, false)
+      element.addEventListener('drop', drop, false)
     }
 
     return () => {
-      ref.current?.removeEventListener('dragenter', dragenter)
-      ref.current?.removeEventListener('dragleave', dragleave)
-      ref.current?.removeEventListener('dragover', dragover)
-      ref.current?.removeEventListener('drop', drop)
+      if (element) {
+        element.removeEventListener('dragenter', dragenter)
+        element.removeEventListener('dragleave', dragleave)
+        element.removeEventListener('dragover', dragover)
+        element.removeEventListener('drop', drop)
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const [previewURL, setPreviewURL] = useState<string>()
@@ -113,6 +117,7 @@ const DropUpload: FC<Props> = ({
 
   useEffect(() => {
     preview()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, _preview, defaultValue])
 
   return (

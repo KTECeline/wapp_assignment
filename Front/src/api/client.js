@@ -549,7 +549,56 @@ export async function updateCourseQuizStatus(userId, courseId, quizData) {
     },
     body: JSON.stringify(quizData),
   });
-  if (!res.ok) throw new Error(`Failed to update quiz status: ${res.status}`);
+  if (!res.ok) throw new Error(`Failed to update course quiz status: ${res.status}`);
   return res.json();
+}
+
+// Data Export - Fetch all admin data for CSV export
+export async function exportAllAdminData() {
+  try {
+    const [
+      users,
+      courses,
+      categories,
+      levels,
+      feedback,
+      announcements,
+      badges,
+      userCourses,
+      messages,
+      helpSessions,
+      userPosts
+    ] = await Promise.all([
+      fetch('/api/Users').then(r => r.ok ? r.json() : []),
+      fetch('/api/Courses').then(r => r.ok ? r.json() : []),
+      fetch('/api/Categories').then(r => r.ok ? r.json() : []),
+      fetch('/api/Levels').then(r => r.ok ? r.json() : []),
+      fetch('/api/UserFeedbacks').then(r => r.ok ? r.json() : []),
+      fetch('/api/Announcements').then(r => r.ok ? r.json() : []),
+      fetch('/api/Badges').then(r => r.ok ? r.json() : []),
+      fetch('/api/UserCourses').then(r => r.ok ? r.json() : []),
+      fetch('/api/Messages').then(r => r.ok ? r.json() : []),
+      fetch('/api/HelpSessions').then(r => r.ok ? r.json() : []),
+      fetch('/api/UserPosts').then(r => r.ok ? r.json() : [])
+    ]);
+
+    return {
+      users,
+      courses,
+      categories,
+      levels,
+      feedback,
+      announcements,
+      badges,
+      userCourses,
+      messages,
+      helpSessions,
+      userPosts,
+      exportDate: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error exporting admin data:', error);
+    throw error;
+  }
 }
 

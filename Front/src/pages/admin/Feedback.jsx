@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MessageSquare, Star, TrendingUp, ChevronDown, X, BookOpen, Eye } from 'lucide-react';
+import { Search, Filter, MessageSquare, Star, TrendingUp, ChevronDown, X, BookOpen, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getUserFeedbacks } from '../../api/client';
 
 function Card({ children, className = '' }) {
@@ -23,6 +23,10 @@ export default function FeedbackV2() {
   const [availableCategories, setAvailableCategories] = useState([]);
   const [availableCourses, setAvailableCourses] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12); // Show 12 items per page (4x3 grid)
 
   // Filter functionality
   React.useEffect(() => {
@@ -56,7 +60,19 @@ export default function FeedbackV2() {
     }
 
     setFilteredRows(filtered);
+    setCurrentPage(1); // Reset to page 1 when filters change
   }, [rows, searchTerm, categoryFilter, courseFilter, ratingFilter]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedRows = filteredRows.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Load feedbacks from backend
   useEffect(() => {
@@ -331,21 +347,35 @@ export default function FeedbackV2() {
 
             <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
               <span className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-gray-900">{filteredRows.length}</span> of <span className="font-semibold text-gray-900">{rows.length}</span> items
+                Showing <span className="font-semibold text-gray-900">{startIndex + 1}-{Math.min(endIndex, filteredRows.length)}</span> of <span className="font-semibold text-gray-900">{filteredRows.length}</span> items
+                {filteredRows.length !== rows.length && ` (filtered from ${rows.length} total)`}
               </span>
-              {(searchTerm || categoryFilter !== 'All' || courseFilter !== 'All' || ratingFilter !== 'All') && (
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setCategoryFilter('All');
-                    setCourseFilter('All');
-                    setRatingFilter('All');
-                  }}
-                  className="text-sm text-[#D9433B] hover:text-[#B13A33] font-medium transition-colors"
+              <div className="flex items-center gap-2">
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className="px-3 py-1.5 bg-white border rounded-lg text-sm focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none"
+                  style={{ borderColor: 'var(--border)' }}
                 >
-                  Clear all filters
-                </button>
-              )}
+                  <option value={6}>6 per page</option>
+                  <option value={12}>12 per page</option>
+                  <option value={24}>24 per page</option>
+                  <option value={48}>48 per page</option>
+                </select>
+                {(searchTerm || categoryFilter !== 'All' || courseFilter !== 'All' || ratingFilter !== 'All') && (
+                  <button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setCategoryFilter('All');
+                      setCourseFilter('All');
+                      setRatingFilter('All');
+                    }}
+                    className="text-sm text-[#D9433B] hover:text-[#B13A33] font-medium transition-colors"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </Card>
@@ -359,7 +389,7 @@ export default function FeedbackV2() {
               <p className="text-gray-600">Try adjusting your filters or search terms</p>
             </Card>
           ) : (
-            filteredRows.map((feedback) => (
+            paginatedRows.map((feedback) => (
               <Card key={feedback.id} className="hover:shadow-lg transform hover:-translate-y-1 cursor-pointer group border-l-4" style={{ borderLeftColor: feedback.rating >= 4 ? '#10b981' : feedback.rating >= 3 ? '#f59e0b' : '#ef4444' }} onClick={() => setExpandedId(expandedId === feedback.id ? null : feedback.id)}>
                 <div className="flex items-start gap-4">
                   {/* Avatar + Eye (eye sits under avatar, beside description) */}
@@ -449,6 +479,70 @@ export default function FeedbackV2() {
             ))
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {filteredRows.length > 0 && totalPages > 1 && (
+          <Card>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{totalPages}</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+                
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1">
+                  {[...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    // Show first page, last page, current page, and pages around current
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => goToPage(page)}
+                          className={`px-3 py-2 rounded-lg transition-all ${
+                            page === currentPage
+                              ? 'bg-[#D9433B] text-white font-semibold shadow-sm'
+                              : 'bg-white border hover:bg-gray-50'
+                          }`}
+                          style={{ borderColor: page === currentPage ? 'transparent' : 'var(--border)' }}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="px-2 text-gray-400">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Detail Modal */}
         {selectedFeedback && (

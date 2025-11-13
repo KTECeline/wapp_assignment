@@ -8,7 +8,7 @@ import { Users, BookOpen, MessageSquare, TrendingUp, ArrowUpRight, ArrowDownRigh
 const initialStats = [
   { title: 'Total Users', value: 0, subtitle: 'Active pastry enthusiasts', icon: Users, change: '', changeValue: '', trend: 'up' },
   { title: 'Active Courses', value: 0, subtitle: 'Baking adventures available', icon: BookOpen, change: '', changeValue: '', trend: 'up' },
-  { title: 'Feedback Pending', value: 0, subtitle: 'Awaiting your attention', icon: MessageSquare, change: '', changeValue: '', trend: 'down' },
+  { title: 'Feedback', value: 0, subtitle: 'Feedbacks submitted', icon: MessageSquare, change: '', changeValue: '', trend: 'down' },
   { title: 'Completion Rate', value: '0%', subtitle: 'Average course completion', icon: TrendingUp, change: '', changeValue: '', trend: 'up' }
 ];
 
@@ -29,8 +29,8 @@ const CustomTooltip = ({ active, payload }) => {
     return (
       <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-100">
         <p className="text-sm font-semibold text-gray-800">{payload[0].payload.name}</p>
-        <p className="text-sm text-emerald-600 font-medium">Current: {payload[0].value}</p>
-        {payload[1] && <p className="text-sm text-gray-400">Previous: {payload[1].value}</p>}
+        <p className="text-sm text-emerald-600 font-medium">Current: {payload[1].value}</p>
+        
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default function Dashboard() {
         setStats([
           { title: 'Total Users', value: totalUsers, subtitle: 'Active pastry enthusiasts', icon: Users, change: enrollmentChange, changeValue: enrollmentChangeValue, trend: enrollmentTrend },
           { title: 'Active Courses', value: activeCourses, subtitle: 'Baking adventures available', icon: BookOpen, change: `${activeCourses}`, changeValue: 'courses live', trend: 'up' },
-          { title: 'Feedback Pending', value: feedbackPending, subtitle: 'Awaiting your attention', icon: MessageSquare, change: `${feedbackPending}`, changeValue: 'needs review', trend: feedbackPending > 0 ? 'down' : 'up' },
+          { title: 'Feedback', value: feedbackPending, subtitle: 'Feedbacks Submitted', icon: MessageSquare, change: `${feedbackPending}`, changeValue: 'Reviews live', trend: feedbackPending > 0 ? 'down' : 'up' },
           { title: 'Completion Rate', value: `${completionVal}%`, subtitle: 'Average course completion', icon: TrendingUp, change: completionChange || `${completionVal}%`, changeValue: completionChangeValue || 'current rate', trend: completionTrend }
         ]);
 

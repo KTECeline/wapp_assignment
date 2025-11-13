@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { User, Bell, Shield, Palette, Database, LogOut, Check, X, Eye, EyeOff } from 'lucide-react';
+import { User, Bell, Shield, Database, LogOut, Check, X, Eye, EyeOff, Download } from 'lucide-react';
+import { exportAllAdminData } from '../../api/client';
 
 // Mock Card component
 const Card = ({ title, subtitle, children, className = '' }) => (
@@ -22,6 +23,7 @@ export default function Settings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [toast, setToast] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -62,6 +64,94 @@ export default function Settings() {
       setConfirmPasswordInput('');
       setChangingPassword(false);
     }, 1000);
+  };
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    showToast('Preparing your data export...', 'success');
+    
+    try {
+      const data = await exportAllAdminData();
+      
+      // Helper function to convert array of objects to CSV
+      const arrayToCSV = (arr, title) => {
+        if (!arr || arr.length === 0) return `${title}\nNo data available\n\n`;
+        
+        const headers = Object.keys(arr[0]);
+        const csvRows = [
+          `${title}`,
+          headers.join(','),
+          ...arr.map(row => 
+            headers.map(header => {
+              const value = row[header];
+              // Handle null, undefined, objects, and arrays
+              if (value === null || value === undefined) return '';
+              if (typeof value === 'object') return JSON.stringify(value).replace(/"/g, '""');
+              // Escape commas and quotes in strings
+              const stringValue = String(value).replace(/"/g, '""');
+              return stringValue.includes(',') || stringValue.includes('\n') ? `"${stringValue}"` : stringValue;
+            }).join(',')
+          ),
+          '' // Empty line between sections
+        ];
+        
+        return csvRows.join('\n') + '\n\n';
+      };
+
+      // Build comprehensive CSV with all data sections
+      let csvContent = `Admin Data Export - ${new Date().toLocaleString()}\n`;
+      csvContent += `Generated at: ${data.exportDate}\n\n`;
+      csvContent += '='.repeat(80) + '\n\n';
+      
+      csvContent += arrayToCSV(data.users, 'USERS');
+      csvContent += arrayToCSV(data.courses, 'COURSES');
+      csvContent += arrayToCSV(data.categories, 'CATEGORIES');
+      csvContent += arrayToCSV(data.levels, 'LEVELS');
+      csvContent += arrayToCSV(data.feedback, 'USER FEEDBACK');
+      csvContent += arrayToCSV(data.announcements, 'ANNOUNCEMENTS');
+      csvContent += arrayToCSV(data.badges, 'BADGES');
+      csvContent += arrayToCSV(data.userCourses, 'USER COURSE ENROLLMENTS');
+      csvContent += arrayToCSV(data.messages, 'MESSAGES');
+      csvContent += arrayToCSV(data.helpSessions, 'HELP SESSIONS');
+      csvContent += arrayToCSV(data.userPosts, 'USER POSTS');
+
+      // Create summary statistics
+      const summary = [
+        { Metric: 'Total Users', Count: data.users?.length || 0 },
+        { Metric: 'Total Courses', Count: data.courses?.length || 0 },
+        { Metric: 'Total Categories', Count: data.categories?.length || 0 },
+        { Metric: 'Total Levels', Count: data.levels?.length || 0 },
+        { Metric: 'Total Feedback', Count: data.feedback?.length || 0 },
+        { Metric: 'Total Announcements', Count: data.announcements?.length || 0 },
+        { Metric: 'Total Badges', Count: data.badges?.length || 0 },
+        { Metric: 'Total Enrollments', Count: data.userCourses?.length || 0 },
+        { Metric: 'Total Messages', Count: data.messages?.length || 0 },
+        { Metric: 'Total Help Sessions', Count: data.helpSessions?.length || 0 },
+        { Metric: 'Total User Posts', Count: data.userPosts?.length || 0 }
+      ];
+      
+      csvContent = arrayToCSV(summary, 'SUMMARY STATISTICS') + '\n' + csvContent;
+
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `admin_data_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showToast('Data exported successfully!', 'success');
+    } catch (error) {
+      console.error('Export failed:', error);
+      showToast('Failed to export data. Please try again.', 'error');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const passwordRules = {
@@ -366,12 +456,23 @@ export default function Settings() {
               <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
                 <Database className="w-8 h-8 text-blue-600 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-700">Download a complete copy of all your data</p>
+                  <p className="text-sm font-semibold text-gray-900 mb-1">Complete Admin Data Export</p>
+                  <p className="text-xs text-gray-600">
+                    Downloads all users, courses, categories, levels, feedback, announcements, badges, enrollments, messages, help sessions, and user posts in CSV format
+                  </p>
                 </div>
               </div>
-              <button className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-xl px-4 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2">
-                <Database className="w-5 h-5" />
-                Export My Data
+              <button 
+                onClick={handleExportData}
+                disabled={isExporting}
+                className={`w-full rounded-xl px-4 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2 transform ${
+                  isExporting 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:scale-105'
+                }`}
+              >
+                <Download className="w-5 h-5" />
+                {isExporting ? 'Exporting...' : 'Export All Admin Data'}
               </button>
             </div>
           </Card>

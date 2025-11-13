@@ -174,6 +174,7 @@ const RgUserSet = () => {
 
     useEffect(() => {
         fetchSessions();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userData]);
 
     // Select a session and mark admin messages as viewed

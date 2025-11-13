@@ -1,15 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Card from '../../components/Card';
 import ChartComponent from '../../components/ChartComponent';
-import { Filter, Download, Calendar, TrendingUp, Users, BookOpen } from 'lucide-react';
+import { Download, Calendar, TrendingUp, Users, BookOpen, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 // use a red palette for pie charts per request
 const RED_COLORS = ['#7f1d1d', '#b91c1c', '#ef4444', '#f87171', '#fecaca'];
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState('Last 30 days');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Refs for chart elements to capture for PDF
+  const userGrowthChartRef = useRef(null);
+  const coursePopularityChartRef = useRef(null);
+  const engagementChartRef = useRef(null);
+  const ratingsChartRef = useRef(null);
 
   const [usersGrowth, setUsersGrowth] = useState([]);
   const [coursePopularity, setCoursePopularity] = useState([]);
@@ -145,6 +155,236 @@ export default function Reports() {
     }
   };
 
+  const exportPdf = async () => {
+    setIsExporting(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      // Import autoTable to extend jsPDF
+      const doc = pdf;
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let yPos = 20;
+
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(217, 67, 59); // Red theme
+      doc.text('Admin Analytics Report', pageWidth / 2, yPos, { align: 'center' });
+      
+      yPos += 10;
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, { align: 'center' });
+      doc.text(`Period: ${dateRange}`, pageWidth / 2, yPos + 5, { align: 'center' });
+
+      yPos += 15;
+
+      // Summary Section
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Executive Summary', 14, yPos);
+      yPos += 8;
+
+      const summaryData = [
+        ['Total Users', totalUsers.toLocaleString()],
+        ['Active Courses', activeCourses.toString()],
+        ['Completion Rate', `${completionRate}%`],
+        ['Average Rating', avgRating.toString()],
+        ['Total Enrollments', coursePopularity.reduce((s, c) => s + c.value, 0).toLocaleString()],
+        ['Total Feedback', feedbackList.length.toLocaleString()]
+      ];
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Metric', 'Value']],
+        body: summaryData,
+        theme: 'grid',
+        headStyles: { fillColor: [217, 67, 59], textColor: [255, 255, 255] },
+        margin: { left: 14, right: 14 },
+        styles: { fontSize: 10 }
+      });
+
+      yPos = doc.lastAutoTable.finalY + 10;
+
+      // Capture and add charts
+      const addChartToPdf = async (chartRef, title, newPage = false) => {
+        if (newPage) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(title, 14, yPos);
+        yPos += 5;
+
+        if (chartRef.current) {
+          try {
+            const canvas = await html2canvas(chartRef.current, {
+              backgroundColor: '#ffffff',
+              scale: 2
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = pageWidth - 28;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            if (yPos + imgHeight > pageHeight - 20) {
+              doc.addPage();
+              yPos = 20;
+              doc.text(title, 14, yPos);
+              yPos += 5;
+            }
+
+            doc.addImage(imgData, 'PNG', 14, yPos, imgWidth, Math.min(imgHeight, 70));
+            yPos += Math.min(imgHeight, 70) + 10;
+          } catch (err) {
+            console.error(`Failed to capture ${title}:`, err);
+          }
+        }
+      };
+
+      // Add all charts
+      await addChartToPdf(userGrowthChartRef, 'User Growth Over Time');
+      await addChartToPdf(coursePopularityChartRef, 'Course Popularity', yPos > pageHeight - 100);
+      await addChartToPdf(engagementChartRef, 'User Engagement Trends', true);
+      await addChartToPdf(ratingsChartRef, 'Ratings Distribution');
+
+      // Top Courses Detail Table
+      if (yPos > pageHeight - 60) {
+        doc.addPage();
+        yPos = 20;
+      } else {
+        yPos += 5;
+      }
+
+      doc.setFontSize(12);
+      doc.text('Top 15 Courses by Enrollment', 14, yPos);
+      yPos += 5;
+
+      const topCourses = coursePopularity.slice().sort((a, b) => b.value - a.value).slice(0, 15);
+      const courseTableData = topCourses.map((c, idx) => [
+        (idx + 1).toString(),
+        c.name,
+        c.value.toLocaleString()
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Rank', 'Course Name', 'Enrollments']],
+        body: courseTableData,
+        theme: 'striped',
+        headStyles: { fillColor: [217, 67, 59], textColor: [255, 255, 255] },
+        margin: { left: 14, right: 14 },
+        styles: { fontSize: 9 }
+      });
+
+      yPos = doc.lastAutoTable.finalY + 10;
+
+      // Feedback Summary
+      if (yPos > pageHeight - 60) {
+        doc.addPage();
+        yPos = 20;
+      } else {
+        yPos += 5;
+      }
+
+      doc.setFontSize(12);
+      doc.text('Feedback Ratings Breakdown', 14, yPos);
+      yPos += 5;
+
+      const ratingsTableData = feedbackData.map(r => [r.name, r.value.toString()]);
+      
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Rating', 'Count']],
+        body: ratingsTableData,
+        theme: 'striped',
+        headStyles: { fillColor: [217, 67, 59], textColor: [255, 255, 255] },
+        margin: { left: 14, right: 14 },
+        styles: { fontSize: 10 }
+      });
+
+      // Recent Feedback Details (last 20)
+      if (feedbackList.length > 0) {
+        doc.addPage();
+        yPos = 20;
+
+        doc.setFontSize(12);
+        doc.text('Recent Feedback (Last 20)', 14, yPos);
+        yPos += 5;
+
+        const userById = usersList.reduce((m, u) => {
+          m[u.id || u.userId || u.userID || u._id] = u;
+          return m;
+        }, {});
+        const courseById = coursesList.reduce((m, c) => {
+          m[c.id || c.courseId || c._id] = c;
+          return m;
+        }, {});
+
+        const recentFeedback = feedbackList.slice(-20).reverse();
+        const feedbackTableData = recentFeedback.map(f => {
+          const userId = f.userId ?? f.userID ?? f.user?.id ?? '';
+          const courseId = f.courseId ?? f.courseID ?? f.course?.id ?? '';
+          const user = userById[userId] || {};
+          const course = courseById[courseId] || {};
+          const userName = user.username || user.name || user.email || 'Unknown';
+          const courseName = course.title || course.name || 'N/A';
+          const rating = '★'.repeat(f.rating || 0);
+          const comment = (f.comment || f.message || '').substring(0, 60) + (((f.comment || f.message || '').length > 60) ? '...' : '');
+          
+          return [userName, courseName, rating, comment];
+        });
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['User', 'Course', 'Rating', 'Comment']],
+          body: feedbackTableData,
+          theme: 'striped',
+          headStyles: { fillColor: [217, 67, 59], textColor: [255, 255, 255] },
+          margin: { left: 14, right: 14 },
+          styles: { fontSize: 8, cellPadding: 2 },
+          columnStyles: {
+            0: { cellWidth: 35 },
+            1: { cellWidth: 45 },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 75 }
+          }
+        });
+      }
+
+      // Footer on every page
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+
+      // Save PDF
+      doc.save(`admin_report_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('Failed to export PDF: ' + (err.message || err));
+    } finally {
+      setIsExporting(false);
+      setShowExportMenu(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Filter Bar */}
@@ -165,27 +405,63 @@ export default function Reports() {
             </select>
           </div>
 
-          {/* Category Filter */}
+          {/* Export Dropdown Button */}
           <div className="relative">
-            <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="pl-12 pr-8 py-2 bg-white border border-[#EADCD2] rounded-xl focus:ring-2 focus:ring-[#D9433B] focus:border-transparent outline-none transition-all duration-200 appearance-none min-w-[160px]"
+            <button 
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={isExporting}
+              className={`rounded-xl px-4 py-2 font-medium transition-all duration-200 flex items-center gap-2 ${
+                isExporting 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-[#D9433B] hover:bg-[#B13A33] text-white'
+              }`}
             >
-              <option value="All">All Categories</option>
-              <option value="Users">Users</option>
-              <option value="Courses">Courses</option>
-              <option value="Engagement">Engagement</option>
-            </select>
-          </div>
+              <Download className="w-4 h-4" />
+              {isExporting ? 'Exporting...' : 'Export'}
+              <ChevronDown className={`w-4 h-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+            </button>
 
-          {/* Export Button */}
-          <button onClick={exportCsv} className="bg-[#D9433B] hover:bg-[#B13A33] text-white rounded-xl px-4 py-2 font-medium transition-all duration-200 flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
+            {/* Dropdown Menu */}
+            {showExportMenu && !isExporting && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-10 overflow-hidden">
+                <button
+                  onClick={() => {
+                    setShowExportMenu(false);
+                    exportPdf();
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
+                >
+                  <FileText className="w-4 h-4 text-red-600" />
+                  <div>
+                    <div className="font-medium text-gray-900 text-sm">Export as PDF</div>
+                    <div className="text-xs text-gray-500">With charts & visuals</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowExportMenu(false);
+                    exportCsv();
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                  <div>
+                    <div className="font-medium text-gray-900 text-sm">Export as CSV</div>
+                    <div className="text-xs text-gray-500">Raw data for analysis</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Click outside to close dropdown */}
+        {showExportMenu && (
+          <div 
+            className="fixed inset-0 z-0" 
+            onClick={() => setShowExportMenu(false)}
+          />
+        )}
       </Card>
 
       {/* Key Metrics Cards */}
@@ -258,11 +534,13 @@ export default function Reports() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="User Growth" subtitle="Weekly new registrations">
-          <ChartComponent data={usersGrowth} />
+          <div ref={userGrowthChartRef}>
+            <ChartComponent data={usersGrowth} />
+          </div>
         </Card>
         <Card title="Course Popularity" subtitle="Top courses by enrollment">
           {/* Use a bar chart for course popularity (sorted, top 10) for better readability */}
-          <div className="h-64">
+          <div className="h-64" ref={coursePopularityChartRef}>
             <ChartComponent data={coursePopularity} xKey="name" yKey="value" />
           </div>
         </Card>
@@ -271,12 +549,14 @@ export default function Reports() {
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="User Engagement" subtitle="Monthly engagement score">
-          <ChartComponent data={engagementData} />
+          <div ref={engagementChartRef}>
+            <ChartComponent data={engagementData} />
+          </div>
         </Card>
         
         <Card title="Ratings Distribution" subtitle="Feedback ratings breakdown (1-5 stars)">
           {/* Pie chart for ratings distribution, use red palette */}
-          <div className="h-64">
+          <div className="h-64" ref={ratingsChartRef}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={feedbackData} dataKey="value" nameKey="name" outerRadius={90} fill="#ef4444" label />
