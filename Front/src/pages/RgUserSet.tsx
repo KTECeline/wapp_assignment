@@ -820,7 +820,7 @@ const RgUserSet = () => {
                                     <span className="flex flex-col max-w-[530px]">
                                         <span className="font-bold mb-[2px]">Email Support:</span>
                                         <span className="text-justify">
-                                            Reach out anytime at <button className="text-[#DA1A32] font-medium underline">Help</button> or <span className="text-[#DA1A32] font-medium mx-[3px]">support@depastrylab.com</span> for course help, account inquiries, or technical assistance.
+                                            Reach out anytime at <button className="text-[#DA1A32] font-medium underline" onClick={() => setActive("Get Help")}>Help</button> or <span className="text-[#DA1A32] font-medium mx-[3px]">support@depastrylab.com</span> for course help, account inquiries, or technical assistance.
                                         </span>
                                     </span>
                                 </li>
@@ -1140,7 +1140,7 @@ const RgUserSet = () => {
                                         </div>
                                     </div>
                                 )}
-                            </div>
+                            </div>  
                         </div>
                     )}
                 </div>
