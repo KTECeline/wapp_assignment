@@ -190,7 +190,6 @@ const RgUserCourse = () => {
     const [steps, setSteps] = useState<CourseStep[]>([]);
     const [tips, setTips] = useState<CourseTip[]>([]);
     const [reviews, setReviews] = useState<Review[]>([]);
-    const [visibleReviews, setVisibleReviews] = useState(3);
     const [totalReviews, setTotalReviews] = useState<number>(0);
     const [averageRating, setAverageRating] = useState<number>(0);
 
@@ -1197,13 +1196,13 @@ const RgUserCourse = () => {
                     )}
 
                     {/* Review Container */}
-                    <div className={`mt-[32px] flex flex-row gap-[20px] ${visibleReviews > 3 ? 'overflow-x-auto w-[1090px] pb-4' : ''} no-scrollbar`}>
+                    <div className="mt-[32px] flex flex-row gap-[20px]">
                         {reviews.length === 0 ? (
                             <div className="w-full text-center text-gray-500 py-8">
                                 No reviews yet. Be the first to review this course!
                             </div>
                         ) : (
-                            reviews.slice(0, visibleReviews).map((review) => (
+                            reviews.slice(0, 3).map((review) => (
                                 <div key={review.feedbackId} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
                                     <div className="flex flex-row justify-between items-center">
                                         {/* Profile and time */}
@@ -1266,14 +1265,12 @@ const RgUserCourse = () => {
                         )}
                     </div>
 
-                    {reviews.length > visibleReviews && (
-                        <button 
-                            className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]"
-                            onClick={() => setVisibleReviews(prev => prev + 3)}
-                        >
-                            View More
-                        </button>
-                    )}
+                    <button 
+                        className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]"
+                        onClick={() => navigate(`/RgUserCourseReview/${id}`)}
+                    >
+                        View More
+                    </button>
                 </div>
             </div>
 

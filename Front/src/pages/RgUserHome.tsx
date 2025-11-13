@@ -98,7 +98,6 @@ const RgUserHome = () => {
     const [coursesError, setCoursesError] = useState<string | null>(null);
     const [postsError, setPostsError] = useState<string | null>(null);
     const [reviewsError, setReviewsError] = useState<string | null>(null);
-    const [visibleReviews, setVisibleReviews] = useState(3);
 
     // Fetch courses on component mount
     useEffect(() => {
@@ -651,7 +650,7 @@ const RgUserHome = () => {
                 </button>
 
                 {/* Review Container */}
-                <div className={`mt-[32px] flex flex-row gap-[20px] ${visibleReviews > 3 ? 'overflow-x-auto w-[1090px] pb-4' : ''} no-scrollbar`}>
+                <div className="mt-[32px] flex flex-row gap-[20px]">
                     {reviewsLoading ? (
                         <div className="text-center py-8">Loading reviews...</div>
                     ) : reviewsError ? (
@@ -659,7 +658,7 @@ const RgUserHome = () => {
                     ) : reviews.length === 0 ? (
                         <div className="text-center py-8">No reviews yet. Be the first to review!</div>
                     ) : (
-                        reviews.slice(0, visibleReviews).map((review) => (
+                        reviews.slice(0, 3).map((review) => (
                             <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
                                 <div className="flex flex-row justify-between items-center">
                                     {/* Profile and time */}
@@ -722,13 +721,11 @@ const RgUserHome = () => {
                     )}
                 </div>
 
-                {reviews.length > visibleReviews && (
-                    <button 
-                        onClick={() => setVisibleReviews(prev => prev + 3)}
-                        className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
-                        View More
-                    </button>
-                )}
+                <button 
+                    onClick={() => navigate('/RgUserReview')}
+                    className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                    View More
+                </button>
             </div>
         </RgUserLayout>
     );
