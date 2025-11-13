@@ -59,6 +59,14 @@ interface Review {
     timeAgo: string;
 }
 
+interface Announcement {
+    id: number;
+    title: string;
+    body: string;
+    annImg: string;
+    visible: boolean;
+}
+
 const RgUserHome = () => {
     const navigate = useNavigate();
     
@@ -77,13 +85,16 @@ const RgUserHome = () => {
     const [showPostView, setShowPostView] = useState(false);
     const [showReviewView, setShowReviewView] = useState(false);
 
-    // Data state for courses and posts
+    // Data state for courses, posts, reviews, and announcements
     const [courses, setCourses] = useState<Course[]>([]);
     const [posts, setPosts] = useState<Post[]>([]);
     const [reviews, setReviews] = useState<Review[]>([]);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
     const [coursesLoading, setCoursesLoading] = useState(true);
     const [postsLoading, setPostsLoading] = useState(true);
     const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [announcementsLoading, setAnnouncementsLoading] = useState(true);
     const [coursesError, setCoursesError] = useState<string | null>(null);
     const [postsError, setPostsError] = useState<string | null>(null);
     const [reviewsError, setReviewsError] = useState<string | null>(null);
@@ -142,6 +153,42 @@ const RgUserHome = () => {
         fetchReviewsData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Fetch announcements on component mount
+    useEffect(() => {
+        const fetchAnnouncements = async () => {
+            try {
+                setAnnouncementsLoading(true);
+                const res = await fetch('/api/Announcements');
+                if (!res.ok) throw new Error("Failed to fetch announcements");
+                
+                const data = await res.json();
+                // Filter only visible announcements
+                const visibleAnnouncements = data.filter((ann: Announcement) => ann.visible);
+                setAnnouncements(visibleAnnouncements);
+            } catch (err) {
+                console.error("Error fetching announcements:", err);
+                setAnnouncements([]);
+            } finally {
+                setAnnouncementsLoading(false);
+            }
+        };
+
+        fetchAnnouncements();
+    }, []);
+
+    // Navigation functions for announcement carousel
+    const handlePrevAnnouncement = () => {
+        setCurrentAnnouncementIndex((prev) => 
+            prev === 0 ? announcements.length - 1 : prev - 1
+        );
+    };
+
+    const handleNextAnnouncement = () => {
+        setCurrentAnnouncementIndex((prev) => 
+            prev === announcements.length - 1 ? 0 : prev + 1
+        );
+    };
 
     // Helper function to calculate time ago
     const getTimeAgo = (date: Date): string => {
@@ -324,32 +371,56 @@ const RgUserHome = () => {
 
             {/* Announcement */}
             <div className="w-full h-[400px] relative">
-                <img src="/images/Announcement.png" alt="announcement" className="w-full h-[400px] object-cover z-0" />
-                <div className="absolute top-0 left-0 w-full h-[400px] bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                <div className="absolute top-0 left-0 w-full h-[400px] z-20">
-                    <div className="relative w-[1100px] h-[400px] mx-auto">
-                        <img src="/images/Announcement.png" alt="announcement" className="w-full h-full object-cover" />
-                        <div className="absolute top-[100px] left-[122px] text-white">
-                            <div className="text-[40px] max-w-[500px] leading-tight font-medium">
-                                Crispy Edges, Chewy Centers
-                            </div>
-                            <div className="text-[14px] max-w-[390px] leading-tight font-[200] pt-[18px]">
-                                Ready to create cookies everyone loves? Join our beginner-friendly course to learn the techniques and tips behind chewy, gooey, bakery-quality chocolate chip cookies
-                            </div>
-                        </div>
-
-                        <div className="absolute bottom-[20px] left-0 w-full flex justify-center">
-                            <div className="flex flex-row gap-[12px]">
-                                <button className="cursor-pointer flex items-center justify-center rounded-full w-[35px] h-[35px] backdrop-blur-sm border-[1px] border-white border-white transition-all duration-[600ms] hover:shadow-[0px_0px_20px_-1px_rgba(255,255,255,0.6)]">
-                                    <IoMdArrowBack className="text-white w-[30px] h-[30px]" />
-                                </button>
-                                <button className="cursor-pointer flex items-center justify-center rounded-full w-[35px] h-[35px] backdrop-blur-sm border-[1px] border-white border-white transition-all duration-[600ms] hover:shadow-[0px_0px_20px_-1px_rgba(255,255,255,0.6)]">
-                                    <IoMdArrowForward className="text-white w-[30px] h-[30px]" />
-                                </button>
-                            </div>
-                        </div>
+                {announcementsLoading ? (
+                    <div className="w-full h-[400px] flex items-center justify-center bg-gray-100">
+                        <div className="text-gray-500">Loading announcements...</div>
                     </div>
-                </div>
+                ) : announcements.length === 0 ? (
+                    <div className="w-full h-[400px] flex items-center justify-center bg-gray-100">
+                        <div className="text-gray-500">No announcements available</div>
+                    </div>
+                ) : (
+                    <>
+                        <img 
+                            src={announcements[currentAnnouncementIndex].annImg || "/images/Announcement.png"} 
+                            alt="announcement" 
+                            className="w-full h-[400px] object-cover z-0" 
+                        />
+                        <div className="absolute top-0 left-0 w-full h-[400px] bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
+                        <div className="absolute top-0 left-0 w-full h-[400px] z-20">
+                            <div className="relative w-[1100px] h-[400px] mx-auto">
+                                <img 
+                                    src={announcements[currentAnnouncementIndex].annImg || "/images/Announcement.png"} 
+                                    alt="announcement" 
+                                    className="w-full h-full object-cover" 
+                                />
+                                <div className="absolute top-[100px] left-[122px] text-white">
+                                    <div className="text-[40px] max-w-[500px] leading-tight font-medium">
+                                        {announcements[currentAnnouncementIndex].title}
+                                    </div>
+                                    <div className="text-[14px] max-w-[390px] leading-tight font-[200] pt-[18px]">
+                                        {announcements[currentAnnouncementIndex].body}
+                                    </div>
+                                </div>
+
+                                <div className="absolute bottom-[20px] left-0 w-full flex justify-center">
+                                    <div className="flex flex-row gap-[12px]">
+                                        <button 
+                                            onClick={handlePrevAnnouncement}
+                                            className="cursor-pointer flex items-center justify-center rounded-full w-[35px] h-[35px] backdrop-blur-sm border-[1px] border-white border-white transition-all duration-[600ms] hover:shadow-[0px_0px_20px_-1px_rgba(255,255,255,0.6)]">
+                                            <IoMdArrowBack className="text-white w-[30px] h-[30px]" />
+                                        </button>
+                                        <button 
+                                            onClick={handleNextAnnouncement}
+                                            className="cursor-pointer flex items-center justify-center rounded-full w-[35px] h-[35px] backdrop-blur-sm border-[1px] border-white border-white transition-all duration-[600ms] hover:shadow-[0px_0px_20px_-1px_rgba(255,255,255,0.6)]">
+                                            <IoMdArrowForward className="text-white w-[30px] h-[30px]" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* My Collection */}
