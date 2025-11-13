@@ -4,17 +4,11 @@ import * as Yup from "yup";
 import IconLoading from "../components/IconLoading.tsx";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import DropUpload from "../components/DropUpload.tsx";
-import { RxCross2 } from "react-icons/rx";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import Select from 'react-select';
 import { Link } from "react-router-dom";
-import { createUser, getCategories } from "../api/client.js";
-
-interface Category {
-    categoryId: number;
-    title: string;
-    description: string;
-}
+import { createUser} from "../api/client.js";
+import { AnimatePresence, motion } from "framer-motion";
 
 const customStyles = {
     control: (base: any, state: { isFocused: boolean }) => ({
@@ -88,27 +82,6 @@ const customStyles = {
     }),
 };
 
-
-const plevels = [
-    { value: "Beginner", label: "Beginner" },
-    { value: "Amateur", label: "Amateur" },
-    { value: "Master", label: "Master" },
-];
-
-type FormValues = {
-    fname: string;
-    lname: string;
-    gender: string;
-    DOB: string;
-    profileimage: globalThis.File | null;
-    plevel: string;
-    pcat: string;
-
-    username: string;
-    email: string;
-    password: string;
-};
-
 const Registration: FC = () => {
     // Dynamic Text Animation
     const dynamicTextRef = useRef<HTMLSpanElement>(null);
@@ -146,67 +119,35 @@ const Registration: FC = () => {
         typeEffect();
     }, []);
 
-    const [emailExists, setEmailExists] = useState(false);
     const [categories, setCategories] = useState<Array<{ value: string; label: string }>>([]);
+    const [levels, setLevels] = useState<any[]>([]);
 
+    // Fetch Levels
     useEffect(() => {
-        let mounted = true;
-        
-        const fetchCategories = async () => {
-            try {
-                // First try to fetch hardcoded categories for testing
-                const testCategories = [
-                    { categoryId: 1, title: "Bread" },
-                    { categoryId: 2, title: "Pastry" },
-                    { categoryId: 3, title: "Cookies" },
-                    { categoryId: 4, title: "Cake" },
-                    { categoryId: 5, title: "Pie & Tarts" },
-                    { categoryId: 6, title: "Sourdough" },
-                    { categoryId: 7, title: "Pizza" },
-                    { categoryId: 8, title: "Scones & Muffins" },
-                    { categoryId: 9, title: "Others" }
-                ];
+        fetch("/api/levels")
+            .then((res) => res.json())
+            .then((data) => {
+                const formatted = data.map((level: any) => ({
+                    value: level.levelId,
+                    label: level.title,
+                }));
+                setLevels(formatted);
+            })
+            .catch((err) => console.error("Error fetching levels:", err));
+    }, []);
 
-                if (mounted) {
-                    const formattedCategories = testCategories.map(cat => ({
-                        value: String(cat.categoryId),
-                        label: cat.title
-                    }));
-                    console.log('Using test categories:', formattedCategories);
-                    setCategories(formattedCategories);
-                }
-
-                // Then try the API call
-                console.log('Also fetching from API...');
-                const response = await fetch('/api/Categories');
-                console.log('API Response:', response.status, response.statusText);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const categoriesData = await response.json();
-                console.log('API categories received:', categoriesData);
-                
-                if (mounted && categoriesData && categoriesData.length > 0) {
-                    const formattedCategories = categoriesData.map((cat: Category) => ({
-                        value: String(cat.categoryId),
-                        label: cat.title
-                    }));
-                    console.log('Using API categories:', formattedCategories);
-                    setCategories(formattedCategories);
-                }
-            } catch (error) {
-                console.error('Failed to fetch categories from API:', error);
-                // API error is logged but won't affect the UI since we have test categories
-            }
-        };
-        
-        fetchCategories();
-        
-        return () => {
-            mounted = false;
-        };
+    // Fetch Categories
+    useEffect(() => {
+        fetch("/api/categories")
+            .then((res) => res.json())
+            .then((data) => {
+                const formatted = data.map((cat: any) => ({
+                    value: cat.categoryId,
+                    label: cat.title,
+                }));
+                setCategories(formatted);
+            })
+            .catch((err) => console.error("Error fetching categories:", err));
     }, []);
 
     const validationSchema = Yup.object({
@@ -308,77 +249,6 @@ const Registration: FC = () => {
         ),
     });
 
-    // const onSubmit = async (
-    //     values: FormValues,
-    //     formikHelpers: any
-    // ) => {
-    //     formikHelpers.setSubmitting(true);
-
-    //     try {
-    //         let imageUrl = null;
-
-    //         // 1. Upload profile image if provided
-    //         if (values.profileimage) {
-    //             const fileExt = values.profileimage.name.split('.').pop();
-    //             const fileName = `${Date.now()}_${values.username}.${fileExt}`;
-    //             const filePath = `user_${values.username}/${fileName}`;
-
-    //             const { data: uploadData, error: uploadError } = await supabase.storage
-    //                 .from('profile-img')
-    //                 .upload(filePath, values.profileimage);
-
-    //             if (uploadError) throw uploadError;
-
-    //             // Get public URL
-    //             const { data: publicUrlData } = supabase.storage
-    //                 .from('profile-img')
-    //                 .getPublicUrl(filePath);
-
-    //             imageUrl = publicUrlData.publicUrl;
-    //         }
-
-    //         // 2. Hash password
-    //         const hashedPassword = await bcrypt.hash(values.password, 10);
-
-    //         // 3. Insert into Supabase DB
-    //         const { error: insertError } = await supabase.from('user').insert([
-    //             {
-    //                 name: values.name,
-    //                 gender: values.gender,
-    //                 birthYear: values.birthYear,
-    //                 profileimage: imageUrl,
-    //                 jobfield: values.jobfield,
-    //                 school: values.school,
-    //                 levelofstudy: values.levelofstudy,
-    //                 username: values.username,
-    //                 email: values.email,
-    //                 password: hashedPassword,
-    //             }
-    //         ]);
-
-    //         if (insertError) throw insertError;
-
-    //         alert('User registered successfully!');
-    //         router.push("/dashboard");
-    //         formikHelpers.resetForm();
-    //     } catch (error: any) {
-    //         console.error("Error during registration:", error);
-
-    //         if (
-    //             error.message &&
-    //             error.message.includes('duplicate key value violates unique constraint') &&
-    //             error.message.includes('user_email_key')
-    //         ) {
-    //             setEmailExists(true); // 🔔 Show custom modal for email exists
-    //         } else {
-    //             alert(`Something went wrong: ${error.message || JSON.stringify(error)}`);
-    //         }
-    //     }
-    //     finally {
-    //         formikHelpers.setSubmitting(false);
-    //     }
-    // };
-
     const [showPassword, setShowPassword] = useState(false);
 
     const [step, setStep] = useState(1);
@@ -388,6 +258,8 @@ const Registration: FC = () => {
     };
 
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const [showPopup, setShowPopup] = useState(false);
 
     const renderRegistrationForm = () => (
         <Formik
@@ -430,7 +302,7 @@ const Registration: FC = () => {
 
                         // Call the API to create user
                         await createUser(userData);
-                        
+
                         // Show success message and redirect
                         alert("Registration successful!");
                         window.location.href = "/login";
@@ -440,7 +312,7 @@ const Registration: FC = () => {
                         const errors = await validateForm();
                         const step1Errors = Object.keys(errors)
                             .filter(field => step1Fields.includes(field));
-                        
+
                         if (step1Errors.length === 0) {
                             setStep(2);
                             setFieldValue("step", 2);
@@ -457,7 +329,6 @@ const Registration: FC = () => {
 
         >
             {({ isSubmitting, values, setFieldValue, touched, errors, resetForm, isValid, validateForm, setTouched }) => {
-
 
                 const buttonType = !values.email && step === 1 ? "submit" : "button";
 
@@ -735,11 +606,9 @@ const Registration: FC = () => {
 
                                             <div className="flex flex-row h-[37px] items-center">
                                                 <Select
-                                                    options={plevels}
-                                                    value={plevels.find(option => option.value === values.plevel) || null}
-                                                    onChange={(selectedOption) => {
-                                                        setFieldValue("plevel", selectedOption?.value);
-                                                    }}
+                                                    options={levels}
+                                                    value={levels.find(option => option.value === values.plevel) || null}
+                                                    onChange={(selectedOption) => setFieldValue("plevel", selectedOption?.value)}
                                                     styles={customStyles}
                                                     placeholder="Select Preferred Level"
                                                     isClearable
@@ -965,21 +834,12 @@ const Registration: FC = () => {
                                             respected
                                             <br />
                                             By clicking “Register Now”, you agree to our
-                                            <a
-                                                href="https:/privacy-notice"
-                                                className="text-[#DA1A32] font-semibold"
+                                            <button
+                                                onClick={() => { setShowPopup(true); }}
+                                                className="text-[#DA1A32] font-semibold ml-[2px]"
                                             >
-                                                {" "}
                                                 Terms & Conditions{" "}
-                                            </a>
-                                            and
-                                            <a
-                                                href="https:/privacy-policy"
-                                                className="text-[#DA1A32] font-semibold"
-                                            >
-                                                {" "}
-                                                Privacy Policy{" "}
-                                            </a>
+                                            </button>
                                             .
                                         </p>
 
@@ -989,57 +849,6 @@ const Registration: FC = () => {
                                 <div className="w-full px-6 pb-3">
                                     <div className="w-full h-[1px] bg-black"></div>
                                 </div>
-
-                                {emailExists && (
-                                    <div className="absolute top-0 left-0 w-full h-full inset-0 bg-black/50 flex justify-center items-center transition-opacity duration-300 z-50">
-                                        <div onClick={() => setEmailExists(false)} className="absolute top-0 left-0 w-full h-full z-0" />
-
-                                        <div className="bg-white border border-black rounded-full rounded-[15px] w-[410px] shadow-md transform transition-all overflow-hidden duration-300 scale-100 opacity-100 z-10 absolute">
-                                            <div className="w-full bg-[#171c20] flex flex-row justify-between h-[55px] items-center pl-4 pr-2">
-                                                <h2 className="text-[18px] font-bold text-[#f1f1f1]">
-                                                    Email already registered
-                                                </h2>
-                                                <div className="flex justify-center items-center w-[30px] h-full text-gray-600">
-                                                    <RxCross2 size={20} onClick={() => setEmailExists(false)} className="cursor-pointer hover:text-[#eb5757] active:text-[#bf4b4b] transition-all duration-[400ms]" />
-                                                </div>
-                                            </div>
-
-                                            <p className="text-[#f1f1f1] text-[13px] flex flex-row justify-between h-[68px] items-center pl-4 font-light">
-                                                This email is already in use. Please log in instead or try another email.
-                                            </p>
-
-                                            <div className="w-full h-[1px] bg-gray-300"></div>
-
-                                            <div className="w-full flex flex-row justify-end p-4">
-                                                <div className="gap-[10px] flex flex-row justify-between text-[16px]">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setEmailExists(false)}
-                                                        className="w-[209px] h-[34px] relative group"
-                                                    >
-                                                        <div className="z-10 w-full h-full absolute hover:scale-[102%] top-0 flex justify-center items-center rounded-[7px] transition-all duration-[700ms] border-[#4F6DDD] text-[#f1f1f1] cursor-pointer border">
-                                                            Try another email
-                                                        </div>
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setEmailExists(false);
-                                                            // router.push("/login");
-                                                        }}
-                                                        className="w-[105px] h-[34px] relative group"
-                                                    >
-                                                        <div className="z-10 w-full h-full absolute top-0 flex justify-center items-center rounded-[7px] transition-all duration-[700ms] bg-gradient-to-r from-[#8567f1] to-[#4F6DDD] hover:scale-[102%] text-white cursor-pointer">
-                                                            Login
-                                                        </div>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
 
                                 <div className="w-full flex flex-row justify-end">
                                     <div className="w-[340.6px] px-6 pb-4 gap-[12px] flex flex-row justify-between">
@@ -1104,6 +913,93 @@ const Registration: FC = () => {
                     </div>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {showPopup && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                    >
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-3xl w-full relative overflow-y-scroll scrol max-h-[90vh]">
+                                {/* Close button */}
+                                <button
+                                    onClick={() => setShowPopup(false)}
+                                    className="absolute top-4 right-4 text-gray-600 hover:text-[#DA1A32] text-xl font-bold"
+                                >
+                                    ×
+                                </button>
+                                <div className="flex flex-col">
+                                    <p className="font-ibarra font-bold text-black text-[36px]">
+                                        Terms & <span className="text-[#DA1A32]">Conditions</span>
+                                    </p>
+
+                                    <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                        Welcome to De Pastry Lab! By accessing or using our platform, you agree to follow the terms and conditions outlined below. These terms are designed to ensure a safe, fair, and enjoyable learning experience for all our users. Please read them carefully before using our services.
+                                    </p>
+
+                                    <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                        User Responsibilities
+                                    </p>
+                                    <div className="mt-[6px] text-[14px] font-inter font-light flex flex-col gap-[16px]">
+                                        <li className="flex flex-row gap-[12px]">
+                                            <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                            <span className="flex flex-col">
+                                                <span className="font-bold mb-[2px]">Account Security:</span>
+                                                You are responsible for keeping your login details secure and for all activities under your account.
+                                            </span>
+                                        </li>
+
+                                        <li className="flex flex-row gap-[12px]">
+                                            <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                            <span className="flex flex-col">
+                                                <span className="font-bold mb-[2px]">Respectful Use:</span>
+                                                Use the platform responsibly. Do not share harmful, offensive, or inappropriate content.
+                                            </span>
+                                        </li>
+
+                                        <li className="flex flex-row gap-[12px]">
+                                            <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                            <span className="flex flex-col">
+                                                <span className="font-bold mb-[2px]">Personal Use Only:</span>
+                                                All courses and resources are for your personal learning. Redistribution or resale is not permitted.
+                                            </span>
+                                        </li>
+                                    </div>
+
+                                    <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                        Intellectual Property
+                                    </p>
+                                    <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                        All course content, including videos, text, images, and resources, are the property of De Pastry Lab or its instructors. You may not copy, modify, distribute, or use the content for commercial purposes without permission.
+                                    </p>
+
+
+                                    <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                        Limitation of Liability
+                                    </p>
+                                    <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                        De Pastry Lab is not responsible for any issues, losses, or damages resulting from the use of our platform. While we aim to provide accurate and helpful content, baking results may vary based on individual skills, equipment, and environment.
+                                    </p>
+
+                                    <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                        Changes to Terms
+                                    </p>
+                                    <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                        We may update these Terms & Conditions from time to time to reflect changes in our services or policies. Users will be notified of significant updates, and continued use of our platform constitutes acceptance of the revised terms.
+                                    </p>
+
+                                    <p className="mt-[32px] text-[14px] font-inter font-light text-justify">
+                                        Thank you for being part of De Pastry Lab. By using our platform, you help us build a respectful and inspiring space for pastry lovers everywhere!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </VisitorLayout >
     );
 };

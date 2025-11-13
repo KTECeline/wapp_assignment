@@ -15,6 +15,7 @@ interface Props {
   defaultValue?: string
   accept?: string
   preview?: (value: File) => string | Promise<string>
+  onClear?: () => void
 }
 
 const DropUpload: FC<Props> = ({
@@ -28,6 +29,7 @@ const DropUpload: FC<Props> = ({
   accept = 'image/png,image/jpeg,image/gif,image/webp',
   disabled = false,
   preview: _preview,
+  onClear
 }) => {
   const ref = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(false)
@@ -85,6 +87,12 @@ const DropUpload: FC<Props> = ({
 
   const [previewURL, setPreviewURL] = useState<string>()
 
+  const handleClear = () => {
+    onChange?.(undefined);    // clear uploaded file
+    setPreviewURL(undefined);  // clear local preview
+    onClear?.();               // notify parent to clear existing URL
+  }
+
   const preview = async () => {
     if (!value || !(value instanceof File)) {
       return setPreviewURL(defaultValue)
@@ -118,15 +126,12 @@ const DropUpload: FC<Props> = ({
               className="mx-auto max-w-full max-h-48 object-contain mb-4"
               draggable={false}
             />
-            {value ? (
-              <AiFillCloseCircle
-                className="w-5 h-5 text-red-500 absolute right-0 top-0 cursor-pointer rounded-full"
-                onClick={() => {
-                  onChange?.(undefined);
-                }}
-              />
 
-            ) : null}
+            <AiFillCloseCircle
+              className="w-5 h-5 text-red-500 absolute right-0 top-0 cursor-pointer rounded-full"
+              onClick={handleClear}
+            />
+
           </div>
         ) : placeholder ?? (
           <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">

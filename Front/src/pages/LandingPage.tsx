@@ -2,12 +2,55 @@ import { FaStar } from "react-icons/fa";
 import { IoIosSend, IoMdArrowBack, IoMdArrowForward, IoMdHeart } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { IoAdd } from "react-icons/io5";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import VisitorLayout from "../components/VisitorLayout.tsx";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
 
 const RgUserHome = () => {
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        fetch('/api/categories')
+            .then(res => res.json())
+            .then(data => {
+                // Take only first 3 items
+                setCategories(data.slice(0, 3));
+            })
+            .catch(err => console.error("Error fetching categories:", err));
+    }, []);
+
+
+    const navigate = useNavigate();
+
+    const [active, setActive] = useState<string | null>(null);
+    const [showPopup, setShowPopup] = useState(false);
+
     return (
         <VisitorLayout>
+            <style>
+                {`
+                        .scrol::-webkit-scrollbar {
+                            width: 5px;
+                            height: 5px;
+                        }
+                        .scrol::-webkit-scrollbar-track {
+                            background: rgba(188, 188, 188, 0.2);
+                            border-radius: 10px;
+                            cursor: pointer;
+                        }
+                        .scrol::-webkit-scrollbar-thumb {
+                            background: rgba(0, 0, 0, 0.2);
+                            border-radius: 10px;
+                            transition: background 0.3s ease-in-out;
+                            cursor: grab;
+                        }
+                        .scrol::-webkit-scrollbar-thumb:active {
+                            cursor: grabbing;
+                        }
+                    `}
+            </style>
 
             {/* HeroSection */}
             <div className="w-full h-[500px] relative">
@@ -59,34 +102,29 @@ const RgUserHome = () => {
                     <div className="w-full">
                         {/* Category container */}
                         <div className="grid grid-cols-3 gap-x-[20px] gap-y-[44px]">
-                            {/* Category Card */}
-                            <div className="w-[350px] flex flex-col items-center group cursor-pointer">
-                                <img src="/images/Bread.webp" alt="Bread" className="w-full h-[237px] object-cover" />
-                                <div className="font-ibarra font-bold text-black text-[20px] mt-[16px] group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Bread
+                            {categories.map(category => (
+                                <div
+                                    key={category.categoryId}
+                                    className="w-[350px] flex flex-col items-center group cursor-pointer"
+                                    onClick={() => navigate(`/RgUserCat/${category.categoryId}`)}
+                                >
+                                    <img
+                                        src={category.catImg}
+                                        alt={category.title}
+                                        className="w-full h-[237px] object-cover"
+                                    />
+                                    <div className="font-ibarra font-bold text-black text-[20px] mt-[16px] group-hover:text-[#DA1A32] transition-all duration-300">
+                                        {category.title}
+                                    </div>
                                 </div>
-                            </div>
-
-                            {/* Category Card */}
-                            <div className="w-[350px] flex flex-col items-center group cursor-pointer">
-                                <img src="/images/Pastry.jpg" alt="Pastry" className="w-full h-[237px] object-cover" />
-                                <div className="font-ibarra font-bold text-black text-[20px] mt-[16px] group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Pastry
-                                </div>
-                            </div>
-
-                            {/* Category Card */}
-                            <div className="w-[350px] flex flex-col items-center group cursor-pointer">
-                                <img src="/images/Cookie.webp" alt="Cookie" className="w-full h-[237px] object-cover" />
-                                <div className="font-ibarra font-bold text-black text-[20px] mt-[16px] group-hover:text-[#DA1A32] transition-all duration-300">
-                                    Cookies
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                <button className="font-inter mt-[38px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                <button className="font-inter mt-[38px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]"
+                    onClick={() => navigate(`/RgUserLearn`)}
+                >
                     View More
                 </button>
             </div>
@@ -649,12 +687,12 @@ const RgUserHome = () => {
                     </a>
 
                     {/* Secondary CTA */}
-                    <a
-                        href="/Support"
+                    <button
+                        onClick={() => { setActive("Contact Us"); setShowPopup(true); }}
                         className="py-2 px-10 border border-[#DA1A32] text-[#DA1A32] rounded-full font-medium hover:scale-105  transition-all duration-[600ms]"
                     >
                         Need Help?
-                    </a>
+                    </button>
                 </div>
 
                 <div className="mt-[48px] text-black flex flex-row justify-between w-[1090px] mx-auto">
@@ -696,10 +734,8 @@ const RgUserHome = () => {
                         <h4 className="font-ibarra font-bold text-[16px] mb-3">Quick Links</h4>
                         <ul className="space-y-2 text-[13px] text-gray-600">
                             <li><a href="/" className="hover:text-[#DA1A32]">Home</a></li>
-                            <li><a href="/Courses" className="hover:text-[#DA1A32]">Courses</a></li>
-                            <li><a href="/Community" className="hover:text-[#DA1A32]">Community</a></li>
-                            <li><a href="/Achievements" className="hover:text-[#DA1A32]">Achievements</a></li>
-                            <li><a href="/FAQ" className="hover:text-[#DA1A32]">FAQ</a></li>
+                            <li><a href="/RgUserLearn" className="hover:text-[#DA1A32]">Learn</a></li>
+                            <li><a href="/RgUserPost" className="hover:text-[#DA1A32]">Posts</a></li>
                         </ul>
                     </div>
 
@@ -707,11 +743,12 @@ const RgUserHome = () => {
                     <div className="ml-16">
                         <h4 className="font-ibarra font-bold text-[16px] mb-3">Get Support</h4>
                         <ul className="space-y-2 text-[13px] text-gray-600">
-                            <li><a href="/Support" className="hover:text-[#DA1A32]">Get Help</a></li>
-                            <li><a href="/Contact" className="hover:text-[#DA1A32]">Contact Us</a></li>
-                            <li><a href="/Terms" className="hover:text-[#DA1A32]">Terms and Conditions</a></li>
-                            <li><a href="/Privacy" className="hover:text-[#DA1A32]">FAQs</a></li>
+                            <li><button onClick={() => { setActive("About Us"); setShowPopup(true); }} className="hover:text-[#DA1A32]">About Us</button></li>
+                            <li><button onClick={() => { setActive("Contact Us"); setShowPopup(true); }} className="hover:text-[#DA1A32]">Contact Us</button></li>
+                            <li><button onClick={() => { setActive("Terms and Conditions"); setShowPopup(true); }} className="hover:text-[#DA1A32]">Terms and Conditions</button></li>
+                            <li><button onClick={() => { setActive("FAQ"); setShowPopup(true); }} className="hover:text-[#DA1A32]">FAQs</button></li>
                         </ul>
+
                     </div>
 
                     {/* Social */}
@@ -720,11 +757,6 @@ const RgUserHome = () => {
                         <p className="text-[13px] text-gray-600 mb-3">
                             Join our baking community for the latest updates, new courses, and tips!
                         </p>
-                        <div className="flex gap-3">
-                            <a href="#" className="hover:text-[#DA1A32]"><i className="fa-brands fa-instagram"></i></a>
-                            <a href="#" className="hover:text-[#DA1A32]"><i className="fa-brands fa-facebook"></i></a>
-                            <a href="#" className="hover:text-[#DA1A32]"><i className="fa-brands fa-youtube"></i></a>
-                        </div>
                     </div>
                 </div>
 
@@ -734,7 +766,298 @@ const RgUserHome = () => {
                 </div>
             </footer>
 
+            <AnimatePresence>
+                {showPopup && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                    >
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-3xl w-full relative overflow-y-scroll scrol max-h-[90vh]">
+                                {/* Close button */}
+                                <button
+                                    onClick={() => setShowPopup(false)}
+                                    className="absolute top-4 right-4 text-gray-600 hover:text-[#DA1A32] text-xl font-bold"
+                                >
+                                    ×
+                                </button>
 
+                                {/* Dynamic content */}
+                                {active === "About Us" && (
+                                    <div className="flex flex-col">
+                                        <p className="font-ibarra font-bold text-black text-[36px]">
+                                            About <span className="text-[#DA1A32]">Us</span>
+                                        </p>
+
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            At De Pastry Lab, we believe that the art of baking should be accessible to everyone. Whether you’re a complete beginner discovering the joy of baking for the first time or an aspiring pastry chef aiming to perfect your craft. Our platform was created with one mission in mind: To inspire and empower learners to explore the world of pastries, cakes, and desserts through hands-on, high-quality online learning.
+                                        </p>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            Our Mission
+                                        </p>
+
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            Our mission is to make pastry education engaging, practical, and inclusive. We aim to bridge the gap between professional techniques and home-baking creativity by offering easy-to-follow lessons, expert guidance, and a supportive learning community.
+                                        </p>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            What We Offer
+                                        </p>
+
+                                        <div className="mt-[6px] text-[14px] font-inter font-light flex flex-col gap-[16px]">
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Interactive Courses:
+                                                    </span>
+                                                    Step-by-step lessons designed by passionate pastry experts.
+                                                </span>
+                                            </li>
+
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Learn Anytime, Anywhere:
+                                                    </span>
+                                                    Access courses on your own schedule, perfect for hobbyists and busy professionals.
+                                                </span>
+                                            </li>
+
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Practical Skills:
+                                                    </span>
+                                                    Learn techniques you can apply instantly, from basic pastries to advanced desserts.
+                                                </span>
+                                            </li>
+
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Community & Sharing:
+                                                    </span>
+                                                    A place to connect, share your creations, and celebrate progress together.
+                                                </span>
+                                            </li>
+                                        </div>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            Our Vision
+                                        </p>
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            We envision a world where anyone with a whisk and a little curiosity can create pastries that bring people together. De Pastry Lab strives to be the leading e-learning hub for pastry education, nurturing creativity, confidence, and lifelong passion for baking.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {active === "Contact Us" && (
+                                    <div className="flex flex-col min-h-[518px]">
+                                        <p className="font-ibarra font-bold text-black text-[36px]">
+                                            Contact <span className="text-[#DA1A32]">Us</span>
+                                        </p>
+
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            We’d love to hear from you! At De Pastry Lab, we value your feedback, questions, and ideas.
+                                            Whether you’re reaching out for support, partnership opportunities, or simply to share your
+                                            baking journey, our team is here to help and connect with you.
+                                        </p>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            Get in Touch
+                                        </p>
+
+                                        <div className="mt-[6px] text-[14px] font-inter font-light flex flex-col gap-[16px]">
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col max-w-[530px]">
+                                                    <span className="font-bold mb-[2px]">Email Support:</span>
+                                                    <span className="text-justify">
+                                                        Reach out anytime at <span className="text-[#DA1A32] font-medium mx-[3px]">support@depastrylab.com</span> for course help, account inquiries, or technical assistance.
+                                                    </span>
+                                                </span>
+                                            </li>
+
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Community Engagement:</span>
+                                                    <span className="text-justify">
+                                                        Share your pastry creations or join discussions on our forums and social channels.
+                                                    </span>
+                                                </span>
+                                            </li>
+                                        </div>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            Follow Us
+                                        </p>
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            Stay inspired and connected! Follow us on social media for the latest recipes,
+                                            baking tips, and updates from the De Pastry Lab community.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {active === "Terms and Conditions" && (
+                                    <div className="flex flex-col">
+                                        <p className="font-ibarra font-bold text-black text-[36px]">
+                                            Terms & <span className="text-[#DA1A32]">Conditions</span>
+                                        </p>
+
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            Welcome to De Pastry Lab! By accessing or using our platform, you agree to follow the terms and conditions outlined below. These terms are designed to ensure a safe, fair, and enjoyable learning experience for all our users. Please read them carefully before using our services.
+                                        </p>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            User Responsibilities
+                                        </p>
+                                        <div className="mt-[6px] text-[14px] font-inter font-light flex flex-col gap-[16px]">
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Account Security:</span>
+                                                    You are responsible for keeping your login details secure and for all activities under your account.
+                                                </span>
+                                            </li>
+
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Respectful Use:</span>
+                                                    Use the platform responsibly. Do not share harmful, offensive, or inappropriate content.
+                                                </span>
+                                            </li>
+
+                                            <li className="flex flex-row gap-[12px]">
+                                                <div className="w-[12px] h-[2px] bg-[#DA1A32] mt-[8px]" />
+                                                <span className="flex flex-col">
+                                                    <span className="font-bold mb-[2px]">Personal Use Only:</span>
+                                                    All courses and resources are for your personal learning. Redistribution or resale is not permitted.
+                                                </span>
+                                            </li>
+                                        </div>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            Intellectual Property
+                                        </p>
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            All course content, including videos, text, images, and resources, are the property of De Pastry Lab or its instructors. You may not copy, modify, distribute, or use the content for commercial purposes without permission.
+                                        </p>
+
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            Limitation of Liability
+                                        </p>
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            De Pastry Lab is not responsible for any issues, losses, or damages resulting from the use of our platform. While we aim to provide accurate and helpful content, baking results may vary based on individual skills, equipment, and environment.
+                                        </p>
+
+                                        <p className="mt-[32px] font-ibarra font-bold text-black text-[28px]">
+                                            Changes to Terms
+                                        </p>
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            We may update these Terms & Conditions from time to time to reflect changes in our services or policies. Users will be notified of significant updates, and continued use of our platform constitutes acceptance of the revised terms.
+                                        </p>
+
+                                        <p className="mt-[32px] text-[14px] font-inter font-light text-justify">
+                                            Thank you for being part of De Pastry Lab. By using our platform, you help us build a respectful and inspiring space for pastry lovers everywhere!
+                                        </p>
+                                    </div>
+                                )}
+
+                                {active === "FAQ" && (
+                                    <div className="flex flex-col">
+                                        {/* Title */}
+                                        <p className="font-ibarra font-bold text-black text-[36px]">
+                                            Frequently Asked <span className="text-[#DA1A32]">Questions</span>
+                                        </p>
+
+                                        {/* Intro */}
+                                        <p className="mt-[6px] text-[14px] font-inter font-light text-justify">
+                                            Have questions about how De Pastry Lab works? Here are some quick answers
+                                            to help you get started on your baking journey.
+                                        </p>
+
+                                        {/* FAQ List */}
+                                        <div className="mt-[32px] flex flex-col gap-[24px] text-[14px] font-inter font-light">
+
+                                            <div>
+                                                <p className="font-bold text-[16px] text-black">
+                                                    1. Is De Pastry Lab really free to use?
+                                                </p>
+                                                <p className="mt-[4px] text-gray-700 text-justify">
+                                                    Yes! All our baking courses, practice quizzes, and community access are completely free.
+                                                    You can learn, practice, and grow your skills without any hidden fees.
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="font-bold text-[16px] text-black">
+                                                    2. How do the courses work?
+                                                </p>
+                                                <p className="mt-[4px] text-gray-700 text-justify">
+                                                    Each course is divided into short, easy-to-follow lessons. You can learn at your own pace,
+                                                    take notes, and test your knowledge with practice quizzes before attempting the final exam.
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="font-bold text-[16px] text-black">
+                                                    3. What happens if I fail a quiz or final exam?
+                                                </p>
+                                                <p className="mt-[4px] text-gray-700 text-justify">
+                                                    No worries! You can retry practice quizzes as many times as you like.
+                                                    For the final exam, you’ll need to pass to officially complete the course,
+                                                    sbut you can reattempt it anytime until you succeed.
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="font-bold text-[16px] text-black">
+                                                    4. Do I get a certificate or achievement after finishing a course?
+                                                </p>
+                                                <p className="mt-[4px] text-gray-700 text-justify">
+                                                    Yes! Once you pass the final exam, you’ll unlock a course completion badge and achievement.
+                                                    These showcase your progress and can be proudly displayed in your profile.
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="font-bold text-[16px] text-black">
+                                                    5. What’s the community section for?
+                                                </p>
+                                                <p className="mt-[4px] text-gray-700 text-justify">
+                                                    The community is where learners share their creations, ask for feedback, and connect with other pastry lovers.
+                                                    It’s a great place to learn tips, stay inspired, and grow together.
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="font-bold text-[16px] text-black">
+                                                    6. Do I need to register before accessing the courses?
+                                                </p>
+                                                <p className="mt-[4px] text-gray-700 text-justify">
+                                                    Yes, registration is required to save your progress, track achievements,
+                                                    and participate in the community. It only takes a minute to sign up — and it’s free!
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Closing line */}
+                                        <p className="mt-[36px] text-[14px] text-gray-600 text-justify">
+                                            Still need help? Visit our <span className="text-[#DA1A32] font-medium">Get Help page</span>, our team is always here to guide you every step of the way.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </VisitorLayout>
     );
 };

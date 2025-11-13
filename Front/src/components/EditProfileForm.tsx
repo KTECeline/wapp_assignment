@@ -2,7 +2,6 @@ import { FC, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { RxCross2 } from "react-icons/rx";
-import { BsCheck } from "react-icons/bs";
 import IconLoading from "./IconLoading.tsx";
 import DropUpload from "./DropUpload.tsx";
 import Select from 'react-select';
@@ -13,7 +12,7 @@ const customStyles = {
         ...base,
         backgroundColor: "#FFFFFF",
         boxShadow: "none",
-        border: state.isFocused ? "1px solid #000000" : "1px solid #000000", // always black border
+        border: state.isFocused ? "1px solid #000000" : "1px solid #000000",
         borderRadius: "8px",
         height: "37px",
         width: "444px",
@@ -21,7 +20,7 @@ const customStyles = {
         fontSize: "0.875rem",
         color: "#111827",
         "&:hover": {
-            border: "1px solid #000000", // stays black on hover
+            border: "1px solid #000000",
         },
     }),
     input: (base: any) => ({
@@ -30,11 +29,11 @@ const customStyles = {
     }),
     placeholder: (base: any) => ({
         ...base,
-        color: "#9CA3AF", // gray-400
+        color: "#9CA3AF",
     }),
     singleValue: (base: any) => ({
         ...base,
-        color: "#111827", // dark text
+        color: "#111827",
     }),
     menu: (base: any) => ({
         ...base,
@@ -61,7 +60,7 @@ const customStyles = {
         backgroundColor: state.isSelected
             ? "#DA1A32"
             : state.isFocused
-                ? "#F8F5F0" // your requested hover color
+                ? "#F8F5F0"
                 : "#FFFFFF",
         color: state.isSelected ? "#ffffff" : "#111827",
         cursor: "pointer",
@@ -80,24 +79,6 @@ const customStyles = {
     }),
 };
 
-const plevels = [
-    { value: "Beginner", label: "Beginner" },
-    { value: "Amateur", label: "Amateur" },
-    { value: "Master", label: "Master" },
-];
-
-const pcats = [
-    { value: "Bread", label: "Bread" },
-    { value: "Pastry", label: "Pastry" },
-    { value: "Cookies", label: "Cookies" },
-    { value: "Cake", label: "Cake" },
-    { value: "Pie & Tarts", label: "Pie & Tarts" },
-    { value: "SourDough", label: "SourDough" },
-    { value: "Pizza", label: "Pizza" },
-    { value: "Scones & Muffins", label: "Scones & Muffins" },
-    { value: "Others", label: "Others" },
-];
-
 type Profile = {
     id: string;
     fname: string;
@@ -105,8 +86,8 @@ type Profile = {
     gender: string;
     DOB: string;
     profileimage: globalThis.File | null;
-    plevel: string;
-    pcat: string;
+    plevel: number;
+    pcat: number;
     username: string;
     email: string;
     userId: number;
@@ -121,7 +102,7 @@ type ProfileFormProps = {
 
 const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, userId }) => {
 
-    // ✅ Validation Schema
+    // Validation Schema
     const validationSchema = Yup.object({
         fname: Yup.string().required("First Name is required").min(3, "At least 3 characters"),
         lname: Yup.string().required("Last Name is required").min(3, "At least 3 characters"),
@@ -147,7 +128,7 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
     });
 
 
-    // ✅ Initial form values depending on where it's opened from
+    // Initial form values depending on where it's opened from
     const [initialValues, setInitialValues] = useState({
         fname: "",
         lname: "",
@@ -162,6 +143,7 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
     });
 
     const [profileImageUrl, setProfileImageUrl] = useState<string>("");
+    const [removeProfileImage, setRemoveProfileImage] = useState(false);
 
     useEffect(() => {
         async function loadUserData() {
@@ -170,7 +152,7 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                     const response = await fetch(`/api/Users/${userId}`);
                     if (!response.ok) throw new Error('Failed to fetch user data');
                     const userData = await response.json();
-                    
+
                     // Map backend data to form fields
                     setInitialValues({
                         fname: userData.firstName || userData.fname || "",
@@ -178,8 +160,8 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                         gender: userData.gender || "",
                         DOB: userData.dob ? userData.dob.split('T')[0] : "",
                         profileimage: null,
-                        plevel: userData.levelId === 1 ? "Beginner" : userData.levelId === 2 ? "Amateur" : "Master",
-                        pcat: userData.categoryId ? pcats[userData.categoryId - 1]?.value || "" : "",
+                        plevel: userData.levelId || "",
+                        pcat: userData.categoryId || "",
                         username: userData.username || "",
                         email: userData.email || "",
                         userId: userData.userId
@@ -195,9 +177,40 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                 }
             }
         }
-        
+
         loadUserData();
-    }, [isEdit, userId, pcats]);
+    }, [isEdit, userId]);
+
+    const [levels, setLevels] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    // Fetch Levels
+    useEffect(() => {
+        fetch("/api/levels")
+            .then((res) => res.json())
+            .then((data) => {
+                const formatted = data.map((level: any) => ({
+                    value: level.levelId, 
+                    label: level.title,  
+                }));
+                setLevels(formatted);
+            })
+            .catch((err) => console.error("Error fetching levels:", err));
+    }, []);
+
+    // Fetch Categories
+    useEffect(() => {
+        fetch("/api/categories")
+            .then((res) => res.json())
+            .then((data) => {
+                const formatted = data.map((cat: any) => ({
+                    value: cat.categoryId, 
+                    label: cat.title,
+                }));
+                setCategories(formatted);
+            })
+            .catch((err) => console.error("Error fetching categories:", err));
+    }, []);
 
     return (
         <div className="fixed top-0 left-0 w-full h-full bg-black/30 z-80 flex items-center justify-center">
@@ -245,15 +258,19 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                             firstName: values.fname,
                             lastName: values.lname,
                             gender: values.gender,
-                            // Format date as ISO string for .NET DateTime
                             dob: values.DOB ? new Date(values.DOB).toISOString() : null,
-                            // Map string values to IDs
-                            levelId: values.plevel === 'Beginner' ? 1 : values.plevel === 'Amateur' ? 2 : 3,
-                            categoryId: pcats.findIndex(cat => cat.value === values.pcat) + 1
-                            // Note: Password is not included in profile updates; use dedicated change-password endpoint for password changes
+                            levelId: values.plevel,
+                            categoryId: values.pcat,
                         };
 
-                        // Attach file if present — client.updateUser will build FormData when a File is present
+                        // Handle profile image upload or removal
+                        if (values.profileimage) {
+                            payload.profileimage = values.profileimage;
+                        } else if (removeProfileImage) {
+                            payload.removeProfileImage = true;
+                        }
+
+                        // Attach file if present
                         const maybeFile = values.profileimage as any;
                         const isFile = maybeFile && typeof maybeFile.size === 'number' && typeof maybeFile.name === 'string';
                         if (isFile) {
@@ -261,9 +278,9 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                         }
 
                         try {
-                            // Call API to update user (userId is passed as prop)
+                            // Call API to update user
                             const updated = await updateUser(userId, payload);
-                            console.log("✅ Profile updated:", updated);
+                            console.log("Profile updated:", updated);
 
                             // Notify parent and close modal
                             onSave(updated as any, isEdit);
@@ -271,7 +288,7 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                             onClose();
                         } catch (err: any) {
                             console.error("Failed to update profile:", err);
-                            // Basic error feedback — you can replace with a toast UI
+                            // Basic error feedback
                             alert(err?.message || "Failed to update profile. See console for details.");
                         } finally {
                             setSubmitting(false);
@@ -456,7 +473,10 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                                             <div className="flex items-end mb-[5px]">
                                                 <button
                                                     type="button"
-                                                    onClick={() => { setFieldValue("profileimage", null) }}
+                                                    onClick={() => {
+                                                        setFieldValue("profileimage", null);
+                                                        setRemoveProfileImage(true); // <-- flag to remove image
+                                                    }}
                                                     className="text-red-500 text-[13px] mr-[8px]"
                                                 >
                                                     Clear
@@ -466,13 +486,19 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                                     </div>
                                     <div className="bg-white border-dotted">
                                         <DropUpload
-                                            className="flex "
+                                            className="flex"
                                             onChange={(value) => setFieldValue("profileimage", value)}
-                                            value={values.profileimage as unknown as globalThis.File}
+                                            value={values.profileimage as unknown as File}
                                             description="PNG, JPG, GIF, WEBP up to 32MB"
                                             disabled={isSubmitting}
                                             defaultValue={profileImageUrl}
+                                            onClear={() => {
+                                                setFieldValue("profileimage", null);
+                                                setProfileImageUrl(""); 
+                                                setRemoveProfileImage(true);
+                                            }}
                                         />
+
                                     </div>
                                     <ErrorMessage name="profileimage" component="div" className="text-red-500 text-xs mt-1 absolute -bottom-5 left-[2px]" />
                                 </div>
@@ -484,27 +510,21 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                                             Preferred Level
                                         </label>
                                         {values.plevel && (
-                                            <div className="flex items-end mb-[5px]">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFieldValue("plevel", "");
-                                                    }}
-                                                    className="text-red-500 text-[13px] mr-[8px]"
-                                                >
-                                                    Clear
-                                                </button>
-                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setFieldValue("plevel", "")}
+                                                className="text-red-500 text-[13px] mr-[8px]"
+                                            >
+                                                Clear
+                                            </button>
                                         )}
                                     </div>
 
                                     <div className="flex flex-row h-[37px] items-center">
                                         <Select
-                                            options={plevels}
-                                            value={plevels.find(option => option.value === values.plevel) || null}
-                                            onChange={(selectedOption) => {
-                                                setFieldValue("plevel", selectedOption?.value);
-                                            }}
+                                            options={levels}
+                                            value={levels.find(option => option.value === values.plevel) || null}
+                                            onChange={(selectedOption) => setFieldValue("plevel", selectedOption?.value)}
                                             styles={customStyles}
                                             placeholder="Select Preferred Level"
                                             isClearable
@@ -521,29 +541,23 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                                             Preferred Category
                                         </label>
                                         {values.pcat && (
-                                            <div className="flex items-end mb-[5px]">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFieldValue("pcat", "");
-                                                    }}
-                                                    className="text-red-500 text-[13px] mr-[8px]"
-                                                >
-                                                    Clear
-                                                </button>
-                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setFieldValue("pcat", "")}
+                                                className="text-red-500 text-[13px] mr-[8px]"
+                                            >
+                                                Clear
+                                            </button>
                                         )}
                                     </div>
 
                                     <div className="flex flex-row h-[37px] items-center">
                                         <Select
-                                            options={pcats}
-                                            value={pcats.find(option => option.value === values.pcat) || null}
-                                            onChange={(selectedOption) => {
-                                                setFieldValue("pcat", selectedOption?.value);
-                                            }}
+                                            options={categories}
+                                            value={categories.find(option => option.value === values.pcat) || null}
+                                            onChange={(selectedOption) => setFieldValue("pcat", selectedOption?.value)}
                                             styles={customStyles}
-                                            placeholder="Select Preferred cat"
+                                            placeholder="Select Preferred Category"
                                             isClearable
                                         />
                                     </div>
@@ -560,7 +574,7 @@ const ProfileForm: FC<ProfileFormProps> = ({ onClose, onSave, isEdit = false, us
                             <div className="w-full flex flex-row justify-between gap-4 mt-4">
                                 {/* Cancel Button */}
                                 <button
-                                    type="button"// define this function in your component
+                                    type="button"
                                     onClick={onClose}
                                     className="w-[50%] h-[37px] relative group cursor-pointer"
                                 >
