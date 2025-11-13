@@ -7,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import { IoAdd } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import ReviewForm from "../components/ReviewForm.tsx";
+import DisplayReview from "../components/DisplayReview.tsx";
 
 interface Review {
     id: number;
@@ -31,6 +32,8 @@ const RgUserReview = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [showReviewForm, setShowReviewForm] = useState(false);
+    const [showReviewView, setShowReviewView] = useState(false);
+    const [selectedReview, setSelectedReview] = useState<Review | null>(null);
     const [isReviewEdit, setIsReviewEdit] = useState(false);
     const [reviewId, setReviewId] = useState<number | null>(null);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -63,6 +66,7 @@ const RgUserReview = () => {
                 if (!res.ok) throw new Error("Failed to fetch reviews");
                 
                 const data = await res.json();
+                console.log("Fetched all feedback data:", data); // Debug log
                 
                 // Format the reviews data
                 const reviewsData = data
@@ -87,6 +91,7 @@ const RgUserReview = () => {
                         };
                     });
                 
+                console.log("Processed reviews:", reviewsData); // Debug log
                 setReviews(reviewsData);
             } catch (err) {
                 console.error("Error fetching reviews:", err);
@@ -121,7 +126,8 @@ const RgUserReview = () => {
 
         // Filter by tab
         if (active === "Website Reviews") {
-            filtered = reviews.filter(review => review.type === "website");
+            // Show all reviews (both "review" and "website" types)
+            filtered = reviews.filter(review => review.type === "review" || review.type === "website");
         } else if (active === "My Reviews") {
             filtered = reviews.filter(review => review.userId === user?.userId);
         }
@@ -135,6 +141,7 @@ const RgUserReview = () => {
             );
         }
 
+        console.log("Filtered reviews:", filtered, "Tab:", active, "Search:", searchTerm); // Debug log
         setFilteredReviews(filtered);
     }, [active, reviews, searchTerm, user?.userId]);
 
@@ -293,6 +300,8 @@ const RgUserReview = () => {
                 </div>
             )}
 
+            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} review={selectedReview || undefined} />}
+
             <div className="max-w-screen overflow-x-hidden">
                 <div className="items-center text-black flex flex-col w-[1090px] mt-[50px] relative mx-auto">
                     <div className="w-full flex flex-col items-center">
@@ -449,7 +458,14 @@ const RgUserReview = () => {
                                 </div>
                             ) : (
                                 filteredReviews.map((review) => (
-                                    <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
+                                    <button
+                                        key={review.id}
+                                        onClick={() => {
+                                            setSelectedReview(review);
+                                            setShowReviewView(true);
+                                        }}
+                                        className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left"
+                                    >
                                         <div className="flex flex-row justify-between items-center">
                                             <div className="flex flex-row gap-[6px]">
                                                 <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
@@ -503,7 +519,7 @@ const RgUserReview = () => {
                                                 );
                                             })}
                                         </div>
-                                    </div>
+                                    </button>
                                 ))
                             )}
                         </div>

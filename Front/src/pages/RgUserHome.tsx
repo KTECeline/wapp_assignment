@@ -84,6 +84,7 @@ const RgUserHome = () => {
     const [reviewtype] = useState<string>("website");
     const [showPostView, setShowPostView] = useState(false);
     const [showReviewView, setShowReviewView] = useState(false);
+    const [selectedReview, setSelectedReview] = useState<Review | null>(null);
 
     // Data state for courses, posts, reviews, and announcements
     const [courses, setCourses] = useState<Course[]>([]);
@@ -439,7 +440,7 @@ const RgUserHome = () => {
             )}
 
             {showPostView && <DisplayPost onClose={() => setShowPostView(false)} />}
-            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} />}
+            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} review={selectedReview || undefined} />}
 
             {/* Announcement */}
             <div className="w-full h-[400px] relative">
@@ -732,7 +733,14 @@ const RgUserHome = () => {
                         <div className="text-center py-8">No reviews yet. Be the first to review!</div>
                     ) : (
                         reviews.slice(0, 3).map((review) => (
-                            <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                            <button
+                                key={review.id}
+                                onClick={() => {
+                                    setSelectedReview(review);
+                                    setShowReviewView(true);
+                                }}
+                                className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0 cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left"
+                            >
                                 <div className="flex flex-row justify-between items-center">
                                     {/* Profile and time */}
                                     <div className="flex flex-row gap-[6px]">
@@ -789,7 +797,7 @@ const RgUserHome = () => {
                                         );
                                     })}
                                 </div>
-                            </div>
+                            </button>
                         ))
                     )}
                 </div>

@@ -2,16 +2,22 @@ import { FaStar } from "react-icons/fa";
 import { IoMdHeart } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import VisitorLayout from "../components/VisitorLayout.tsx";
+import DisplayReview from "../components/DisplayReview.tsx";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Review {
     id: number;
+    userId: number;
     userName: string;
     userInitial: string;
+    type: string;
+    courseId: number;
+    courseTitle: string;
     rating: number;
     title: string;
     description: string;
+    createdAt: string;
     timeAgo: string;
 }
 
@@ -19,6 +25,8 @@ const RgUserHome = () => {
     const [categories, setCategories] = useState<any[]>([]);
     const [reviews, setReviews] = useState<Review[]>([]);
     const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [showReviewView, setShowReviewView] = useState(false);
+    const [selectedReview, setSelectedReview] = useState<Review | null>(null);
 
     useEffect(() => {
         fetch('/api/categories')
@@ -52,6 +60,7 @@ const RgUserHome = () => {
                 if (!res.ok) throw new Error("Failed to fetch reviews");
                 
                 const data = await res.json();
+                console.log("Fetched reviews:", data); // Debug log
                 
                 // Filter for reviews and website feedback, sort by rating (desc) then by date (desc)
                 const reviewsData = data
@@ -71,15 +80,21 @@ const RgUserHome = () => {
                         
                         return {
                             id: item.id,
+                            userId: item.userId,
                             userName: item.userName || 'Anonymous',
                             userInitial,
+                            type: item.type,
+                            courseId: item.courseId,
+                            courseTitle: item.courseTitle || 'Website Review',
                             rating: item.rating,
                             title: item.title,
                             description: item.description,
+                            createdAt: item.createdAt,
                             timeAgo
                         };
                     });
                 
+                console.log("Processed reviews:", reviewsData); // Debug log
                 setReviews(reviewsData);
             } catch (err) {
                 console.error("Error fetching reviews:", err);
@@ -100,6 +115,8 @@ const RgUserHome = () => {
 
     return (
         <VisitorLayout>
+            {showReviewView && <DisplayReview onClose={() => setShowReviewView(false)} review={selectedReview || undefined} />}
+            
             <style>
                 {`
                         .scrol::-webkit-scrollbar {
@@ -527,16 +544,21 @@ const RgUserHome = () => {
                 </div>
 
                 {/* Review Container */}
-                <div className="mt-[38px] flex flex-row gap-[20px] max-w-screen">
-
-
-                {reviewsLoading ? (
-                    <div className="text-center py-8">Loading reviews...</div>
-                ) : reviews.length === 0 ? (
-                    <div className="text-center py-8">No reviews yet</div>
-                ) : (
-                    reviews.map((review) => (
-                        <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                <div className="mt-[38px] flex flex-row gap-[20px] max-w-screen overflow-x-auto w-full justify-center px-4">
+                    {reviewsLoading ? (
+                        <div className="text-center py-8 w-full">Loading reviews...</div>
+                    ) : reviews.length === 0 ? (
+                        <div className="text-center py-8 w-full">No reviews yet</div>
+                    ) : (
+                        reviews.map((review) => (
+                            <button
+                                key={review.id}
+                                onClick={() => {
+                                    setSelectedReview(review);
+                                    setShowReviewView(true);
+                                }}
+                                className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0 cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left"
+                            >
                             <div className="flex flex-row justify-between items-center">
                                 {/* Profile and time */}
                                 <div className="flex flex-row gap-[6px]">
@@ -595,12 +617,14 @@ const RgUserHome = () => {
                                     );
                                 })}
                             </div>
-                        </div>
-                    ))
-                )}
+                        </button>
+                        ))
+                    )}
                 </div>
 
-                <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                <button 
+                    onClick={() => navigate('/RgUserReview')}
+                    className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
                     View More
                 </button>
             </div>
