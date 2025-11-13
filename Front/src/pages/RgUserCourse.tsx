@@ -63,6 +63,18 @@ interface CourseStep {
     courseStepImg: string;
 }
 
+interface Review {
+    feedbackId: number;
+    userId: number;
+    userName: string;
+    userInitial: string;
+    rating: number;
+    title: string;
+    description: string;
+    createdAt: string;
+    timeAgo: string;
+}
+
 function useLocalToast() {
     const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
 
@@ -177,6 +189,17 @@ const RgUserCourse = () => {
 
     const [steps, setSteps] = useState<CourseStep[]>([]);
     const [tips, setTips] = useState<CourseTip[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [visibleReviews, setVisibleReviews] = useState(3);
+    const [totalReviews, setTotalReviews] = useState<number>(0);
+    const [averageRating, setAverageRating] = useState<number>(0);
+
+    // Review form states
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [reviewRating, setReviewRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [reviewTitle, setReviewTitle] = useState("");
+    const [reviewDescription, setReviewDescription] = useState("");
 
     useEffect(() => {
         if (!id) return;
@@ -205,7 +228,36 @@ const RgUserCourse = () => {
             .catch(err => console.error("Error fetching review count:", err));
     }, [id]);
 
-    const [totalReviews, setTotalReviews] = useState<number>(0);
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/UserFeedbacks/average/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.text(); // Get as text first
+            })
+            .then(text => {
+                console.log("Average rating raw response:", text);
+                try {
+                    const data = text ? JSON.parse(text) : 0;
+                    console.log("Average rating parsed:", data);
+                    setAverageRating(data);
+                } catch (e) {
+                    console.error("Failed to parse average rating:", e);
+                    setAverageRating(0);
+                }
+            })
+            .catch(err => console.error("Error fetching average rating:", err));
+    }, [id]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/UserFeedbacks/course/${id}/reviews`)
+            .then(res => res.json())
+            .then((data: Review[]) => setReviews(data))
+            .catch(err => console.error("Error fetching reviews:", err));
+    }, [id]);
 
     function formatCookingTime(minutes: number) {
         if (minutes < 60) return `${minutes} mins`;
@@ -505,6 +557,84 @@ const RgUserCourse = () => {
         doc.save(`${course.title}.pdf`);
     };
 
+    const handleSubmitReview = async () => {
+        if (!user?.userId || !course?.courseId) {
+            add("Please log in to submit a review", "error");
+            return;
+        }
+
+        if (reviewRating === 0) {
+            add("Please select a rating", "error");
+            return;
+        }
+
+        if (!reviewTitle.trim()) {
+            add("Please enter a review title", "error");
+            return;
+        }
+
+        if (!reviewDescription.trim()) {
+            add("Please enter a review description", "error");
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('userId', user.userId.toString());
+            formData.append('courseId', course.courseId.toString());
+            formData.append('type', 'review');
+            formData.append('rating', reviewRating.toString());
+            formData.append('title', reviewTitle);
+            formData.append('description', reviewDescription);
+
+            const response = await fetch('/api/UserFeedbacks', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Failed to submit review' }));
+                throw new Error(errorData.message || 'Failed to submit review');
+            }
+
+            add("Review submitted successfully!");
+            
+            // Reset form
+            setReviewRating(0);
+            setReviewTitle("");
+            setReviewDescription("");
+            setShowReviewModal(false);
+
+            // Refresh reviews
+            fetch(`/api/UserFeedbacks/course/${id}/reviews`)
+                .then(res => res.json())
+                .then((data: Review[]) => setReviews(data))
+                .catch(err => console.error("Error fetching reviews:", err));
+
+            // Refresh review count
+            fetch(`/api/UserFeedbacks/count/${id}`)
+                .then(res => res.json())
+                .then(data => setTotalReviews(data))
+                .catch(err => console.error("Error fetching review count:", err));
+
+            // Refresh average rating
+            fetch(`/api/UserFeedbacks/average/${id}`)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res.text();
+                })
+                .then(text => {
+                    const data = text ? JSON.parse(text) : 0;
+                    setAverageRating(data);
+                })
+                .catch(err => console.error("Error fetching average rating:", err));
+
+        } catch (err: any) {
+            console.error("Submit review error:", err);
+            add(err.message || "Failed to submit review", "error");
+        }
+    };
+
     return (
         <Layout>
 
@@ -562,12 +692,16 @@ const RgUserCourse = () => {
                             <div className="flex flex-col gap-[2px] justify-center translate-y-[-2px]">
                                 {/* Review */}
                                 <div className="font-inter text-[#484848] text-[14px] font-light">
+                                    <span className="font-medium text-[#DA1A32] mr-1">
+                                        {averageRating.toFixed(1)}
+                                    </span>
                                     {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
                                 </div>
 
                                 <div className="flex gap-[4px]">
                                     {[...Array(5)].map((_, index) => {
-                                        const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
+                                        const fillPercentage = Math.min(Math.max(averageRating - index, 0), 1) * 100;
+                                        console.log(`Star ${index + 1}: fillPercentage = ${fillPercentage}%, averageRating = ${averageRating}`);
 
                                         return (
                                             <div
@@ -575,7 +709,6 @@ const RgUserCourse = () => {
                                                 className="relative"
                                                 style={{ width: `14px`, height: `14px` }}
                                             >
-
                                                 <FaStar
                                                     className="absolute top-0 left-0 text-gray-300"
                                                     size="14px"
@@ -1052,7 +1185,8 @@ const RgUserCourse = () => {
                     </div>
 
                     {UserRegisteredCourse && (
-                        <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-[34px] right-[223px]">
+                        <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-[34px] right-[223px]"
+                            onClick={() => setShowReviewModal(true)}>
                             <div className="font-inter text-[16px] font-light text-black">
                                 Review
                             </div>
@@ -1063,203 +1197,163 @@ const RgUserCourse = () => {
                     )}
 
                     {/* Review Container */}
-                    <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
-
-                        {/* Review Card */}
-                        <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                            <div className="flex flex-row justify-between items-center">
-                                {/* Profile and time */}
-                                <div className="flex flex-row gap-[6px]">
-                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                        A
-                                    </div>
-
-                                    <div className="flex flex-col">
-                                        <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                            Amy Wong
-                                        </div>
-
-                                        <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                            17 hours ago
-                                        </div>
-                                    </div>
-                                </div>
+                    <div className={`mt-[32px] flex flex-row gap-[20px] ${visibleReviews > 3 ? 'overflow-x-auto w-[1090px] pb-4' : ''} no-scrollbar`}>
+                        {reviews.length === 0 ? (
+                            <div className="w-full text-center text-gray-500 py-8">
+                                No reviews yet. Be the first to review this course!
                             </div>
+                        ) : (
+                            reviews.slice(0, visibleReviews).map((review) => (
+                                <div key={review.feedbackId} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                                    <div className="flex flex-row justify-between items-center">
+                                        {/* Profile and time */}
+                                        <div className="flex flex-row gap-[6px]">
+                                            <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                                {review.userInitial}
+                                            </div>
 
-                            {/* Review title */}
-                            <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
-                                One of the best brownies ever!!!
-                            </div>
+                                            <div className="flex flex-col">
+                                                <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                                    {review.userName}
+                                                </div>
 
-                            {/* Review Description */}
-                            <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
-                                WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                            </div>
-
-                            <div className="flex gap-[4px]">
-                                {[...Array(5)].map((_, index) => {
-                                    // Fill in the ratings replace the 5
-                                    const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                    return (
-                                        <div
-                                            key={index}
-                                            className="relative"
-                                            style={{ width: `14px`, height: `14px` }}
-                                        >
-                                            {/* Gray star background */}
-                                            <FaStar
-                                                className="absolute top-0 left-0 text-gray-300"
-                                                size="14px"
-                                            />
-                                            {/* Red filled star */}
-                                            <div
-                                                className="absolute top-0 left-0 overflow-hidden"
-                                                style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                            >
-                                                <FaStar
-                                                    className="text-[#DA1A32]"
-                                                    size="14px"
-                                                />
+                                                <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
+                                                    {review.timeAgo}
+                                                </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Review Card */}
-                        <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                            <div className="flex flex-row justify-between items-center">
-                                {/* Profile and time */}
-                                <div className="flex flex-row gap-[6px]">
-                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                        A
                                     </div>
 
-                                    <div className="flex flex-col">
-                                        <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                            Amy Wong
-                                        </div>
-
-                                        <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                            17 hours ago
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Review title */}
-                            <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
-                                One of the best brownies ever!!!
-                            </div>
-
-                            {/* Review Description */}
-                            <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
-                                WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                            </div>
-
-                            <div className="flex gap-[4px]">
-                                {[...Array(5)].map((_, index) => {
-                                    // Fill in the ratings replace the 5
-                                    const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                    return (
-                                        <div
-                                            key={index}
-                                            className="relative"
-                                            style={{ width: `14px`, height: `14px` }}
-                                        >
-                                            {/* Gray star background */}
-                                            <FaStar
-                                                className="absolute top-0 left-0 text-gray-300"
-                                                size="14px"
-                                            />
-                                            {/* Red filled star */}
-                                            <div
-                                                className="absolute top-0 left-0 overflow-hidden"
-                                                style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                            >
-                                                <FaStar
-                                                    className="text-[#DA1A32]"
-                                                    size="14px"
-                                                />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Review Card */}
-                        <div className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                            <div className="flex flex-row justify-between items-center">
-                                {/* Profile and time */}
-                                <div className="flex flex-row gap-[6px]">
-                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                        A
+                                    {/* Review title */}
+                                    <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
+                                        {review.title}
                                     </div>
 
-                                    <div className="flex flex-col">
-                                        <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                            Amy Wong
-                                        </div>
+                                    {/* Review Description */}
+                                    <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
+                                        {review.description}
+                                    </div>
 
-                                        <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                            17 hours ago
-                                        </div>
+                                    <div className="flex gap-[4px]">
+                                        {[...Array(5)].map((_, index) => {
+                                            const fillPercentage = Math.min(Math.max(review.rating - index, 0), 1) * 100;
+
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className="relative"
+                                                    style={{ width: `14px`, height: `14px` }}
+                                                >
+                                                    <FaStar
+                                                        className="absolute top-0 left-0 text-gray-300"
+                                                        size="14px"
+                                                    />
+                                                    <div
+                                                        className="absolute top-0 left-0 overflow-hidden"
+                                                        style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                    >
+                                                        <FaStar
+                                                            className="text-[#DA1A32]"
+                                                            size="14px"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Review title */}
-                            <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
-                                One of the best brownies ever!!!
-                            </div>
-
-                            {/* Review Description */}
-                            <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
-                                WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                            </div>
-
-                            <div className="flex gap-[4px]">
-                                {[...Array(5)].map((_, index) => {
-                                    // Fill in the ratings replace the 5
-                                    const fillPercentage = Math.min(Math.max(5 - index, 0), 1) * 100;
-
-                                    return (
-                                        <div
-                                            key={index}
-                                            className="relative"
-                                            style={{ width: `14px`, height: `14px` }}
-                                        >
-                                            {/* Gray star background */}
-                                            <FaStar
-                                                className="absolute top-0 left-0 text-gray-300"
-                                                size="14px"
-                                            />
-                                            {/* Red filled star */}
-                                            <div
-                                                className="absolute top-0 left-0 overflow-hidden"
-                                                style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                            >
-                                                <FaStar
-                                                    className="text-[#DA1A32]"
-                                                    size="14px"
-                                                />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                            ))
+                        )}
                     </div>
 
-                    <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
-                        View More
-                    </button>
+                    {reviews.length > visibleReviews && (
+                        <button 
+                            className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]"
+                            onClick={() => setVisibleReviews(prev => prev + 3)}
+                        >
+                            View More
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* Review Modal */}
+            {showReviewModal && (
+                <div className="fixed inset-0 flex items-center justify-center z-50">
+                    <div className="absolute w-full h-full bg-black bg-opacity-50"
+                        onClick={() => setShowReviewModal(false)} />
+                    <div className="bg-white rounded-2xl w-[500px] relative p-8 z-10">
+                        <button className="absolute top-4 right-4 text-gray-600 hover:text-[#DA1A32]"
+                            onClick={() => setShowReviewModal(false)}>
+                            <RxCross2 size={24} />
+                        </button>
+
+                        <h2 className="font-ibarra text-[28px] font-bold text-black mb-6">Write a Review</h2>
+
+                        {/* Star Rating */}
+                        <div className="mb-6">
+                            <label className="font-inter text-[14px] font-medium text-black mb-2 block">Rating</label>
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <FaStar
+                                        key={star}
+                                        size={32}
+                                        className={`cursor-pointer transition-colors ${
+                                            star <= (hoverRating || reviewRating)
+                                                ? 'text-[#DA1A32]'
+                                                : 'text-gray-300'
+                                        }`}
+                                        onMouseEnter={() => setHoverRating(star)}
+                                        onMouseLeave={() => setHoverRating(0)}
+                                        onClick={() => setReviewRating(star)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Title Input */}
+                        <div className="mb-6">
+                            <label className="font-inter text-[14px] font-medium text-black mb-2 block">Title</label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#DA1A32]"
+                                placeholder="Enter review title"
+                                value={reviewTitle}
+                                onChange={(e) => setReviewTitle(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Description Textarea */}
+                        <div className="mb-6">
+                            <label className="font-inter text-[14px] font-medium text-black mb-2 block">Description</label>
+                            <textarea
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#DA1A32] resize-none"
+                                placeholder="Share your experience with this course"
+                                rows={4}
+                                value={reviewDescription}
+                                onChange={(e) => setReviewDescription(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-4">
+                            <button
+                                className="flex-1 h-[48px] bg-[#DA1A32] text-white rounded-full font-inter text-[16px] hover:scale-105 transition-all duration-[600ms]"
+                                onClick={handleSubmitReview}
+                            >
+                                Submit Review
+                            </button>
+                            <button
+                                className="flex-1 h-[48px] bg-white border border-black text-black rounded-full font-inter text-[16px] hover:scale-105 transition-all duration-[600ms]"
+                                onClick={() => setShowReviewModal(false)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {ToastContainer}
         </Layout>
     );

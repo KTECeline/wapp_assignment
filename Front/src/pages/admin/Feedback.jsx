@@ -69,8 +69,11 @@ export default function FeedbackV2() {
         const normalizeType = (t) => {
           if (!t) return 'Website';
           const s = String(t).toLowerCase();
-          if (s.includes('course') || s.includes('lesson') || s.includes('content') || s.includes('class')) return 'Course';
-          return 'Website';
+          // Map backend types to display types
+          if (s === 'review' || s === 'course') return 'Course';
+          if (s === 'website') return 'Website';
+          // Default to capitalize the type as-is
+          return t.charAt(0).toUpperCase() + t.slice(1);
         };
 
         const mapped = data.map(f => ({
@@ -400,7 +403,7 @@ export default function FeedbackV2() {
                       <h4 className="font-medium text-gray-900 mb-1 text-sm truncate">{feedback.title}</h4>
                     )}
                     
-                    {/* Message Preview with inline Website badge and inline expand */}
+                    {/* Message Preview with inline badges and inline expand */}
                     <div className="mb-2">
                         <div className="flex items-start justify-between">
                         <p
@@ -410,11 +413,17 @@ export default function FeedbackV2() {
                         </p>
 
                         <div className="ml-3 flex items-start gap-2">
-                          {feedback.category === 'Website' ? (
+                          {feedback.category === 'Website' && (
                             <span className="inline-flex items-center text-xs px-2 py-1 rounded-full font-medium flex-shrink-0" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
                               Website
                             </span>
-                          ) : null}
+                          )}
+
+                          {feedback.category === 'Course' && (
+                            <span className="inline-flex items-center text-xs px-2 py-1 rounded-full font-medium flex-shrink-0" style={{ backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                              Course
+                            </span>
+                          )}
 
                           {feedback.message && feedback.message.length > 140 && (
                             <button
@@ -430,14 +439,9 @@ export default function FeedbackV2() {
                       </div>
                     </div>
 
-                    {/* Footer: only show Course pill here (keeps Course badge at bottom-right) */}
+                    {/* Footer: Empty or for other actions */}
                     <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
-                      
-                      {feedback.category !== 'Website' && (
-                        <span className="inline-flex items-center text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: '#dbeafe', color: '#1e40af' }}>
-                          {feedback.category}
-                        </span>
-                      )}
+                      {/* Footer content can go here if needed */}
                     </div>
                   </div>
                 </div>

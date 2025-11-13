@@ -12,6 +12,7 @@ interface Course {
     title: string;
     description: string;
     rating: number;
+    averageRating: number;
     courseImg: string;
     cookingTimeMin: number;
     servings: number;
@@ -67,8 +68,29 @@ const RgUserCol = () => {
                 }
 
                 const data = await getUserCourses(user.userId, statusFilter || undefined);
-                setCourses(data);
-                setFilteredCourses(data);
+                
+                // Fetch average ratings for all courses
+                const withAverageRatings = await Promise.all(
+                    data.map(async (course: Course) => {
+                        try {
+                            // Fetch average rating
+                            const avgRes = await fetch(`/api/UserFeedbacks/average/${course.courseId}`);
+                            const avgText = await avgRes.text();
+                            const averageRating = avgText ? parseFloat(avgText) : 0.0;
+                            
+                            return {
+                                ...course,
+                                averageRating: averageRating
+                            };
+                        } catch (err) {
+                            console.error(`Error fetching average rating for course ${course.courseId}:`, err);
+                            return { ...course, averageRating: 0.0 };
+                        }
+                    })
+                );
+                
+                setCourses(withAverageRatings);
+                setFilteredCourses(withAverageRatings);
                 setError(null);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to fetch courses");
@@ -159,6 +181,7 @@ const RgUserCol = () => {
     // Apply filters and sort whenever any filter changes
     useEffect(() => {
         applyFiltersAndSort(courses);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedLevels, ratingFilter, minCookingTime, maxCookingTime, sortBy]);
 
     // Handle filter modal
@@ -289,7 +312,7 @@ const RgUserCol = () => {
                                     <div className="flex flex-row mt-[16px] items-center">
                                         <div className="flex gap-[4px]">
                                             {[...Array(5)].map((_, index) => {
-                                                const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
+                                                const fillPercentage = Math.min(Math.max(course.averageRating - index, 0), 1) * 100;
 
                                                 return (
                                                     <div
@@ -318,7 +341,7 @@ const RgUserCol = () => {
                                         </div>
 
                                         <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                            {Math.round(course.rating)} reviews
+                                            {course.averageRating > 0 ? course.averageRating.toFixed(1) : '0.0'} rating
                                         </div>
                                     </div>
 

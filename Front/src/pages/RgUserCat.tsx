@@ -28,6 +28,7 @@ interface Course {
     description: string;
     courseImg: string;
     rating: number;
+    averageRating: number;
     totalReviews: number;
     cookingTimeMin: number;
     servings: number;
@@ -69,19 +70,27 @@ const RgUserCat = () => {
                 // Filter courses by category
                 const filtered = data.filter((c: Course) => c.categoryId === Number(id));
 
-                // Fetch only the totalReviews for each course
+                // Fetch both totalReviews and averageRating for each course
                 const withReviews = await Promise.all(
                     filtered.map(async (course: Course) => {
                         try {
-                            const res = await fetch(`/api/UserFeedbacks/course/${course.courseId}`);
-                            const feedbackData = await res.json();
+                            // Fetch total reviews
+                            const countRes = await fetch(`/api/UserFeedbacks/course/${course.courseId}`);
+                            const feedbackData = await countRes.json();
+                            
+                            // Fetch average rating
+                            const avgRes = await fetch(`/api/UserFeedbacks/average/${course.courseId}`);
+                            const avgText = await avgRes.text();
+                            const averageRating = avgText ? parseFloat(avgText) : 0.0;
+                            
                             return {
                                 ...course,
-                                totalReviews: feedbackData.totalReviews || 0
+                                totalReviews: feedbackData.totalReviews || 0,
+                                averageRating: averageRating
                             };
                         } catch (err) {
                             console.error(`Error fetching reviews for course ${course.courseId}:`, err);
-                            return { ...course, totalReviews: 0 };
+                            return { ...course, totalReviews: 0, averageRating: 0.0 };
                         }
                     })
                 );
@@ -198,7 +207,7 @@ const RgUserCat = () => {
                                     <div className="flex flex-row mt-[16px] items-center">
                                         <div className="flex gap-[4px]">
                                             {[...Array(5)].map((_, index) => {
-                                                const fillPercentage = Math.min(Math.max(course.rating - index, 0), 1) * 100;
+                                                const fillPercentage = Math.min(Math.max(course.averageRating - index, 0), 1) * 100;
                                                 return (
                                                     <div key={index} className="relative" style={{ width: "18px", height: "18px" }}>
                                                         <FaStar className="absolute top-0 left-0 text-gray-300" size="18px" />

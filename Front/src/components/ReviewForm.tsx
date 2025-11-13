@@ -6,6 +6,7 @@ import { BsCheck } from "react-icons/bs";
 import IconLoading from "./IconLoading.tsx";
 import DropUpload from "./DropUpload.tsx";
 import { FaStar } from "react-icons/fa";
+import { getUserCourses } from "../api/client.js";
 
 type Review = {
     id: string;
@@ -31,6 +32,7 @@ type ReviewFormProps = {
 const ReviewForm: FC<ReviewFormProps> = ({ onClose, onSave, isEdit = false, reviewId, userId, courseId, reviewtype, from }) => {
     const [courses, setCourses] = useState<any[]>([]);
     const [reviewType, setReviewType] = useState<string>("website");
+    const [coursesLoading, setCoursesLoading] = useState(false);
 
     // ✅ Validation Schema
     const validationSchema = Yup.object().shape({
@@ -40,29 +42,36 @@ const ReviewForm: FC<ReviewFormProps> = ({ onClose, onSave, isEdit = false, revi
         rating: Yup.number().required("Please give a rating").min(1).max(5),
     });
 
-    // 🧠 Placeholder: later fetch from supabase
+    // Fetch user's enrolled courses
     useEffect(() => {
-        if (from === "home") {
-            // 🔒 When backend is ready:
-            /*
-            const fetchCourses = async () => {
-                const { data, error } = await supabase
-                    .from("course")
-                    .select("id, title")
-                    .eq("user_id", userId);
-                if (!error) setCourses(data || []);
-            };
-            fetchCourses();
-            */
+        const fetchUserCourses = async () => {
+            if (from === "home") {
+                try {
+                    setCoursesLoading(true);
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    
+                    if (user?.userId) {
+                        const data = await getUserCourses(user.userId);
+                        // Map to the format expected by the form
+                        const formattedCourses = data.map((course: any) => ({
+                            id: course.courseId,
+                            title: course.title
+                        }));
+                        setCourses(formattedCourses);
+                    } else {
+                        setCourses([]);
+                    }
+                } catch (error) {
+                    console.error("Error fetching user courses:", error);
+                    setCourses([]);
+                } finally {
+                    setCoursesLoading(false);
+                }
+            }
+        };
 
-            // 🧩 Placeholder mock data for now
-            setCourses([
-                { id: 1, title: "Pastry Basics" },
-                { id: 2, title: "Chocolate Artistry" },
-                { id: 3, title: "Cake Decorating Mastery" },
-            ]);
-        }
-    }, [from, userId]);
+        fetchUserCourses();
+    }, [from]);
 
     // ✅ Initial form values depending on where it's opened from
     const [initialValues, setInitialValues] = useState({
@@ -273,8 +282,11 @@ const ReviewForm: FC<ReviewFormProps> = ({ onClose, onSave, isEdit = false, revi
                                             as="select"
                                             name="course_id"
                                             className="mt-3 border border-black bg-white rounded-[8px] px-[10px] py-[8px] text-black cursor-pointer w-full sm:text-sm focus:outline-none focus:ring-0"
+                                            disabled={coursesLoading}
                                         >
-                                            <option value="">Select Course</option>
+                                            <option value="">
+                                                {coursesLoading ? "Loading courses..." : courses.length === 0 ? "No enrolled courses" : "Select Course"}
+                                            </option>
                                             {courses.map((c) => (
                                                 <option key={c.id} value={c.id}>{c.title}</option>
                                             ))}

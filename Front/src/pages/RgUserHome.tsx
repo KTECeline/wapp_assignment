@@ -44,6 +44,21 @@ interface Post {
     isLiked: boolean;
 }
 
+interface Review {
+    id: number;
+    userId: number;
+    userName: string;
+    userInitial: string;
+    type: string;
+    courseId: number;
+    courseTitle: string;
+    rating: number;
+    title: string;
+    description: string;
+    createdAt: string;
+    timeAgo: string;
+}
+
 const RgUserHome = () => {
     const navigate = useNavigate();
     
@@ -54,7 +69,8 @@ const RgUserHome = () => {
     const [isReviewEdit, setIsReviewEdit] = useState(false);
     const [postId, setPostId] = useState<number | null>(null);
     const [reviewId, setReviewId] = useState<number | null>(null);
-    const [userId] = useState(1);
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const [userId] = useState(user?.userId || 1);
     const [courseId] = useState<number | null>(null);
     const [posttype] = useState<string>("normal");
     const [reviewtype] = useState<string>("website");
@@ -64,10 +80,14 @@ const RgUserHome = () => {
     // Data state for courses and posts
     const [courses, setCourses] = useState<Course[]>([]);
     const [posts, setPosts] = useState<Post[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
     const [coursesLoading, setCoursesLoading] = useState(true);
     const [postsLoading, setPostsLoading] = useState(true);
+    const [reviewsLoading, setReviewsLoading] = useState(true);
     const [coursesError, setCoursesError] = useState<string | null>(null);
     const [postsError, setPostsError] = useState<string | null>(null);
+    const [reviewsError, setReviewsError] = useState<string | null>(null);
+    const [visibleReviews, setVisibleReviews] = useState(3);
 
     // Fetch courses on component mount
     useEffect(() => {
@@ -123,6 +143,25 @@ const RgUserHome = () => {
         fetchPosts();
     }, []);
 
+    // Fetch reviews on component mount
+    useEffect(() => {
+        fetchReviewsData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Helper function to calculate time ago
+    const getTimeAgo = (date: Date): string => {
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'min' : 'mins'} ago`;
+        if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+        return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    };
+
     const handlePostSave = (post: any, isEdit: boolean) => {
         console.log("✅ Mock Save:", post, "isEdit:", isEdit);
     };
@@ -133,14 +172,125 @@ const RgUserHome = () => {
         setPostId(null);
     };
 
-    const handleReviewSave = (post: any, isEdit: boolean) => {
-        console.log("✅ Mock Save:", post, "isEdit:", isEdit);
+    const handleReviewSave = async (review: any, isEdit: boolean) => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!user?.userId) {
+                alert("Please login to submit a review");
+                return;
+            }
+
+            let courseIdToUse = review.course_id;
+
+            // For website reviews, we need to get a valid courseId
+            if (review.reviewtype === 'website') {
+                // Try to use the first course from the user's courses
+                if (courses.length > 0) {
+                    courseIdToUse = courses[0].courseId;
+                } else {
+                    // Fallback: fetch the first available course
+                    try {
+                        const coursesRes = await fetch('/api/courses');
+                        const coursesData = await coursesRes.json();
+                        if (coursesData.length > 0) {
+                            courseIdToUse = coursesData[0].courseId;
+                        } else {
+                            alert("No courses available. Cannot submit website review.");
+                            return;
+                        }
+                    } catch (err) {
+                        console.error("Error fetching courses:", err);
+                        alert("Failed to submit review. Please try again.");
+                        return;
+                    }
+                }
+            } else {
+                // For course reviews, validate that a course was selected
+                if (!courseIdToUse) {
+                    alert("Please select a course");
+                    return;
+                }
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('userId', user.userId.toString());
+            formData.append('courseId', courseIdToUse.toString());
+            formData.append('type', review.reviewtype === 'course' ? 'review' : 'website');
+            formData.append('rating', review.rating.toString());
+            formData.append('title', review.title);
+            formData.append('description', review.description);
+
+            // Submit review
+            const response = await fetch('/api/UserFeedbacks', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Failed to submit review');
+            }
+
+            // Success - refresh reviews list
+            await fetchReviewsData();
+            
+            handleCloseReviewModal();
+            alert('Review submitted successfully!');
+        } catch (error) {
+            console.error('Error submitting review:', error);
+            alert('Failed to submit review: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        }
     };
 
     const handleCloseReviewModal = () => {
         setShowReviewForm(false);
         setIsReviewEdit(false);
         setReviewId(null);
+    };
+
+    // Extract review fetching logic for reuse
+    const fetchReviewsData = async () => {
+        try {
+            setReviewsLoading(true);
+            const res = await fetch('/api/UserFeedbacks');
+            if (!res.ok) throw new Error("Failed to fetch reviews");
+            
+            const data = await res.json();
+            
+            // Filter for reviews only and format the data
+            const reviewsData = data
+                .filter((item: any) => item.type === "review" || item.type === "website")
+                .map((item: any) => {
+                    const userInitial = item.userName ? item.userName.charAt(0).toUpperCase() : 'U';
+                    const timeAgo = getTimeAgo(new Date(item.createdAt));
+                    
+                    return {
+                        id: item.id,
+                        userId: item.userId,
+                        userName: item.userName || 'Anonymous',
+                        userInitial,
+                        type: item.type,
+                        courseId: item.courseId,
+                        courseTitle: item.courseTitle || 'Website Review',
+                        rating: item.rating,
+                        title: item.title,
+                        description: item.description,
+                        createdAt: item.createdAt,
+                        timeAgo
+                    };
+                });
+            
+            setReviews(reviewsData);
+            setReviewsError(null);
+        } catch (err) {
+            console.error("Error fetching reviews:", err);
+            setReviewsError(err instanceof Error ? err.message : "Failed to fetch reviews");
+            setReviews([]);
+        } finally {
+            setReviewsLoading(false);
+        }
     };
 
     return (
@@ -434,14 +584,85 @@ const RgUserHome = () => {
                     </div>
                 </button>
 
-                {/* Review Container - Placeholder */}
-                <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
-                    <div className="text-center py-8">Reviews coming soon...</div>
+                {/* Review Container */}
+                <div className={`mt-[32px] flex flex-row gap-[20px] ${visibleReviews > 3 ? 'overflow-x-auto w-[1090px] pb-4' : ''} no-scrollbar`}>
+                    {reviewsLoading ? (
+                        <div className="text-center py-8">Loading reviews...</div>
+                    ) : reviewsError ? (
+                        <div className="text-center py-8 text-red-500">Error loading reviews</div>
+                    ) : reviews.length === 0 ? (
+                        <div className="text-center py-8">No reviews yet. Be the first to review!</div>
+                    ) : (
+                        reviews.slice(0, visibleReviews).map((review) => (
+                            <div key={review.id} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                                <div className="flex flex-row justify-between items-center">
+                                    {/* Profile and time */}
+                                    <div className="flex flex-row gap-[6px]">
+                                        <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                            {review.userInitial}
+                                        </div>
+
+                                        <div className="flex flex-col">
+                                            <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                                {review.userName}
+                                            </div>
+
+                                            <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
+                                                {review.timeAgo}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Review title */}
+                                <div className="font-ibarra mt-[16px] line-clamp-1 text-[16px] font-bold leading-tight">
+                                    {review.title}
+                                </div>
+
+                                {/* Review Description */}
+                                <div className="font-inter mt-[10px] line-clamp-2 text-[10px] font-light text-justify mb-[8px]">
+                                    {review.description}
+                                </div>
+
+                                <div className="flex gap-[4px]">
+                                    {[...Array(5)].map((_, index) => {
+                                        const fillPercentage = Math.min(Math.max(review.rating - index, 0), 1) * 100;
+
+                                        return (
+                                            <div
+                                                key={index}
+                                                className="relative"
+                                                style={{ width: `14px`, height: `14px` }}
+                                            >
+                                                <FaStar
+                                                    className="absolute top-0 left-0 text-gray-300"
+                                                    size="14px"
+                                                />
+                                                <div
+                                                    className="absolute top-0 left-0 overflow-hidden"
+                                                    style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                >
+                                                    <FaStar
+                                                        className="text-[#DA1A32]"
+                                                        size="14px"
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
 
-                <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
-                    View More
-                </button>
+                {reviews.length > visibleReviews && (
+                    <button 
+                        onClick={() => setVisibleReviews(prev => prev + 3)}
+                        className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                        View More
+                    </button>
+                )}
             </div>
         </RgUserLayout>
     );
