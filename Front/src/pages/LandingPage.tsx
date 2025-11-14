@@ -465,7 +465,7 @@ const RgUserHome = () => {
                     <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                 </div>
                 {/* Review Container */}
-                <div className="mt-[38px] flex flex-row gap-[20px] max-w-screen overflow-x-auto scrol w-full justify-center px-4">
+                <div className="mt-[32px] flex flex-row gap-[20px]">
                     {reviewsLoading ? (
                         <div className="text-center py-8 w-full">Loading reviews...</div>
                     ) : reviews.length === 0 ? (

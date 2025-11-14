@@ -637,7 +637,7 @@ const RgUserCourse = () => {
             }
 
             add("Review submitted successfully!");
-            
+
             // Reset form
             setReviewRating(0);
             setReviewTitle("");
@@ -1032,6 +1032,24 @@ const RgUserCourse = () => {
                     </div>
                 )}
 
+                {user?.userId && (
+                    <div className="mb-[-40px]">
+                        {/* Decorative Divider */}
+                        < div className="flex items-center justify-center gap-[8px] mb-[12px] mt-[88px]">
+                            <div className="w-[30px] h-[2px] bg-[#DA1A32]" />
+                            <span className="font-ibarra text-[16px] text-[#DA1A32] uppercase tracking-widest font-bold">
+                                How do I complete this course?
+                            </span>
+                            <div className="w-[30px] h-[2px] bg-[#DA1A32]" />
+                        </div>
+                        {/* Subtext */}
+                        <p className="font-inter text-[15px] text-gray-600 text-center max-w-[600px] mb-8">
+                            Share your progress by creating a post in this course.
+                            Or, if posting in the general feed, make sure to select the relevant course to showcase your work!
+                        </p>
+                    </div>
+                )}
+
                 {/* Ingredient and Tools */}
                 <div className="mt-[88px] flex flex-row justify-between w-[1090px]">
                     <div className="w-[480px] flex flex-col items-center">
@@ -1116,17 +1134,17 @@ const RgUserCourse = () => {
                         <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                     </div>
 
-                {UserRegisteredCourse && (
-                    <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-0"
-                        onClick={() => setShowPostForm(true)}>
-                        <div className="font-inter text-[16px] font-light text-black">
-                            Post
-                        </div>
-                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                            <IoAdd className="text-white w-[32px] h-[32px]" />
-                        </div>
-                    </button>
-                )}                    {/* Post Container */}
+                    {UserRegisteredCourse && (
+                        <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-0"
+                            onClick={() => setShowPostForm(true)}>
+                            <div className="font-inter text-[16px] font-light text-black">
+                                Post
+                            </div>
+                            <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                                <IoAdd className="text-white w-[32px] h-[32px]" />
+                            </div>
+                        </button>
+                    )}                    {/* Post Container */}
                     <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen overflow-x-auto no-scrollbar">
                         {posts.length === 0 ? (
                             <div className="w-full text-center text-gray-500 py-8">
@@ -1300,7 +1318,7 @@ const RgUserCourse = () => {
                         )}
                     </div>
 
-                    <button 
+                    <button
                         className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]"
                         onClick={() => navigate(`/RgUserCourseReview/${id}`)}
                     >
@@ -1310,84 +1328,85 @@ const RgUserCourse = () => {
             </div>
 
             {/* Review Modal */}
-            {showReviewModal && (
-                <div className="fixed inset-0 flex items-center justify-center z-50">
-                    <div className="absolute w-full h-full bg-black bg-opacity-50"
-                        onClick={() => setShowReviewModal(false)} />
-                    <div className="bg-white rounded-2xl w-[500px] relative p-8 z-10">
-                        <button className="absolute top-4 right-4 text-gray-600 hover:text-[#DA1A32]"
-                            onClick={() => setShowReviewModal(false)}>
-                            <RxCross2 size={24} />
-                        </button>
+            {
+                showReviewModal && (
+                    <div className="fixed inset-0 flex items-center justify-center z-50">
+                        <div className="absolute w-full h-full bg-black bg-opacity-50"
+                            onClick={() => setShowReviewModal(false)} />
+                        <div className="bg-white rounded-2xl w-[500px] relative p-8 z-10">
+                            <button className="absolute top-4 right-4 text-gray-600 hover:text-[#DA1A32]"
+                                onClick={() => setShowReviewModal(false)}>
+                                <RxCross2 size={24} />
+                            </button>
 
-                        <h2 className="font-ibarra text-[28px] font-bold text-black mb-6">Write a Review</h2>
+                            <h2 className="font-ibarra text-[28px] font-bold text-black mb-6">Write a Review</h2>
 
-                        {/* Star Rating */}
-                        <div className="mb-6">
-                            <label className="font-inter text-[14px] font-medium text-black mb-2 block">Rating</label>
-                            <div className="flex gap-2">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <FaStar
-                                        key={star}
-                                        size={32}
-                                        className={`cursor-pointer transition-colors ${
-                                            star <= (hoverRating || reviewRating)
+                            {/* Star Rating */}
+                            <div className="mb-6">
+                                <label className="font-inter text-[14px] font-medium text-black mb-2 block">Rating</label>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <FaStar
+                                            key={star}
+                                            size={32}
+                                            className={`cursor-pointer transition-colors ${star <= (hoverRating || reviewRating)
                                                 ? 'text-[#DA1A32]'
                                                 : 'text-gray-300'
-                                        }`}
-                                        onMouseEnter={() => setHoverRating(star)}
-                                        onMouseLeave={() => setHoverRating(0)}
-                                        onClick={() => setReviewRating(star)}
-                                    />
-                                ))}
+                                                }`}
+                                            onMouseEnter={() => setHoverRating(star)}
+                                            onMouseLeave={() => setHoverRating(0)}
+                                            onClick={() => setReviewRating(star)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Title Input */}
+                            <div className="mb-6">
+                                <label className="font-inter text-[14px] font-medium text-black mb-2 block">Title</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#DA1A32]"
+                                    placeholder="Enter review title"
+                                    value={reviewTitle}
+                                    onChange={(e) => setReviewTitle(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Description Textarea */}
+                            <div className="mb-6">
+                                <label className="font-inter text-[14px] font-medium text-black mb-2 block">Description</label>
+                                <textarea
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#DA1A32] resize-none"
+                                    placeholder="Share your experience with this course"
+                                    rows={4}
+                                    value={reviewDescription}
+                                    onChange={(e) => setReviewDescription(e.target.value)}
+                                />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-4">
+                                <button
+                                    className="flex-1 h-[48px] bg-[#DA1A32] text-white rounded-full font-inter text-[16px] hover:scale-105 transition-all duration-[600ms]"
+                                    onClick={handleSubmitReview}
+                                >
+                                    Submit Review
+                                </button>
+                                <button
+                                    className="flex-1 h-[48px] bg-white border border-black text-black rounded-full font-inter text-[16px] hover:scale-105 transition-all duration-[600ms]"
+                                    onClick={() => setShowReviewModal(false)}
+                                >
+                                    Cancel
+                                </button>
                             </div>
                         </div>
-
-                        {/* Title Input */}
-                        <div className="mb-6">
-                            <label className="font-inter text-[14px] font-medium text-black mb-2 block">Title</label>
-                            <input
-                                type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#DA1A32]"
-                                placeholder="Enter review title"
-                                value={reviewTitle}
-                                onChange={(e) => setReviewTitle(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Description Textarea */}
-                        <div className="mb-6">
-                            <label className="font-inter text-[14px] font-medium text-black mb-2 block">Description</label>
-                            <textarea
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#DA1A32] resize-none"
-                                placeholder="Share your experience with this course"
-                                rows={4}
-                                value={reviewDescription}
-                                onChange={(e) => setReviewDescription(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-4">
-                            <button
-                                className="flex-1 h-[48px] bg-[#DA1A32] text-white rounded-full font-inter text-[16px] hover:scale-105 transition-all duration-[600ms]"
-                                onClick={handleSubmitReview}
-                            >
-                                Submit Review
-                            </button>
-                            <button
-                                className="flex-1 h-[48px] bg-white border border-black text-black rounded-full font-inter text-[16px] hover:scale-105 transition-all duration-[600ms]"
-                                onClick={() => setShowReviewModal(false)}
-                            >
-                                Cancel
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {ToastContainer}
-        </Layout>
+        </Layout >
     );
 };
 
