@@ -7,8 +7,15 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 
-// use a red palette for pie charts per request
-const RED_COLORS = ['#7f1d1d', '#b91c1c', '#ef4444', '#f87171', '#fecaca'];
+// Red color palette for rating distribution - 5 stars (darkest red) to 1 star (lightest red)
+// Map: 5★ → darkest, 4★ → slightly lighter, 3★ → medium, 2★ → light, 1★ → lightest
+const RATING_COLORS = {
+  '5★': '#7f1d1d', // Darkest red (5 stars)
+  '4★': '#b91c1c', // Dark red (4 stars)
+  '3★': '#ef4444', // Medium red (3 stars)
+  '2★': '#f87171', // Light red (2 stars)
+  '1★': '#fecaca'  // Lightest red (1 star)
+};
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState('Last 30 days');
@@ -555,14 +562,21 @@ export default function Reports() {
         </Card>
         
         <Card title="Ratings Distribution" subtitle="Feedback ratings breakdown (1-5 stars)">
-          {/* Pie chart for ratings distribution, use red palette */}
+          {/* Pie chart for ratings distribution, use red palette - 5 stars = darkest red */}
           <div className="h-64" ref={ratingsChartRef}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={feedbackData} dataKey="value" nameKey="name" outerRadius={90} fill="#ef4444" label />
-                {feedbackData.map((entry, index) => (
-                  <Cell key={`fcell-${index}`} fill={RED_COLORS[index % RED_COLORS.length]} />
-                ))}
+                <Pie 
+                  data={feedbackData} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  outerRadius={90} 
+                  label
+                >
+                  {feedbackData.map((entry) => (
+                    <Cell key={`cell-${entry.name}`} fill={RATING_COLORS[entry.name] || '#ef4444'} />
+                  ))}
+                </Pie>
                 <Tooltip />
                 <Legend />
               </PieChart>
