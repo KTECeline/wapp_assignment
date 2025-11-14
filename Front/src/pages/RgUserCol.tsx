@@ -116,7 +116,14 @@ const RgUserCol = () => {
     // Get unique levels from courses
     const getUniqueLevels = () => {
         const levels = new Set(courses.map(course => course.levelName));
-        return Array.from(levels).filter(level => level);
+        return Array.from(levels)
+            .filter(level => level)
+            .sort((a, b) => {
+                // Extract numeric part if it exists (e.g., "Level 1" -> 1)
+                const numA = parseInt(a.match(/\d+/)?.[0] || "0");
+                const numB = parseInt(b.match(/\d+/)?.[0] || "0");
+                return numA - numB;
+            });
     };
 
     // Apply filters and sort
@@ -182,9 +189,9 @@ const RgUserCol = () => {
 
     // Apply filters and sort whenever any filter changes
     useEffect(() => {
-        applyFiltersAndSort(courses);
+        applyFiltersAndSort(courses, searchTerm);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedLevels, ratingFilter, minCookingTime, maxCookingTime, sortBy]);
+    }, [selectedLevels, ratingFilter, minCookingTime, maxCookingTime, sortBy, searchTerm, courses]);
 
     // Handle filter modal
     const handleClearFilters = () => {

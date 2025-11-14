@@ -49,7 +49,7 @@ const VisitorLayout: React.FC<VisitorLayoutProps> = ({ children }) => {
                 className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
               />
             </Link> */}
-            <Link to="/RgUserSet">
+            <Link to="/Register">
               <img
                 src="/images/Profile.png"
                 alt="Profile"

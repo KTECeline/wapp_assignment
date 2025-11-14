@@ -71,6 +71,25 @@ const RgUserCat = () => {
             .catch(err => console.error("Error fetching category:", err));
     }, [id]);
 
+    // Fetch courses by category
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/courses?categoryId=${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Network response was not ok");
+                return res.json();
+            })
+            .then(data => {
+                setCourses(data);
+                setFilteredCourses(data);
+            })
+            .catch(err => {
+                console.error("Error fetching courses:", err);
+                setCourses([]);
+                setFilteredCourses([]);
+            });
+    }, [id]);
 
     const navigate = useNavigate();
 
@@ -88,7 +107,7 @@ const RgUserCat = () => {
                 levels.set(course.level.levelId, course.level);
             }
         });
-        return Array.from(levels.values());
+        return Array.from(levels.values()).sort((a, b) => a.levelId - b.levelId);
     };
 
     // Apply filters and sort
@@ -136,11 +155,11 @@ const RgUserCat = () => {
         setFilteredCourses(result);
     };
 
-    // Apply filters and sort whenever any filter changes or courses are updated
+    // Apply filters and sort whenever any filter changes
     useEffect(() => {
-        applyFiltersAndSort(courses);
+        applyFiltersAndSort(courses, searchTerm);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedLevels, sortBy, courses]);
+    }, [selectedLevels, sortBy, courses, searchTerm]);
 
     // Handle filter clear
     const handleClearFilters = () => {
