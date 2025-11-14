@@ -75,6 +75,23 @@ interface Review {
     timeAgo: string;
 }
 
+interface Post {
+    postId: number;
+    userId: number;
+    userName: string;
+    userInitial: string;
+    title: string;
+    description: string;
+    postImg: string;
+    courseId?: number;
+    courseName?: string;
+    categoryName?: string;
+    createdAt: string;
+    timeAgo: string;
+    likeCount: number;
+    isLiked: boolean;
+}
+
 function useLocalToast() {
     const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
 
@@ -192,6 +209,7 @@ const RgUserCourse = () => {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [totalReviews, setTotalReviews] = useState<number>(0);
     const [averageRating, setAverageRating] = useState<number>(0);
+    const [posts, setPosts] = useState<Post[]>([]);
 
     // Review form states
     const [showReviewModal, setShowReviewModal] = useState(false);
@@ -262,6 +280,18 @@ const RgUserCourse = () => {
                 setReviews(data);
             })
             .catch(err => console.error("Error fetching reviews:", err));
+    }, [id]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        fetch(`/api/UserPosts?courseId=${id}`)
+            .then(res => res.json())
+            .then((data: Post[]) => {
+                console.log("Posts response:", data);
+                setPosts(data);
+            })
+            .catch(err => console.error("Error fetching posts:", err));
     }, [id]);
 
     function formatCookingTime(minutes: number) {
@@ -640,6 +670,35 @@ const RgUserCourse = () => {
         }
     };
 
+    const handlePostLike = async (postId: number) => {
+        if (!user?.userId) {
+            add("Please log in to like posts", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/UserPosts/${postId}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.userId }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to toggle like');
+            }
+
+            // Refresh posts to get updated like counts
+            fetch(`/api/UserPosts?courseId=${id}`)
+                .then(res => res.json())
+                .then((data: Post[]) => setPosts(data))
+                .catch(err => console.error("Error refreshing posts:", err));
+
+        } catch (err: any) {
+            console.error("Like error:", err);
+            add(err.message || "Failed to like post", "error");
+        }
+    };
+
     return (
         <Layout>
 
@@ -978,202 +1037,81 @@ const RgUserCourse = () => {
                     )}
 
                     {/* Post Container */}
-                    <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen">
-
-                        {/* Post Card */}
-                        <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                            <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
-                                <img src="/images/Post.webp" alt="post" className="w-full h-full object-cover z-0" />
-                                <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                                <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                    <img src="/images/Post.webp" alt="post" className="w-full object-cover" />
-                                </div>
+                    <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen overflow-x-auto no-scrollbar">
+                        {posts.length === 0 ? (
+                            <div className="w-full text-center text-gray-500 py-8">
+                                No posts yet. Be the first to share your creation!
                             </div>
-
-                            <div className="flex flex-col w-[142px] justify-between">
-                                <div>
-                                    <div className="flex flex-row justify-between items-center">
-                                        {/* Profile and time */}
-                                        <div className="flex flex-row gap-[6px]">
-                                            <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                A
-                                            </div>
-
-                                            <div className="flex flex-col">
-                                                <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                    Amy Wong
-                                                </div>
-
-                                                <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                                    17 hours ago
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Like button */}
-                                        <button className="cursor-pointer">
-                                            <IoMdHeart className="w-[20px] h-[20px] text-[#D9D9D9]" />
-                                        </button>
-                                    </div>
-
-                                    {/* Post title */}
-                                    <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
-                                        My Freshly Baked Brownies
-                                    </div>
-
-                                    {/* Post Description */}
-                                    <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
-                                        WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                                    </div>
-
-                                    {/* Hashtage, Course Name and Category */}
-                                    <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                        <span>#Small-Batch Brownies</span>
-                                        <span>#Cakes</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col">
-                                    <div className="bg-black w-full h-[1px]" />
-                                    <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
-                                        <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
-                                        <div className="translate-y-[2px]">
-                                            100
+                        ) : (
+                            posts.slice(0, 3).map((post) => (
+                                <div key={post.postId} className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                                    <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
+                                        <img src={post.postImg || "/images/Post.webp"} alt="post" className="w-full h-full object-cover z-0" />
+                                        <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
+                                        <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
+                                            <img src={post.postImg || "/images/Post.webp"} alt="post" className="w-full object-cover" />
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Post Card */}
-                        <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                            <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
-                                <img src="/images/Post.webp" alt="post" className="w-full h-full object-cover z-0" />
-                                <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                                <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                    <img src="/images/Post.webp" alt="post" className="w-full object-cover" />
-                                </div>
-                            </div>
+                                    <div className="flex flex-col w-[142px] justify-between">
+                                        <div>
+                                            <div className="flex flex-row justify-between items-center">
+                                                {/* Profile and time */}
+                                                <div className="flex flex-row gap-[6px]">
+                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
+                                                        {post.userInitial}
+                                                    </div>
 
-                            <div className="flex flex-col w-[142px] justify-between">
-                                <div>
-                                    <div className="flex flex-row justify-between items-center">
-                                        {/* Profile and time */}
-                                        <div className="flex flex-row gap-[6px]">
-                                            <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                A
+                                                    <div className="flex flex-col">
+                                                        <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
+                                                            {post.userName}
+                                                        </div>
+
+                                                        <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
+                                                            {post.timeAgo}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Like button */}
+                                                <button className="cursor-pointer" onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePostLike(post.postId);
+                                                }}>
+                                                    <IoMdHeart className={`w-[20px] h-[20px] ${post.isLiked ? 'text-[#FF5454]' : 'text-[#D9D9D9]'}`} />
+                                                </button>
                                             </div>
 
-                                            <div className="flex flex-col">
-                                                <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                    Amy Wong
-                                                </div>
+                                            {/* Post title */}
+                                            <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
+                                                {post.title}
+                                            </div>
 
-                                                <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                                    17 hours ago
-                                                </div>
+                                            {/* Post Description */}
+                                            <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
+                                                {post.description}
+                                            </div>
+
+                                            {/* Hashtags, Course Name and Category */}
+                                            <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
+                                                {post.courseName && <span>#{post.courseName}</span>}
+                                                {post.categoryName && <span>#{post.categoryName}</span>}
                                             </div>
                                         </div>
 
-                                        {/* Like button */}
-                                        <button className="cursor-pointer">
-                                            <IoMdHeart className="w-[20px] h-[20px] text-[#D9D9D9]" />
-                                        </button>
-                                    </div>
-
-                                    {/* Post title */}
-                                    <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
-                                        My Freshly Baked Brownies
-                                    </div>
-
-                                    {/* Post Description */}
-                                    <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
-                                        WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                                    </div>
-
-                                    {/* Hashtage, Course Name and Category */}
-                                    <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                        <span>#Small-Batch Brownies</span>
-                                        <span>#Cakes</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col">
-                                    <div className="bg-black w-full h-[1px]" />
-                                    <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
-                                        <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
-                                        <div className="translate-y-[2px]">
-                                            100
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Post Card */}
-                        <div className="cursor-pointer hover:scale-[105%] transition-all duration-[600ms] w-[350px] h-[323px] bg-white flex flex-row gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
-                            <div className="relative w-[170px] h-full rounded-[16px] overflow-hidden">
-                                <img src="/images/Post.webp" alt="post" className="w-full h-full object-cover z-0" />
-                                <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                                <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                    <img src="/images/Post.webp" alt="post" className="w-full object-cover" />
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col w-[142px] justify-between">
-                                <div>
-                                    <div className="flex flex-row justify-between items-center">
-                                        {/* Profile and time */}
-                                        <div className="flex flex-row gap-[6px]">
-                                            <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                A
-                                            </div>
-
-                                            <div className="flex flex-col">
-                                                <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                    Amy Wong
-                                                </div>
-
-                                                <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px] ">
-                                                    17 hours ago
+                                        <div className="flex flex-col">
+                                            <div className="bg-black w-full h-[1px]" />
+                                            <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
+                                                <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
+                                                <div className="translate-y-[2px]">
+                                                    {post.likeCount}
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {/* Like button */}
-                                        <button className="cursor-pointer">
-                                            <IoMdHeart className="w-[20px] h-[20px] text-[#D9D9D9]" />
-                                        </button>
-                                    </div>
-
-                                    {/* Post title */}
-                                    <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
-                                        My Freshly Baked Brownies
-                                    </div>
-
-                                    {/* Post Description */}
-                                    <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
-                                        WOW — the chocolate flavor is next-level! Can’t wait to share them with the family tonight. 🥰
-                                    </div>
-
-                                    {/* Hashtage, Course Name and Category */}
-                                    <div className="font-inter mt-[26px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                        <span>#Small-Batch Brownies</span>
-                                        <span>#Cakes</span>
                                     </div>
                                 </div>
-
-                                <div className="flex flex-col">
-                                    <div className="bg-black w-full h-[1px]" />
-                                    <div className="flex flex-row font-inter text-[10px] font-light gap-[2px] mt-[5px] mb-[3px]">
-                                        <IoMdHeart className="w-[17px] h-[17px] text-[#FF5454]" />
-                                        <div className="translate-y-[2px]">
-                                            100
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            ))
+                        )}
                     </div>
 
                     <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">

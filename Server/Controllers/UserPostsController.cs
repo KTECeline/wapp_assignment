@@ -16,7 +16,7 @@ public class UserPostsController : ControllerBase
 
     // GET: api/UserPosts
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> GetUserPosts([FromQuery] string? filter = null, [FromQuery] int? userId = null)
+    public async Task<ActionResult<IEnumerable<object>>> GetUserPosts([FromQuery] string? filter = null, [FromQuery] int? userId = null, [FromQuery] int? courseId = null)
     {
         // Build base query with includes
         var query = _context.UserPosts
@@ -54,6 +54,12 @@ public class UserPostsController : ControllerBase
         {
             // ensure user-specific requests can still filter by user id
             query = query.Where(p => p.UserId == userId.Value);
+        }
+
+        if (courseId.HasValue)
+        {
+            // filter by course id
+            query = query.Where(p => p.CourseId == courseId.Value);
         }
 
         var posts = await query
