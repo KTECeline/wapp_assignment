@@ -460,30 +460,68 @@ const RgUserCol = () => {
 
                                 {/* Cooking Time Filter */}
                                 <div className="mb-6">
-                                    <h3 className="font-ibarra text-[16px] font-bold text-black mb-3">Cooking Time (minutes)</h3>
-                                    <div className="flex gap-4">
-                                        <div className="flex-1">
-                                            <label className="font-inter text-[12px] text-gray-600 block mb-1">Min: {minCookingTime}</label>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="999999"
-                                                value={minCookingTime}
-                                                onChange={(e) => setMinCookingTime(Number(e.target.value))}
-                                                className="w-full accent-[#DA1A32]"
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="font-inter text-[12px] text-gray-600 block mb-1">Max: {maxCookingTime === 999999 ? "Unlimited" : maxCookingTime}</label>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="999999"
-                                                value={maxCookingTime}
-                                                onChange={(e) => setMaxCookingTime(Number(e.target.value))}
-                                                className="w-full accent-[#DA1A32]"
-                                            />
-                                        </div>
+                                    <h3 className="font-ibarra text-[16px] font-bold text-black mb-3">Maximum Cooking Time</h3>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button
+                                            onClick={() => setMaxCookingTime(30)}
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
+                                                maxCookingTime === 30
+                                                    ? "bg-[#DA1A32] text-white"
+                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
+                                        >
+                                            &lt; 30 mins
+                                        </button>
+                                        <button
+                                            onClick={() => setMaxCookingTime(60)}
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
+                                                maxCookingTime === 60
+                                                    ? "bg-[#DA1A32] text-white"
+                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
+                                        >
+                                            1 hour
+                                        </button>
+                                        <button
+                                            onClick={() => setMaxCookingTime(120)}
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
+                                                maxCookingTime === 120
+                                                    ? "bg-[#DA1A32] text-white"
+                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
+                                        >
+                                            2 hours
+                                        </button>
+                                        <button
+                                            onClick={() => setMaxCookingTime(180)}
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
+                                                maxCookingTime === 180
+                                                    ? "bg-[#DA1A32] text-white"
+                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
+                                        >
+                                            3 hours
+                                        </button>
+                                        <button
+                                            onClick={() => setMaxCookingTime(240)}
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
+                                                maxCookingTime === 240
+                                                    ? "bg-[#DA1A32] text-white"
+                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
+                                        >
+                                            4 hours
+                                        </button>
+                                        <button
+                                            onClick={() => setMaxCookingTime(999999)}
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
+                                                maxCookingTime === 999999
+                                                    ? "bg-[#DA1A32] text-white"
+                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
+                                        >
+                                            4+ hours
+                                        </button>
                                     </div>
                                 </div>
 
