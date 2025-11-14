@@ -40,7 +40,7 @@ const RgUserCol = () => {
     const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
     const [ratingFilter, setRatingFilter] = useState<number | null>(null);
     const [minCookingTime, setMinCookingTime] = useState<number>(0);
-    const [maxCookingTime, setMaxCookingTime] = useState<number>(999999);
+    const [maxCookingTime, setMaxCookingTime] = useState<number | null>(null);
     
     // Sort state
     const [sortBy, setSortBy] = useState<string>("default");
@@ -149,9 +149,11 @@ const RgUserCol = () => {
         }
 
         // Apply cooking time filter
-        result = result.filter(course => 
-            course.cookingTimeMin >= minCookingTime && course.cookingTimeMin <= maxCookingTime
-        );
+        if (maxCookingTime !== null) {
+            result = result.filter(course => 
+                course.cookingTimeMin >= minCookingTime && course.cookingTimeMin <= maxCookingTime
+            );
+        }
 
         // Apply sorting
         switch (sortBy) {
@@ -198,7 +200,7 @@ const RgUserCol = () => {
         setSelectedLevels([]);
         setRatingFilter(null);
         setMinCookingTime(0);
-        setMaxCookingTime(999999);
+        setMaxCookingTime(null);
         setSortBy("default");
     };
 
