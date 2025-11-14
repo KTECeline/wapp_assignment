@@ -69,7 +69,15 @@ export default function AdminLayout() {
               
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-lg border border-[#F2E6E0] py-2 z-50">
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors">Settings</button>
+                  <button 
+                    onClick={() => {
+                      navigate('/admin/settings');
+                      setProfileOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-[#FFF8F2] transition-colors"
+                  >
+                    Settings
+                  </button>
                   <hr className="my-2 border-[#F2E6E0]" />
                   <button 
                     onClick={handleLogout}

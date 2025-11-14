@@ -1,11 +1,11 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 interface RgUserQQLayoutProps {
   children: React.ReactNode;
 }
 
-const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children}) => {
+const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children }) => {
   return (
     <div className="font-inter bg-white min-h-screen w-full overflow-hidden">
       {/* Header */}
@@ -43,16 +43,20 @@ const RgUserQQLayout: React.FC<RgUserQQLayoutProps> = ({ children}) => {
 
           {/* Right Icons */}
           <div className="flex gap-[16px]">
-            <img
-              src="/images/Search.png"
-              alt="Search"
-              className="w-[22px] h-[22px] cursor-pointer"
-            />
-            <img
-              src="/images/Profile.png"
-              alt="Profile"
-              className="w-[22px] h-[22px] cursor-pointer"
-            />
+            {/* <Link to="/RgUserSearch">
+              <img
+                src="/images/Search.png"
+                alt="Search"
+                className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+              />
+            </Link> */}
+            <Link to="/RgUserSet">
+              <img
+                src="/images/Profile.png"
+                alt="Profile"
+                className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+              />
+            </Link>
           </div>
         </div>
       </header>

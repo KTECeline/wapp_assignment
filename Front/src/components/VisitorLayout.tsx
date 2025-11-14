@@ -42,14 +42,14 @@ const VisitorLayout: React.FC<VisitorLayoutProps> = ({ children }) => {
 
           {/* Right Icons */}
           <div className="flex gap-[16px]">
-            <Link to="/RgUserSearch">
+            {/* <Link to="/RgUserSearch">
               <img
                 src="/images/Search.png"
                 alt="Search"
                 className="w-[22px] h-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
               />
-            </Link>
-            <Link to="/Register">
+            </Link> */}
+            <Link to="/RgUserSet">
               <img
                 src="/images/Profile.png"
                 alt="Profile"
