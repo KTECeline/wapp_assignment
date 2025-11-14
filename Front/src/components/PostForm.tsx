@@ -212,7 +212,8 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
                                     <Field
                                         as="select"
                                         name="posttype"
-                                        className={`bg-white border border-black rounded-[8px] px-[10px] py-[8px] text-black cursor-pointer w-full sm:text-sm focus:outline-none focus:ring-0`}
+                                        disabled={from === "course"}
+                                        className={`bg-white border border-black rounded-[8px] px-[10px] py-[8px] text-black ${from === "course" ? "cursor-not-allowed opacity-60" : "cursor-pointer"} w-full sm:text-sm focus:outline-none focus:ring-0`}
                                         onChange={(e: any) => {
                                             const value = e.target.value;
                                             setPostType(value);
@@ -225,7 +226,7 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
                                     </Field>
                                 </div>
 
-                                {postType === "course" && (
+                                {postType === "course" && from !== "course" && (
                                     <div className="mb-6 relative">
                                         <Field
                                             as="select"

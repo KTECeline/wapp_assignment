@@ -261,7 +261,8 @@ const ReviewForm: FC<ReviewFormProps> = ({ onClose, onSave, isEdit = false, revi
                                     <Field
                                         as="select"
                                         name="reviewtype"
-                                        className={`bg-white border border-black rounded-[8px] px-[10px] py-[8px] text-black cursor-pointer w-full sm:text-sm focus:outline-none focus:ring-0`}
+                                        disabled={from === "course"}
+                                        className={`bg-white border border-black rounded-[8px] px-[10px] py-[8px] text-black ${from === "course" ? "cursor-not-allowed opacity-60" : "cursor-pointer"} w-full sm:text-sm focus:outline-none focus:ring-0`}
                                         onChange={(e: any) => {
                                             const value = e.target.value;
                                             setReviewType(value);
@@ -274,7 +275,7 @@ const ReviewForm: FC<ReviewFormProps> = ({ onClose, onSave, isEdit = false, revi
                                     </Field>
                                 </div>
 
-                                {reviewType === "course" && (
+                                {reviewType === "course" && from !== "course" && (
                                     <div className="mb-6 relative">
                                         <Field
                                             as="select"

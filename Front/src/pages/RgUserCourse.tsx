@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { startQuiz } from "../components/QuizManager.tsx";
 import jsPDF from "jspdf";
+import PostForm from "../components/PostForm.tsx";
 
 interface Course {
     courseId: number;
@@ -211,6 +212,9 @@ const RgUserCourse = () => {
     const [averageRating, setAverageRating] = useState<number>(0);
     const [posts, setPosts] = useState<Post[]>([]);
 
+    // Post form states
+    const [showPostForm, setShowPostForm] = useState(false);
+
     // Review form states
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [reviewRating, setReviewRating] = useState(0);
@@ -285,7 +289,7 @@ const RgUserCourse = () => {
     useEffect(() => {
         if (!id) return;
 
-        fetch(`/api/UserPosts?courseId=${id}`)
+        fetch(`/api/UserPosts?courseId=${id}&filter=all`)
             .then(res => res.json())
             .then((data: Post[]) => {
                 console.log("Posts response:", data);
@@ -688,7 +692,7 @@ const RgUserCourse = () => {
             }
 
             // Refresh posts to get updated like counts
-            fetch(`/api/UserPosts?courseId=${id}`)
+            fetch(`/api/UserPosts?courseId=${id}&filter=all`)
                 .then(res => res.json())
                 .then((data: Post[]) => setPosts(data))
                 .catch(err => console.error("Error refreshing posts:", err));
@@ -699,8 +703,95 @@ const RgUserCourse = () => {
         }
     };
 
+    const handlePostSave = async (postData: any, isEdit: boolean) => {
+        try {
+            if (!user?.userId) {
+                add("Please log in to submit a post", "error");
+                return;
+            }
+
+            let imageUrl = "";
+
+            // Step 1: Upload image if provided
+            if (postData.postimage instanceof File) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', postData.postimage);
+
+                const uploadRes = await fetch('/api/Uploads', {
+                    method: 'POST',
+                    body: uploadFormData,
+                });
+
+                if (!uploadRes.ok) {
+                    const errorText = await uploadRes.text();
+                    throw new Error("Image upload failed: " + (errorText || `${uploadRes.status}`));
+                }
+
+                const uploadedData = await uploadRes.json();
+                imageUrl = uploadedData.path || uploadedData.url || "";
+            }
+
+            // Step 2: Create post with image URL
+            const courseIdValue = postData.posttype === "course" && postData.course_id
+                ? parseInt(postData.course_id)
+                : parseInt(id || '0');
+
+            const postPayload: any = {
+                UserId: user.userId,
+                Title: postData.title,
+                Description: postData.description,
+                Type: 'post',
+                PostImg: imageUrl,
+                CourseId: courseIdValue,
+            };
+
+            console.log("Sending post payload:", postPayload);
+
+            const res = await fetch('/api/UserPosts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postPayload),
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText || `Failed to create post: ${res.status}`);
+            }
+
+            add("Post created successfully! It will appear after admin approval.");
+            setShowPostForm(false);
+
+            // Refresh posts
+            fetch(`/api/UserPosts?courseId=${id}&filter=all`)
+                .then(res => res.json())
+                .then((data: Post[]) => setPosts(data))
+                .catch(err => console.error("Error fetching posts:", err));
+
+        } catch (err) {
+            console.error("Error saving post:", err);
+            add("Failed to create post: " + (err instanceof Error ? err.message : "Unknown error"), "error");
+        }
+    };
+
     return (
         <Layout>
+
+            {showPostForm && (
+                <div className="fixed z-[100]">
+                    <PostForm
+                        onClose={() => setShowPostForm(false)}
+                        onSave={handlePostSave}
+                        isEdit={false}
+                        postId={null}
+                        userId={user?.userId || 0}
+                        courseId={course?.courseId || null}
+                        posttype="course"
+                        from="course"
+                    />
+                </div>
+            )}
 
             {/* Banner */}
             <div
@@ -1025,18 +1116,17 @@ const RgUserCourse = () => {
                         <div className="w-[16px] h-[1px] bg-[#DA1A32]" />
                     </div>
 
-                    {UserRegisteredCourse && (
-                        <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-0">
-                            <div className="font-inter text-[16px] font-light text-black">
-                                Post
-                            </div>
-                            <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                                <IoAdd className="text-white w-[32px] h-[32px]" />
-                            </div>
-                        </button>
-                    )}
-
-                    {/* Post Container */}
+                {UserRegisteredCourse && (
+                    <button className="flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms] absolute top-0 right-0"
+                        onClick={() => setShowPostForm(true)}>
+                        <div className="font-inter text-[16px] font-light text-black">
+                            Post
+                        </div>
+                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                            <IoAdd className="text-white w-[32px] h-[32px]" />
+                        </div>
+                    </button>
+                )}                    {/* Post Container */}
                     <div className="mt-[32px] flex flex-row gap-[20px] max-w-screen overflow-x-auto no-scrollbar">
                         {posts.length === 0 ? (
                             <div className="w-full text-center text-gray-500 py-8">
@@ -1114,7 +1204,8 @@ const RgUserCourse = () => {
                         )}
                     </div>
 
-                    <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
+                    <button className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]"
+                        onClick={() => navigate(`/RgUserCoursePost/${id}`)}>
                         View More
                     </button>
                 </div>

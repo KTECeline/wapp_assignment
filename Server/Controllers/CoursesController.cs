@@ -13,7 +13,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Course>>> GetCourses([FromQuery] int? categoryId = null)
+    public async Task<ActionResult<IEnumerable<object>>> GetCourses([FromQuery] int? categoryId = null)
     {
         var query = _context.Courses
             .Include(c => c.Level)
@@ -25,7 +25,48 @@ public class CoursesController : ControllerBase
             query = query.Where(c => c.CategoryId == categoryId.Value);
         }
 
-        return await query.ToListAsync();
+        var courses = await query.ToListAsync();
+
+        // Calculate average ratings and review counts for each course
+        var courseIds = courses.Select(c => c.CourseId).ToList();
+        
+        var reviewStats = await _context.UserFeedbacks
+            .Where(f => courseIds.Contains(f.CourseId) && f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .GroupBy(f => f.CourseId)
+            .Select(g => new
+            {
+                CourseId = g.Key,
+                AverageRating = g.Average(f => (double)f.Rating),
+                TotalReviews = g.Count()
+            })
+            .ToListAsync();
+
+        var result = courses.Select(c =>
+        {
+            var stats = reviewStats.FirstOrDefault(r => r.CourseId == c.CourseId);
+            return new
+            {
+                courseId = c.CourseId,
+                title = c.Title,
+                description = c.Description,
+                courseImg = c.CourseImg,
+                cookingTimeMin = c.CookingTimeMin,
+                servings = c.Servings,
+                video = c.Video,
+                badgeImg = c.BadgeImg,
+                quizBadgeImg = c.QuizBadgeImg,
+                levelId = c.LevelId,
+                level = c.Level,
+                categoryId = c.CategoryId,
+                category = c.Category,
+                deleted = c.Deleted,
+                rating = c.Rating,
+                averageRating = stats?.AverageRating ?? 0.0,
+                totalReviews = stats?.TotalReviews ?? 0
+            };
+        });
+
+        return Ok(result);
     }
 
     // GET: /api/Courses/withstats

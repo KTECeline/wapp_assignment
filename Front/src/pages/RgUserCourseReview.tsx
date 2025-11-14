@@ -4,6 +4,8 @@ import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { FaStar } from "react-icons/fa";
 import { IoAdd } from "react-icons/io5";
+import ReviewForm from "../components/ReviewForm.tsx";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Review {
     feedbackId: number;
@@ -27,10 +29,21 @@ interface Course {
 const RgUserCourseReview = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
     const [course, setCourse] = useState<Course | null>(null);
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [isReviewEdit, setIsReviewEdit] = useState(false);
+    const [reviewId, setReviewId] = useState<number | null>(null);
+    const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
+
+    const addToast = (message: string, variant: "success" | "error" = "success") => {
+        const id = Math.random().toString(36).slice(2);
+        setToasts(prev => [...prev, { id, message, variant }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+    };
 
     const getTimeAgo = (date: string) => {
         const now = new Date();
@@ -133,8 +146,105 @@ const RgUserCourseReview = () => {
         return (stats.ratingDistribution[rating as keyof typeof stats.ratingDistribution] / stats.totalReviews) * 100;
     };
 
+    const handleReviewSave = async (review: any, isEdit: boolean) => {
+        try {
+            if (!user?.userId) {
+                addToast("Please log in to submit a review", "error");
+                return;
+            }
+
+            if (!id) {
+                addToast("Course not found", "error");
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('userId', user.userId.toString());
+            formData.append('courseId', id);
+            formData.append('type', 'review');
+            formData.append('rating', review.rating.toString());
+            formData.append('title', review.title);
+            formData.append('description', review.description);
+
+            // Submit review
+            const response = await fetch('/api/UserFeedbacks', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Failed to submit review');
+            }
+
+            // Refresh reviews
+            const reviewsResponse = await fetch(`/api/UserFeedbacks/course/${id}/reviews`);
+            const data = await reviewsResponse.json();
+            
+            const reviewsData = data.map((review: any) => ({
+                feedbackId: review.feedbackId,
+                userId: review.userId,
+                userName: review.userName || "Anonymous",
+                userInitial: (review.userName || "A").charAt(0).toUpperCase(),
+                rating: review.rating,
+                title: review.title,
+                description: review.description,
+                createdAt: review.createdAt,
+                timeAgo: getTimeAgo(review.createdAt)
+            }));
+            
+            setReviews(reviewsData);
+            handleCloseReviewModal();
+            addToast('Review submitted successfully!');
+        } catch (error) {
+            console.error('Error submitting review:', error);
+            addToast('Failed to submit review: ' + (error instanceof Error ? error.message : 'Unknown error'), "error");
+        }
+    };
+
+    const handleCloseReviewModal = () => {
+        setShowReviewForm(false);
+        setIsReviewEdit(false);
+        setReviewId(null);
+    };
+
     return (
         <RgUserLayout>
+            {showReviewForm && (
+                <div className="fixed z-[100]">
+                    <ReviewForm
+                        onClose={handleCloseReviewModal}
+                        onSave={handleReviewSave}
+                        isEdit={isReviewEdit}
+                        reviewId={reviewId}
+                        userId={user?.userId || 0}
+                        courseId={parseInt(id || '0')}
+                        reviewtype="course"
+                        from="course"
+                    />
+                </div>
+            )}
+
+            {/* Toast Container */}
+            <div className="fixed bottom-4 right-4 space-y-2 z-[9999] pointer-events-none">
+                <AnimatePresence>
+                    {toasts.map(t => (
+                        <motion.div
+                            key={t.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className={`px-4 py-2 rounded-lg shadow-lg pointer-events-auto ${
+                                t.variant === "error" ? "bg-red-500" : "bg-green-500"
+                            } text-white`}
+                        >
+                            {t.message}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+
             <div className="max-w-screen overflow-x-hidden">
                 {/* Banner */}
                 <div
@@ -343,7 +453,15 @@ const RgUserCourseReview = () => {
                     </div>
                 </div>
 
-                <button className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
+                <button 
+                    onClick={() => {
+                        if (!user?.userId) {
+                            addToast("Please log in to submit a review", "error");
+                            return;
+                        }
+                        setShowReviewForm(true);
+                    }}
+                    className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                     <div className="font-inter text-[16px] font-light text-black">
                         Review
                     </div>

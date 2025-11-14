@@ -26,8 +26,9 @@ public class UserCoursesController : ControllerBase
         if (!userExists)
             return NotFound(new { message = "User not found" });
 
+        // Query all courses where user has registered (enrolled)
         var query = _context.CourseUserActivities
-            .Where(a => a.UserId == userId && a.Registered)
+            .Where(a => a.UserId == userId && a.Registered == true)
             .Include(a => a.Course)
             .Include(a => a.Course!.Level)
             .AsQueryable();
@@ -38,10 +39,11 @@ public class UserCoursesController : ControllerBase
             switch (status.ToLower())
             {
                 case "completed":
-                    query = query.Where(a => a.QuizStatus == "completed");
+                    query = query.Where(a => a.QuizStatus != null && a.QuizStatus.ToLower() == "completed");
                     break;
                 case "progressing":
-                    query = query.Where(a => a.QuizStatus != "completed");
+                    // Progressing means either not started (null/empty) or started but not completed
+                    query = query.Where(a => string.IsNullOrEmpty(a.QuizStatus) || a.QuizStatus.ToLower() != "completed");
                     break;
                 case "bookmarked":
                     query = query.Where(a => a.Bookmark);
