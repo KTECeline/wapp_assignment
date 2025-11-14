@@ -13,7 +13,7 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Course>>> GetCourses([FromQuery] int? categoryId = null)
+    public async Task<ActionResult<IEnumerable<object>>> GetCourses([FromQuery] int? categoryId = null)
     {
         var query = _context.Courses
             .Include(c => c.Level)
@@ -25,7 +25,27 @@ public class CoursesController : ControllerBase
             query = query.Where(c => c.CategoryId == categoryId.Value);
         }
 
-        return await query.ToListAsync();
+        var courses = await query.ToListAsync();
+
+        // Calculate average ratings from UserFeedbacks for each course
+        var courseRatings = await _context.UserFeedbacks
+            .Where(f => f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .GroupBy(f => f.CourseId)
+            .Select(g => new
+            {
+                CourseId = g.Key,
+                AverageRating = g.Average(f => f.Rating)
+            })
+            .ToListAsync();
+
+        var result = courses.Select(c =>
+        {
+            var rating = courseRatings.FirstOrDefault(r => r.CourseId == c.CourseId);
+            c.Rating = rating != null ? (float)rating.AverageRating : 0;
+            return c;
+        });
+
+        return Ok(result);
     }
 
     // GET: /api/Courses/withstats
@@ -61,10 +81,22 @@ public class CoursesController : ControllerBase
             })
             .ToListAsync();
 
+        // Also get review counts for each course
+        var reviewCounts = await _context.UserFeedbacks
+            .Where(f => f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .GroupBy(f => f.CourseId)
+            .Select(g => new
+            {
+                CourseId = g.Key,
+                ReviewCount = g.Count()
+            })
+            .ToListAsync();
+
         var result = courses.Select(c =>
         {
             var enrollment = enrollmentCounts.FirstOrDefault(e => e.CourseId == c.CourseId);
             var rating = courseRatings.FirstOrDefault(r => r.CourseId == c.CourseId);
+            var reviewCount = reviewCounts.FirstOrDefault(r => r.CourseId == c.CourseId);
             
             // Update the course rating property with calculated average
             c.Rating = rating != null ? (float)rating.AverageRating : 0;
@@ -72,7 +104,8 @@ public class CoursesController : ControllerBase
             return new
             {
                 course = c,
-                totalEnrollments = enrollment?.TotalEnrollments ?? 0
+                totalEnrollments = enrollment?.TotalEnrollments ?? 0,
+                totalReviews = reviewCount?.ReviewCount ?? 0
             };
         });
 
@@ -88,6 +121,13 @@ public class CoursesController : ControllerBase
             .FirstOrDefaultAsync(c => c.CourseId == id && !c.Deleted);
 
         if (course == null) return NotFound();
+
+        // Calculate average rating for this course
+        var courseRating = await _context.UserFeedbacks
+            .Where(f => f.CourseId == id && f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .AverageAsync(f => (double?)f.Rating) ?? 0;
+        
+        course.Rating = (float)courseRating;
 
         if (userId.HasValue)
         {
@@ -109,6 +149,13 @@ public class CoursesController : ControllerBase
             .FirstOrDefaultAsync(c => c.CourseId == id && !c.Deleted);
 
         if (course == null) return NotFound();
+
+        // Calculate average rating for this course
+        var courseRating = await _context.UserFeedbacks
+            .Where(f => f.CourseId == id && f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .AverageAsync(f => (double?)f.Rating) ?? 0;
+        
+        course.Rating = (float)courseRating;
 
         var tips = await _context.CourseTips
             .Where(t => t.CourseId == id && !t.Deleted)
