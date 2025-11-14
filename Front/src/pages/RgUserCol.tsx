@@ -182,9 +182,9 @@ const RgUserCol = () => {
 
     // Apply filters and sort whenever any filter changes
     useEffect(() => {
-        applyFiltersAndSort(courses);
+        applyFiltersAndSort(courses, searchTerm);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedLevels, ratingFilter, minCookingTime, maxCookingTime, sortBy]);
+    }, [selectedLevels, ratingFilter, minCookingTime, maxCookingTime, sortBy, searchTerm, courses]);
 
     // Handle filter modal
     const handleClearFilters = () => {
