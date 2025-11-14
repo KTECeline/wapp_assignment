@@ -35,23 +35,37 @@ public class ReportsController : ControllerBase
     }
 
     // GET: /api/Reports/CoursePopularity
-    // Returns courses ordered by total enrollments (uses CourseStats when available)
+    // Returns courses ordered by total enrollments (calculated from CourseUserActivities)
     [HttpGet("CoursePopularity")]
     public async Task<ActionResult<IEnumerable<object>>> GetCoursePopularity()
     {
-        var stats = await _context.CourseStats
-            .Include(s => s.Course)
-            .OrderByDescending(s => s.TotalEnrollments)
+        // Calculate enrollments from CourseUserActivities instead of CourseStats
+        // First get all courses to ensure we have course information
+        var courses = await _context.Courses.Where(c => !c.Deleted).ToListAsync();
+        var courseDict = courses.ToDictionary(c => c.CourseId, c => c.Title ?? "Unknown");
+
+        var enrollments = await _context.CourseUserActivities
+            .Where(a => a.Registered)
+            .GroupBy(a => a.CourseId)
+            .Select(g => new { courseId = g.Key, value = g.Count() })
+            .OrderByDescending(x => x.value)
             .ToListAsync();
 
-        var list = stats.Select(s => new { name = s.Course.Title, value = s.TotalEnrollments }).ToList();
-        // Fallback: if no stats, return basic course list with zero values
-        if (!list.Any())
+        // Map courseId to course name
+        var result = enrollments
+            .Select(e => new { 
+                name = courseDict.ContainsKey(e.courseId) ? courseDict[e.courseId] : "Unknown", 
+                value = e.value 
+            })
+            .ToList();
+
+        // If no enrollments, return all courses with 0 enrollments
+        if (!result.Any())
         {
-            var courses = await _context.Courses.Where(c => !c.Deleted).ToListAsync();
-            return Ok(courses.Select(c => new { name = c.Title, value = 0 }));
+            return Ok(courses.Select(c => new { name = c.Title ?? "Unknown", value = 0 }));
         }
-        return Ok(list);
+        
+        return Ok(result);
     }
 
     // GET: /api/Reports/Engagement
