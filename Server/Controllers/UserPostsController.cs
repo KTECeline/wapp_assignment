@@ -256,6 +256,19 @@ public class UserPostsController : ControllerBase
         if (post == null) return NotFound();
 
         post.ApproveStatus = "Approved";
+        
+        // If this is a course-related post, mark the course as completed for this user
+        if (post.CourseId.HasValue && post.CourseId > 0)
+        {
+            var activity = await _context.CourseUserActivities
+                .FirstOrDefaultAsync(a => a.UserId == post.UserId && a.CourseId == post.CourseId.Value);
+            
+            if (activity != null)
+            {
+                activity.Completed = true;
+            }
+        }
+        
         await _context.SaveChangesAsync();
 
         return Ok(new { success = true });

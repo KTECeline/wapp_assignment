@@ -4,7 +4,7 @@ import { CiFilter } from "react-icons/ci";
 import { TbArrowsSort } from "react-icons/tb";
 import React, { useState, useEffect } from "react";
 import VisitorLayout from "../components/VisitorLayout.tsx";
-import { IoAdd, IoShareSocialSharp } from "react-icons/io5";
+import { IoAdd } from "react-icons/io5";
 import { RxCross2 } from "react-icons/rx";
 import { getUserPosts, getLikedPosts, togglePostLike } from "../api/client.js";
 import PostForm from "../components/PostForm.tsx";
