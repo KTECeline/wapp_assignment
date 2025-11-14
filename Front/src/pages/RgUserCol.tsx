@@ -40,7 +40,7 @@ const RgUserCol = () => {
     const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
     const [ratingFilter, setRatingFilter] = useState<number | null>(null);
     const [minCookingTime, setMinCookingTime] = useState<number>(0);
-    const [maxCookingTime, setMaxCookingTime] = useState<number>(180);
+    const [maxCookingTime, setMaxCookingTime] = useState<number>(999999);
     
     // Sort state
     const [sortBy, setSortBy] = useState<string>("default");
@@ -198,7 +198,7 @@ const RgUserCol = () => {
         setSelectedLevels([]);
         setRatingFilter(null);
         setMinCookingTime(0);
-        setMaxCookingTime(180);
+        setMaxCookingTime(999999);
         setSortBy("default");
     };
 
@@ -467,18 +467,18 @@ const RgUserCol = () => {
                                             <input
                                                 type="range"
                                                 min="0"
-                                                max="180"
+                                                max="999999"
                                                 value={minCookingTime}
                                                 onChange={(e) => setMinCookingTime(Number(e.target.value))}
                                                 className="w-full accent-[#DA1A32]"
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <label className="font-inter text-[12px] text-gray-600 block mb-1">Max: {maxCookingTime}</label>
+                                            <label className="font-inter text-[12px] text-gray-600 block mb-1">Max: {maxCookingTime === 999999 ? "Unlimited" : maxCookingTime}</label>
                                             <input
                                                 type="range"
                                                 min="0"
-                                                max="180"
+                                                max="999999"
                                                 value={maxCookingTime}
                                                 onChange={(e) => setMaxCookingTime(Number(e.target.value))}
                                                 className="w-full accent-[#DA1A32]"
