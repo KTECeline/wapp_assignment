@@ -465,6 +465,24 @@ const RgUserHome = () => {
         return m === 0 ? `${h}h` : `${h}h ${m}m`;
     }
 
+    const formatTimeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (seconds < 60) return `${seconds} seconds ago`;
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes} minutes ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hours ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days} days ago`;
+        const months = Math.floor(days / 30);
+        if (months < 12) return `${months} months ago`;
+        const years = Math.floor(months / 12);
+        return `${years} years ago`;
+    };
+
     return (
         <RgUserLayout>
             {showPostForm && (
@@ -642,7 +660,7 @@ const RgUserHome = () => {
                 </div>
 
                 {/* Top Picks Container */}
-                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen"> 
+                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen">
                     {topPicksLoading ? (
                         <div className="text-center py-8">Loading top picks...</div>
                     ) : topPicks.length === 0 ? (
@@ -763,10 +781,10 @@ const RgUserHome = () => {
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
-                                                        {post.userFirstName} {post.userLastName}
+                                                        {post.userName}
                                                     </div>
                                                     <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
-                                                        {new Date(post.createdAt).toLocaleDateString()}
+                                                        {formatTimeAgo(post.createdAt)}
                                                     </div>
                                                 </div>
                                             </div>
@@ -811,7 +829,7 @@ const RgUserHome = () => {
                 </button>
             </div>
 
-            {/* Reviews - Keeping as is */}
+            {/* Reviews */}
             <div className="mt-[62px] items-center text-black flex flex-col w-full bg-[#F8F5F0] pt-[36px] pb-[62px] relative">
                 <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px]">
                     <div className="w-[16px] h-[1px] bg-[#DA1A32]" />

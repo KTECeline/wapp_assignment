@@ -78,17 +78,17 @@ const RgUserReview = () => {
                 setLoading(true);
                 const res = await fetch('/api/UserFeedbacks');
                 if (!res.ok) throw new Error("Failed to fetch reviews");
-                
+
                 const data = await res.json();
                 console.log("Fetched all feedback data:", data); // Debug log
-                
+
                 // Format the reviews data
                 const reviewsData = data
                     .filter((item: any) => item.type === "review" || item.type === "website")
                     .map((item: any) => {
                         const userInitial = item.userName ? item.userName.charAt(0).toUpperCase() : 'U';
                         const timeAgo = getTimeAgo(new Date(item.createdAt));
-                        
+
                         return {
                             id: item.id,
                             userId: item.userId,
@@ -104,7 +104,7 @@ const RgUserReview = () => {
                             timeAgo
                         };
                     });
-                
+
                 console.log("Processed reviews:", reviewsData); // Debug log
                 setReviews(reviewsData);
             } catch (err) {
@@ -130,7 +130,7 @@ const RgUserReview = () => {
                 console.error("Error fetching courses:", err);
             }
         };
-        
+
         fetchCourses();
     }, []);
 
@@ -139,7 +139,7 @@ const RgUserReview = () => {
         if (courses.length > 0 && reviews.length > 0) {
             const coursesWithAvgRating = courses.map((course: any) => {
                 // Only include course reviews (type === "review"), not website reviews
-                const courseReviews = reviews.filter(review => 
+                const courseReviews = reviews.filter(review =>
                     review.courseId === course.courseId && review.type === "review"
                 );
                 const avgRating = courseReviews.length > 0
@@ -168,14 +168,14 @@ const RgUserReview = () => {
         if (active === "All Courses") {
             // Filter courses by search term
             let filtered = coursesWithRatings;
-            
+
             if (searchTerm) {
                 filtered = filtered.filter(course =>
                     course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     course.description.toLowerCase().includes(searchTerm.toLowerCase())
                 );
             }
-            
+
             setFilteredCourses(filtered);
         } else {
             // Filter reviews
@@ -191,7 +191,7 @@ const RgUserReview = () => {
 
             // Filter by search term
             if (searchTerm) {
-                filtered = filtered.filter(review => 
+                filtered = filtered.filter(review =>
                     review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     review.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     review.userName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -269,7 +269,7 @@ const RgUserReview = () => {
     const handleReviewSave = async (review: any, isEdit: boolean) => {
         try {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-            
+
             if (!user?.userId) {
                 alert("Please login to submit a review");
                 return;
@@ -336,7 +336,7 @@ const RgUserReview = () => {
                     .map((item: any) => {
                         const userInitial = item.userName ? item.userName.charAt(0).toUpperCase() : 'U';
                         const timeAgo = getTimeAgo(new Date(item.createdAt));
-                        
+
                         return {
                             id: item.id,
                             userId: item.userId,
@@ -352,10 +352,10 @@ const RgUserReview = () => {
                             timeAgo
                         };
                     });
-                
+
                 setReviews(reviewsData);
             }
-            
+
             handleCloseReviewModal();
             alert('Review submitted successfully!');
         } catch (error) {
@@ -371,6 +371,13 @@ const RgUserReview = () => {
     };
 
     const LayoutComponent = isLoggedIn ? RgUserLayout : VisitorLayout;
+
+    function formatCookingTime(minutes: number) {
+        if (minutes < 60) return `${minutes} mins`;
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return m === 0 ? `${h}h` : `${h}h ${m}m`;
+    }
 
     return (
         <LayoutComponent>
@@ -520,7 +527,7 @@ const RgUserReview = () => {
                     <div className="mt-[22px] w-screen max-h-[522px] overflow-y-scroll no-scrollbar pb-[64px] pt-[10px]">
                         {active === "All Courses" ? (
                             /* Courses Grid */
-                            <div className="grid grid-cols-4 gap-[14px] w-[1090px] mx-auto">
+                            <div className="grid grid-cols-4 gap-x-[14px] gap-y-[48px] w-[1090px] mx-auto">
                                 {loading ? (
                                     <div className="col-span-4 text-center py-8">Loading courses...</div>
                                 ) : filteredCourses.length === 0 ? (
@@ -529,12 +536,12 @@ const RgUserReview = () => {
                                     </div>
                                 ) : (
                                     filteredCourses.map((course) => (
-                                        <div 
-                                            key={course.courseId} 
+                                        <div
+                                            key={course.courseId}
                                             onClick={() => navigate(`/RgUserCourseReview/${course.courseId}`)}
-                                            className="max-h-[297px] w-[262px] group cursor-pointer flex-shrink-0 hover:scale-105 transition-all duration-300"
+                                            className="max-h-[297px] w-[262px] group cursor-pointer"
                                         >
-                                            <img src={course.courseImg} alt={course.title} className="w-full h-[177px] object-cover rounded-lg" />
+                                            <img src={course.courseImg} alt={course.title} className="w-full h-[177px] object-cover" />
 
                                             {/* Review */}
                                             <div className="flex flex-row mt-[16px] items-center">
@@ -543,16 +550,9 @@ const RgUserReview = () => {
                                                         const fillPercentage = Math.min(Math.max(course.averageRating - index, 0), 1) * 100;
 
                                                         return (
-                                                            <div
-                                                                key={index}
-                                                                className="relative"
-                                                                style={{ width: `18px`, height: `18px` }}
-                                                            >
+                                                            <div key={index} className="relative" style={{ width: "18px", height: "18px" }}>
                                                                 <FaStar className="absolute top-0 left-0 text-gray-300" size="18px" />
-                                                                <div
-                                                                    className="absolute top-0 left-0 overflow-hidden"
-                                                                    style={{ width: `${fillPercentage}%`, height: "100%" }}
-                                                                >
+                                                                <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${fillPercentage}%`, height: "100%" }}>
                                                                     <FaStar className="text-[#DA1A32]" size="18px" />
                                                                 </div>
                                                             </div>
@@ -560,7 +560,7 @@ const RgUserReview = () => {
                                                     })}
                                                 </div>
                                                 <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                                    {course.averageRating} ({course.reviewCount} {course.reviewCount === 1 ? 'review' : 'reviews'})
+                                                    {Number(course.averageRating).toFixed(1)} ({course.reviewCount} {course.reviewCount === 1 ? "review" : "reviews"})
                                                 </div>
                                             </div>
 
@@ -574,7 +574,7 @@ const RgUserReview = () => {
                                                 <div className="flex items-center">
                                                     <img src="/images/Time.png" alt="time" className="w-[12px] h-[12px] object-cover" />
                                                     <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                                        {course.cookingTimeMin} min
+                                                        {formatCookingTime(course.cookingTimeMin)}
                                                     </div>
                                                 </div>
 
@@ -582,22 +582,20 @@ const RgUserReview = () => {
 
                                                 <div className="flex items-center">
                                                     <img src="/images/Profile.png" alt="servings" className="w-[11px] h-[11px] object-cover" />
-                                                    <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                                        {course.servings} servings
-                                                    </div>
+                                                    <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">{course.servings}</div>
+                                                    <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">servings</div>
                                                 </div>
 
                                                 <div className="h-[16px] w-[1.1px] bg-black" />
 
                                                 <div className="flex items-center">
                                                     <img src="/images/Level.png" alt="level" className="w-[14px] h-[14px] object-cover" />
-                                                    <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                                        {course.levelName}
-                                                    </div>
+                                                    <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">{course.levelName}</div>
                                                 </div>
                                             </div>
                                         </div>
                                     ))
+
                                 )}
                             </div>
                         ) : (
@@ -681,7 +679,7 @@ const RgUserReview = () => {
 
 
                     {isLoggedIn && (
-                        <button 
+                        <button
                             onClick={() => setShowReviewForm(true)}
                             className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                             <div className="font-inter text-[16px] font-light text-black">

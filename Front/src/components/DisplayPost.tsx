@@ -1,6 +1,6 @@
 import { FC, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
-import { FaHeart, FaShareAlt } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
 import { IoMdHeart } from "react-icons/io";
 import { togglePostLike } from "../api/client.js";
 
@@ -77,7 +77,7 @@ const DisplayPost: FC<DisplayPostProps> = ({ onClose, post, onLikeUpdate }) => {
         className="cursor-default relative flex flex-row bg-white rounded-[20px] shadow-lg p-[15px] w-[820px] h-[550px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ❌ Close Button */}
+        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-[12px] right-[12px] text-gray-500 hover:text-red-500 transition-all"
@@ -93,7 +93,7 @@ const DisplayPost: FC<DisplayPostProps> = ({ onClose, post, onLikeUpdate }) => {
           <IoMdHeart className={`w-[26px] h-[26px] ${isLiked ? 'text-[#FF5454]' : 'text-[#D9D9D9]'}`} />
         </button>
 
-        {/* 🖼 Left: Image Section */}
+        {/* Left: Image Section */}
         <div className="relative w-[340px] h-full rounded-[16px] overflow-hidden">
           <img src={post.postImg || "/images/Post.webp"} alt={post.title} className="w-full h-full object-cover z-0" />
           <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
@@ -102,9 +102,9 @@ const DisplayPost: FC<DisplayPostProps> = ({ onClose, post, onLikeUpdate }) => {
           </div>
         </div>
 
-        {/* 📜 Right: Content Section */}
+        {/* Right: Content Section */}
         <div className="flex flex-col justify-between w-[460px] ml-[25px]">
-          {/* 🧑 Author Info */}
+          {/* Author Info */}
           <div className="flex items-center mt-[10px] mb-[20px]">
             <div className="w-[40px] h-[40px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[18px] mr-[12px]">
               {authorInitial}
@@ -118,17 +118,17 @@ const DisplayPost: FC<DisplayPostProps> = ({ onClose, post, onLikeUpdate }) => {
             </div>
           </div>
 
-          {/* 📝 Post Title */}
+          {/* Post Title */}
           <h2 className="font-ibarra text-[22px] font-bold mb-[10px] mr-2">
             {post.title}
           </h2>
 
-          {/* 💬 Description */}
+          {/* Description */}
           <p className="font-inter text-[13.5px] text-gray-700 font-light leading-relaxed mb-[15px] text-justify  mr-2">
             {post.description}
           </p>
 
-          {/* 🔖 Hashtags */}
+          {/* Hashtags */}
           <div className="text-[12px] font-inter mt-[26px] font-light underline cursor-pointer">
             {post.courseName && (
               <span className="hover:text-[#DA1A32] transition-all duration-300 mr-2">
@@ -142,16 +142,13 @@ const DisplayPost: FC<DisplayPostProps> = ({ onClose, post, onLikeUpdate }) => {
             )}
           </div>
 
-          {/* ❤️ Reactions */}
+          {/* Reactions */}
           <div className="flex flex-row justify-between items-center mt-auto">
             <div className="flex flex-row gap-[25px]">
               <div className="flex items-center gap-[7px]">
                 <FaHeart className="text-red-500" />
                 <span className="text-[15px]">{likeCount}</span>
               </div>
-            </div>
-            <div>
-              <FaShareAlt className="text-gray-600 hover:text-blue-500 cursor-pointer" />
             </div>
           </div>
         </div>

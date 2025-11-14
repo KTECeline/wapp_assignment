@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { IoIosArrowBack, IoIosArrowForward, IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { FaStar } from "react-icons/fa";
 import { IoAdd } from "react-icons/io5";
@@ -82,7 +82,7 @@ const RgUserCourseReview = () => {
                 const response = await fetch(`/api/UserFeedbacks/course/${id}/reviews`);
                 const data = await response.json();
                 console.log("Received reviews data:", data);
-                
+
                 const reviewsData = data.map((review: any) => ({
                     feedbackId: review.feedbackId,
                     userId: review.userId,
@@ -94,7 +94,7 @@ const RgUserCourseReview = () => {
                     createdAt: review.createdAt,
                     timeAgo: getTimeAgo(review.createdAt)
                 }));
-                
+
                 console.log("Mapped reviews data:", reviewsData);
                 setReviews(reviewsData);
             } catch (error) {
@@ -181,7 +181,7 @@ const RgUserCourseReview = () => {
             // Refresh reviews
             const reviewsResponse = await fetch(`/api/UserFeedbacks/course/${id}/reviews`);
             const data = await reviewsResponse.json();
-            
+
             const reviewsData = data.map((review: any) => ({
                 feedbackId: review.feedbackId,
                 userId: review.userId,
@@ -193,7 +193,7 @@ const RgUserCourseReview = () => {
                 createdAt: review.createdAt,
                 timeAgo: getTimeAgo(review.createdAt)
             }));
-            
+
             setReviews(reviewsData);
             handleCloseReviewModal();
             addToast('Review submitted successfully!');
@@ -235,9 +235,8 @@ const RgUserCourseReview = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className={`px-4 py-2 rounded-lg shadow-lg pointer-events-auto ${
-                                t.variant === "error" ? "bg-red-500" : "bg-green-500"
-                            } text-white`}
+                            className={`px-4 py-2 rounded-lg shadow-lg pointer-events-auto ${t.variant === "error" ? "bg-red-500" : "bg-green-500"
+                                } text-white`}
                         >
                             {t.message}
                         </motion.div>
@@ -363,14 +362,19 @@ const RgUserCourseReview = () => {
                         </div>
 
                         {/* Search Input */}
-                        <div className="mt-[22px] w-full">
-                            <input
-                                type="text"
-                                placeholder="Search review..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full h-[40px] px-[20px] rounded-full border border-[#D9D9D9] text-[14px] font-inter focus:outline-none focus:border-[#DA1A32]"
-                            />
+                        <div className="font-ibarra text-[24px] font-bold flex flex-row items-center gap-[8px] w-full">
+                            <div className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px]">
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="font-inter w-[160px] bg-transparent outline-none text-black text-[16px] font-light"
+                                />
+                                <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
+                                    <IoIosSearch className="text-white w-[24px] h-[24px] " />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Course Title Label */}
@@ -453,7 +457,7 @@ const RgUserCourseReview = () => {
                     </div>
                 </div>
 
-                <button 
+                <button
                     onClick={() => {
                         if (!user?.userId) {
                             addToast("Please log in to submit a review", "error");

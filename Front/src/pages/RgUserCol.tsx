@@ -35,13 +35,13 @@ const RgUserCol = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [showSortModal, setShowSortModal] = useState(false);
-    
+
     // Filter states
     const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
     const [ratingFilter, setRatingFilter] = useState<number | null>(null);
     const [minCookingTime, setMinCookingTime] = useState<number>(0);
     const [maxCookingTime, setMaxCookingTime] = useState<number | null>(null);
-    
+
     // Sort state
     const [sortBy, setSortBy] = useState<string>("default");
 
@@ -53,7 +53,7 @@ const RgUserCol = () => {
             try {
                 setLoading(true);
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
-                
+
                 if (!user?.userId) {
                     setError("User not logged in");
                     setLoading(false);
@@ -70,7 +70,7 @@ const RgUserCol = () => {
                 }
 
                 const data = await getUserCourses(user.userId, statusFilter || undefined);
-                
+
                 // Fetch average ratings for all courses
                 const withAverageRatings = await Promise.all(
                     data.map(async (course: Course) => {
@@ -79,7 +79,7 @@ const RgUserCol = () => {
                             const avgRes = await fetch(`/api/UserFeedbacks/average/${course.courseId}`);
                             const avgText = await avgRes.text();
                             const averageRating = avgText ? parseFloat(avgText) : 0.0;
-                            
+
                             return {
                                 ...course,
                                 averageRating: averageRating
@@ -90,7 +90,7 @@ const RgUserCol = () => {
                         }
                     })
                 );
-                
+
                 setCourses(withAverageRatings);
                 setFilteredCourses(withAverageRatings);
                 setError(null);
@@ -150,7 +150,7 @@ const RgUserCol = () => {
 
         // Apply cooking time filter
         if (maxCookingTime !== null) {
-            result = result.filter(course => 
+            result = result.filter(course =>
                 course.cookingTimeMin >= minCookingTime && course.cookingTimeMin <= maxCookingTime
             );
         }
@@ -203,6 +203,13 @@ const RgUserCol = () => {
         setMaxCookingTime(null);
         setSortBy("default");
     };
+
+    function formatCookingTime(minutes: number) {
+        if (minutes < 60) return `${minutes} mins`;
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return m === 0 ? `${h}h` : `${h}h ${m}m`;
+    }
 
     return (
         <RgUserLayout>
@@ -266,7 +273,7 @@ const RgUserCol = () => {
                         </div>
 
                         <div className="flex flex-row gap-[10px]">
-                            <button 
+                            <button
                                 onClick={() => setShowFilterModal(true)}
                                 className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">
@@ -277,7 +284,7 @@ const RgUserCol = () => {
                                 </div>
                             </button>
 
-                            <button 
+                            <button
                                 onClick={() => setShowSortModal(true)}
                                 className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">
@@ -313,92 +320,89 @@ const RgUserCol = () => {
 
                     {/* Courses Container */}
                     {!loading && !error && filteredCourses.length > 0 && (
-                    <div className="mt-[32px] w-screen max-h-[512px] overflow-y-scroll no-scrollbar pb-[64px]">
-                        <div className="grid grid-cols-4 gap-x-[14px] gap-y-[48px] w-[1090px] mx-auto">
-                            {filteredCourses.map((course) => (
-                                <div key={course.courseId} className="max-h-[297px] w-[262px] group cursor-pointer" onClick={() => navigate(`/RgUserCourse/${course.courseId}`)}>
-                                    <img src={course.courseImg || "/images/Recipe.jpeg"} alt={course.title} className="w-full h-[177px] object-cover" />
+                        <div className="mt-[32px] w-screen max-h-[512px] overflow-y-scroll no-scrollbar pb-[64px]">
+                            <div className="grid grid-cols-4 gap-x-[14px] gap-y-[48px] w-[1090px] mx-auto">
+                                {filteredCourses.map((course) => (
+                                    <div key={course.courseId} className="max-h-[297px] w-[262px] group cursor-pointer" onClick={() => navigate(`/RgUserCourse/${course.courseId}`)}>
+                                        <img src={course.courseImg || "/images/Recipe.jpeg"} alt={course.title} className="w-full h-[177px] object-cover" />
 
-                                    {/* Review */}
-                                    <div className="flex flex-row mt-[16px] items-center">
-                                        <div className="flex gap-[4px]">
-                                            {[...Array(5)].map((_, index) => {
-                                                const fillPercentage = Math.min(Math.max(course.averageRating - index, 0), 1) * 100;
+                                        {/* Review */}
+                                        <div className="flex flex-row mt-[16px] items-center">
+                                            <div className="flex gap-[4px]">
+                                                {[...Array(5)].map((_, index) => {
+                                                    const fillPercentage = Math.min(Math.max(course.averageRating - index, 0), 1) * 100;
 
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="relative"
-                                                        style={{ width: `18px`, height: `18px` }}
-                                                    >
-                                                        {/* Gray star background */}
-                                                        <FaStar
-                                                            className="absolute top-0 left-0 text-gray-300"
-                                                            size="18px"
-                                                        />
-                                                        {/* Red filled star */}
+                                                    return (
                                                         <div
-                                                            className="absolute top-0 left-0 overflow-hidden"
-                                                            style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                            key={index}
+                                                            className="relative"
+                                                            style={{ width: `18px`, height: `18px` }}
                                                         >
+                                                            {/* Gray star background */}
                                                             <FaStar
-                                                                className="text-[#DA1A32]"
+                                                                className="absolute top-0 left-0 text-gray-300"
                                                                 size="18px"
                                                             />
+                                                            {/* Red filled star */}
+                                                            <div
+                                                                className="absolute top-0 left-0 overflow-hidden"
+                                                                style={{ width: `${fillPercentage}%`, height: "100%" }}
+                                                            >
+                                                                <FaStar
+                                                                    className="text-[#DA1A32]"
+                                                                    size="18px"
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
+                                                {course.averageRating > 0 ? course.averageRating.toFixed(1) : '0.0'} rating
+                                            </div>
                                         </div>
 
-                                        <div className="font-inter ml-[8px] text-[#484848] text-[12px]">
-                                            {course.averageRating > 0 ? course.averageRating.toFixed(1) : '0.0'} rating
+                                        {/* Title */}
+                                        <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
+                                            {course.title}
                                         </div>
+
+                                        {/* Details */}
+                                        <div className="flex gap-[14px] mt-[14px]">
+                                            <div className="flex items-center">
+                                                <img src="/images/Time.png" alt="time" className="w-[12px] h-[12px] object-cover" />
+                                                <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                                    {formatCookingTime(course.cookingTimeMin)}
+                                                </div>
+                                            </div>
+
+                                            <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                            <div className="flex items-center">
+                                                <img src="/images/Profile.png" alt="servings" className="w-[11px] h-[11px] object-cover" />
+                                                <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
+                                                    {course.servings}
+                                                </div>
+                                                <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
+                                                    servings
+                                                </div>
+                                            </div>
+
+                                            <div className="h-[16px] w-[1.1px] bg-black" />
+
+                                            <div className="flex items-center">
+                                                <img src="/images/Level.png" alt="level" className="w-[14px] h-[14px] object-cover" />
+                                                <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
+                                                    {course.levelName}
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
-
-                                    {/* Title */}
-                                    <div className="font-ibarra text-[18px] font-bold mt-[12px] line-clamp-2 group-hover:text-[#DA1A32] transition-all duration-300">
-                                        {course.title}
-                                    </div>
-
-                                    {/* Details */}
-                                    <div className="flex gap-[14px] mt-[14px]">
-                                        <div className="flex items-center">
-                                            <img src="/images/Time.png" alt="time" className="w-[12px] h-[12px] object-cover" />
-                                            <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                                {course.cookingTimeMin}
-                                            </div>
-                                            <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                                min
-                                            </div>
-                                        </div>
-
-                                        <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                        <div className="flex items-center">
-                                            <img src="/images/Profile.png" alt="servings" className="w-[11px] h-[11px] object-cover" />
-                                            <div className="font-inter ml-[4px] text-[#484848] text-[11px] font-light">
-                                                {course.servings}
-                                            </div>
-                                            <div className="font-inter ml-[1px] text-[#484848] text-[11px] font-light">
-                                                servings
-                                            </div>
-                                        </div>
-
-                                        <div className="h-[16px] w-[1.1px] bg-black" />
-
-                                        <div className="flex items-center">
-                                            <img src="/images/Level.png" alt="level" className="w-[14px] h-[14px] object-cover" />
-                                            <div className="font-inter ml-[6px] text-[#484848] text-[11px] font-light">
-                                                {course.levelName}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
                     )}
 
                     {/* Filter Modal */}
@@ -407,7 +411,7 @@ const RgUserCol = () => {
                             <div className="bg-white rounded-2xl w-[400px] max-h-[600px] overflow-y-auto p-6 shadow-2xl">
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="font-ibarra text-[24px] font-bold text-black">Filters</h2>
-                                    <button 
+                                    <button
                                         onClick={() => setShowFilterModal(false)}
                                         className="text-gray-500 hover:text-black transition-all"
                                     >
@@ -466,61 +470,55 @@ const RgUserCol = () => {
                                     <div className="grid grid-cols-3 gap-2">
                                         <button
                                             onClick={() => setMaxCookingTime(30)}
-                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
-                                                maxCookingTime === 30
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${maxCookingTime === 30
                                                     ? "bg-[#DA1A32] text-white"
                                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
+                                                }`}
                                         >
                                             &lt; 30 mins
                                         </button>
                                         <button
                                             onClick={() => setMaxCookingTime(60)}
-                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
-                                                maxCookingTime === 60
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${maxCookingTime === 60
                                                     ? "bg-[#DA1A32] text-white"
                                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
+                                                }`}
                                         >
                                             1 hour
                                         </button>
                                         <button
                                             onClick={() => setMaxCookingTime(120)}
-                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
-                                                maxCookingTime === 120
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${maxCookingTime === 120
                                                     ? "bg-[#DA1A32] text-white"
                                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
+                                                }`}
                                         >
                                             2 hours
                                         </button>
                                         <button
                                             onClick={() => setMaxCookingTime(180)}
-                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
-                                                maxCookingTime === 180
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${maxCookingTime === 180
                                                     ? "bg-[#DA1A32] text-white"
                                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
+                                                }`}
                                         >
                                             3 hours
                                         </button>
                                         <button
                                             onClick={() => setMaxCookingTime(240)}
-                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
-                                                maxCookingTime === 240
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${maxCookingTime === 240
                                                     ? "bg-[#DA1A32] text-white"
                                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
+                                                }`}
                                         >
                                             4 hours
                                         </button>
                                         <button
                                             onClick={() => setMaxCookingTime(999999)}
-                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${
-                                                maxCookingTime === 999999
+                                            className={`px-3 py-2 rounded-lg font-inter text-[13px] transition-all ${maxCookingTime === 999999
                                                     ? "bg-[#DA1A32] text-white"
                                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
+                                                }`}
                                         >
                                             4+ hours
                                         </button>
@@ -552,7 +550,7 @@ const RgUserCol = () => {
                             <div className="bg-white rounded-2xl w-[400px] max-h-[400px] overflow-y-auto p-6 shadow-2xl">
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="font-ibarra text-[24px] font-bold text-black">Sort By</h2>
-                                    <button 
+                                    <button
                                         onClick={() => setShowSortModal(false)}
                                         className="text-gray-500 hover:text-black transition-all"
                                     >

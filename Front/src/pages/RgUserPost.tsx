@@ -8,6 +8,7 @@ import { IoAdd, IoShareSocialSharp } from "react-icons/io5";
 import { RxCross2 } from "react-icons/rx";
 import { getUserPosts, getLikedPosts, togglePostLike } from "../api/client.js";
 import PostForm from "../components/PostForm.tsx";
+import { FaHeart} from "react-icons/fa";
 
 interface Post {
     postId: number;
@@ -172,9 +173,9 @@ const RgUserPost = () => {
 
         try {
             const result = await togglePostLike(postId, user.userId);
-            setPosts(prevPosts => 
-                prevPosts.map(post => 
-                    post.postId === postId 
+            setPosts(prevPosts =>
+                prevPosts.map(post =>
+                    post.postId === postId
                         ? { ...post, likeCount: result.likeCount, isLiked: result.isLiked }
                         : post
                 )
@@ -208,8 +209,8 @@ const RgUserPost = () => {
             }
 
             // Step 2: Create post with image URL
-            const courseId = postData.posttype === "course" && postData.course_id 
-                ? parseInt(postData.course_id) 
+            const courseId = postData.posttype === "course" && postData.course_id
+                ? parseInt(postData.course_id)
                 : null;
 
             const postPayload: any = {
@@ -316,7 +317,7 @@ const RgUserPost = () => {
                         </div>
 
                         <div className="flex flex-row gap-[10px]">
-                            <button 
+                            <button
                                 onClick={() => setShowFilterModal(true)}
                                 className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">Filter</div>
@@ -324,7 +325,7 @@ const RgUserPost = () => {
                                     <CiFilter className="text-white w-[20px] h-[20px]" />
                                 </div>
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setShowSortModal(true)}
                                 className="flex items-center justify-between h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
                                 <div className="font-inter text-[16px] font-light">Sort</div>
@@ -354,8 +355,8 @@ const RgUserPost = () => {
                         {!loading && !error && filteredPosts.length > 0 && (
                             <div className="columns-3 gap-[20px] w-[1090px] mx-auto">
                                 {filteredPosts.map((post) => (
-                                    <div 
-                                        key={post.postId} 
+                                    <div
+                                        key={post.postId}
                                         onClick={() => setSelectedPost(post)}
                                         className="cursor-pointer hover:scale-[102%] transition-all duration-[600ms] w-full h-auto bg-white flex flex-col gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] mb-4 break-inside-avoid">
                                         <img src={post.postImg || "/images/Post.webp"} alt="post" className="w-[332px] h-auto max-h-[377px] object-cover rounded-[16px] " />
@@ -375,11 +376,8 @@ const RgUserPost = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-row items-center gap-2">
-                                                    <button className="cursor-pointer flex flex-row justify-center items-center -translate-y-[2px] w-[20px] h-[20px] rounded-full bg-[#D9D9D9]">
-                                                        <IoShareSocialSharp className="w-[14px] h-[14px] text-[#4f4f4f]" />
-                                                    </button>
                                                     {user?.userId && (
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleLike(post.postId);
@@ -420,7 +418,7 @@ const RgUserPost = () => {
                     </div>
 
                     {user?.userId && (
-                        <button 
+                        <button
                             onClick={() => setShowPostForm(true)}
                             className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
                         >
@@ -432,7 +430,7 @@ const RgUserPost = () => {
                     )}
                 </div>
                 {showPostForm && user?.userId && (
-                    <PostForm 
+                    <PostForm
                         onClose={() => setShowPostForm(false)}
                         onSave={handleSavePost}
                         userId={user.userId}
@@ -446,7 +444,7 @@ const RgUserPost = () => {
                         <div className="bg-white rounded-2xl w-[400px] max-h-[600px] overflow-y-auto p-6 shadow-2xl">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="font-ibarra text-[24px] font-bold text-black">Filters</h2>
-                                <button 
+                                <button
                                     onClick={() => setShowFilterModal(false)}
                                     className="text-gray-500 hover:text-black transition-all"
                                 >
@@ -527,7 +525,7 @@ const RgUserPost = () => {
                         <div className="bg-white rounded-2xl w-[400px] max-h-[400px] overflow-y-auto p-6 shadow-2xl">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="font-ibarra text-[24px] font-bold text-black">Sort By</h2>
-                                <button 
+                                <button
                                     onClick={() => setShowSortModal(false)}
                                     className="text-gray-500 hover:text-black transition-all"
                                 >
@@ -641,129 +639,121 @@ const RgUserPost = () => {
 
                 {/* Post Zoom Modal */}
                 {selectedPost && (
-                    <div 
-                        className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+                    <div
+                        className="fixed inset-0 z-50 bg-black/60 flex justify-center items-center mt-[75px] cursor-pointer"
                         onClick={() => setSelectedPost(null)}
                     >
-                        <div 
-                            className="bg-white rounded-[24px] max-w-[600px] w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+                        <div
+                            className="cursor-default relative flex flex-row bg-white rounded-[20px] shadow-lg p-[15px] w-[820px] h-[550px]"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Close Button */}
-                            <div className="sticky top-0 flex justify-between items-center p-6 border-b bg-white rounded-t-[24px]">
-                                <h2 className="font-ibarra text-[24px] font-bold text-black">Post Details</h2>
-                                <button 
-                                    onClick={() => setSelectedPost(null)}
-                                    className="text-gray-500 hover:text-black transition-all"
+                            <button
+                                onClick={() => setSelectedPost(null)}
+                                className="absolute top-[12px] right-[12px] text-gray-500 hover:text-red-500 transition-all"
+                            >
+                                <RxCross2 size={28} />
+                            </button>
+
+                            {/* Like Button */}
+                            {user?.userId && (
+                                <button
+                                    onClick={() => {
+                                        handleLike(selectedPost.postId);
+                                        setPosts(prevPosts =>
+                                            prevPosts.map(post =>
+                                                post.postId === selectedPost.postId
+                                                    ? { ...post, isLiked: !post.isLiked, likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1 }
+                                                    : post
+                                            )
+                                        );
+                                        setFilteredPosts(prevPosts =>
+                                            prevPosts.map(post =>
+                                                post.postId === selectedPost.postId
+                                                    ? { ...post, isLiked: !post.isLiked, likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1 }
+                                                    : post
+                                            )
+                                        );
+                                        setSelectedPost(prev => prev ? { ...prev, isLiked: !prev.isLiked, likeCount: prev.isLiked ? prev.likeCount - 1 : prev.likeCount + 1 } : null);
+                                    }}
+                                    className="absolute top-[13px] right-[54px] cursor-pointer hover:scale-110 transition-all"
                                 >
-                                    <RxCross2 size={28} />
+                                    <IoMdHeart
+                                        className={`w-[26px] h-[26px] ${selectedPost.isLiked ? "text-[#FF5454]" : "text-[#D9D9D9]"}`}
+                                    />
                                 </button>
+                            )}
+
+                            {/* Left: Image Section */}
+                            <div className="relative w-[340px] h-full rounded-[16px] overflow-hidden">
+                                <img
+                                    src={selectedPost.postImg || "/images/Post.webp"}
+                                    alt={selectedPost.title}
+                                    className="w-full h-full object-cover z-0"
+                                />
+                                <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
+                                <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
+                                    <img
+                                        src={selectedPost.postImg || "/images/Post.webp"}
+                                        alt={selectedPost.title}
+                                        className="w-full object-cover"
+                                    />
+                                </div>
                             </div>
 
-                            {/* Post Content */}
-                            <div className="p-6 flex flex-col gap-6">
-                                {/* Post Image */}
-                                <img 
-                                    src={selectedPost.postImg || "/images/Post.webp"} 
-                                    alt="post" 
-                                    className="w-full h-[400px] object-cover rounded-[16px]"
-                                />
-
-                                {/* User Info */}
-                                <div className="flex flex-row gap-4 items-start">
-                                    <div className="w-[50px] h-[50px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[18px] font-bold flex-shrink-0">
+                            {/* Right: Content Section */}
+                            <div className="flex flex-col justify-between w-[460px] ml-[25px]">
+                                {/* Author Info */}
+                                <div className="flex items-center mt-[10px] mb-[20px]">
+                                    <div className="w-[40px] h-[40px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[18px] mr-[12px]">
                                         {getUserInitial(selectedPost.userFirstName, selectedPost.userLastName)}
                                     </div>
-                                    <div className="flex flex-col flex-1">
-                                        <div className="font-ibarra text-[16px] font-bold text-black">
-                                            {selectedPost.userFirstName} {selectedPost.userLastName}
-                                        </div>
-                                        <div className="font-inter text-[12px] text-gray-600">
-                                            @{selectedPost.userName}
-                                        </div>
-                                        <div className="font-inter text-[11px] text-gray-500 mt-1">
-                                            {formatTimeAgo(selectedPost.createdAt)}
-                                        </div>
+                                    <div>
+                                        <p className="text-[14.5px] font-semibold">
+                                            {selectedPost.userName}
+                                        </p>
+                                        <p className="text-[12px] text-gray-500">{formatTimeAgo(selectedPost.createdAt)}</p>
                                     </div>
                                 </div>
 
                                 {/* Post Title */}
-                                <div>
-                                    <h3 className="font-ibarra text-[22px] font-bold text-black leading-tight">
-                                        {selectedPost.title}
-                                    </h3>
-                                </div>
+                                <h2 className="font-ibarra text-[22px] font-bold mb-[10px] mr-2">
+                                    {selectedPost.title}
+                                </h2>
 
                                 {/* Post Description */}
-                                <div className="font-inter text-[14px] text-gray-800 leading-relaxed text-justify">
+                                <p className="font-inter text-[13.5px] text-gray-700 font-light leading-relaxed mb-[15px] text-justify mr-2">
                                     {selectedPost.description}
-                                </div>
+                                </p>
 
                                 {/* Hashtags */}
-                                <div className="font-inter text-[13px] text-gray-600 flex flex-wrap gap-3">
-                                    <span className="text-[#DA1A32] font-semibold cursor-pointer hover:underline">
-                                        #{selectedPost.courseName}
-                                    </span>
-                                    <span className="text-[#DA1A32] font-semibold cursor-pointer hover:underline">
-                                        #{selectedPost.categoryName}
-                                    </span>
+                                <div className="text-[12px] font-inter mt-[26px] font-light underline cursor-pointer">
+                                    {selectedPost.courseName && (
+                                        <span className="hover:text-[#DA1A32] transition-all duration-300 mr-2">
+                                            #{selectedPost.courseName}
+                                        </span>
+                                    )}
+                                    {selectedPost.categoryName && (
+                                        <span className="hover:text-[#DA1A32] transition-all duration-300">
+                                            #{selectedPost.categoryName}
+                                        </span>
+                                    )}
                                 </div>
 
-                                {/* Divider */}
-                                <div className="bg-gray-300 w-full h-[1px]" />
-
-                                {/* Like Count */}
-                                <div className="flex flex-row items-center gap-3 font-inter text-[14px]">
-                                    <IoMdHeart className="w-[24px] h-[24px] text-[#FF5454]" />
-                                    <span className="font-semibold text-black">{selectedPost.likeCount}</span>
-                                    <span className="text-gray-600">people liked this</span>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex flex-row gap-3 pt-4">
-                                    {user?.userId && (
-                                        <button 
-                                            onClick={() => {
-                                                handleLike(selectedPost.postId);
-                                                setPosts(prevPosts => 
-                                                    prevPosts.map(post => 
-                                                        post.postId === selectedPost.postId 
-                                                            ? { ...post, isLiked: !post.isLiked, likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1 }
-                                                            : post
-                                                    )
-                                                );
-                                                setFilteredPosts(prevPosts => 
-                                                    prevPosts.map(post => 
-                                                        post.postId === selectedPost.postId 
-                                                            ? { ...post, isLiked: !post.isLiked, likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1 }
-                                                            : post
-                                                    )
-                                                );
-                                                setSelectedPost(prev => prev ? { ...prev, isLiked: !prev.isLiked, likeCount: prev.isLiked ? prev.likeCount - 1 : prev.likeCount + 1 } : null);
-                                            }}
-                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#FFE5E5] text-[#DA1A32] rounded-full font-inter font-semibold text-[14px] hover:bg-[#FFCCCC] transition-all"
-                                        >
-                                            <IoMdHeart className={`w-[20px] h-[20px] ${selectedPost.isLiked ? "text-[#FF5454]" : "text-[#DA1A32]"}`} />
-                                            {selectedPost.isLiked ? "Liked" : "Like"}
-                                        </button>
-                                    )}
-                                    {!user?.userId && (
-                                        <button 
-                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 text-gray-600 rounded-full font-inter font-semibold text-[14px] cursor-not-allowed"
-                                        >
-                                            <IoMdHeart className="w-[20px] h-[20px]" />
-                                            Like
-                                        </button>
-                                    )}
-                                    <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#E8E8E8] text-[#4f4f4f] rounded-full font-inter font-semibold text-[14px] hover:bg-[#D9D9D9] transition-all">
-                                        <IoShareSocialSharp className="w-[18px] h-[18px]" />
-                                        Share
-                                    </button>
+                                {/* Reactions */}
+                                <div className="flex flex-row justify-between items-center mt-auto">
+                                    <div className="flex flex-row gap-[25px]">
+                                        <div className="flex items-center gap-[7px]">
+                                            <FaHeart className="text-red-500" />
+                                            <span className="text-[15px]">{selectedPost.likeCount}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
+
             </div>
         </Layout>
     );

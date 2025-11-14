@@ -107,14 +107,39 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
                 posttype: "normal",
                 course_id: 1,
                 postimage: null,
-                userId:1
+                userId: 1
             });
         }
     }, [isEdit, postId]);
 
     return (
         <div className="fixed top-0 left-0 w-full h-full bg-black/30 z-[100] flex items-center justify-center">
-            <div className="bg-white text-black rounded-2xl w-[500px] pt-[16px] pb-[18px] px-[18px] relative shadow-lg">
+            <style>
+                {`
+                    .scrol::-webkit-scrollbar {
+                        width: 5px;
+                        height: 5px;
+                    }
+
+                    .scrol::-webkit-scrollbar-track {
+                        background: rgba(188, 188, 188, 0.2); /* Darker transparent track */
+                        border-radius: 10px;
+                        cursor: pointer; /* Pointer cursor on track hover */
+                    }
+
+                    .scrol::-webkit-scrollbar-thumb {
+                        background: rgba(0, 0, 0, 0.2); /* Lighter thumb for contrast */
+                        border-radius: 10px;
+                        transition: background 0.3s ease-in-out;
+                        cursor: grab; /* Grab cursor for thumb */
+                    }
+
+                    .scrol::-webkit-scrollbar-thumb:active {
+                        cursor: grabbing; /* Grabbing cursor when dragging */
+                    }
+                    `}
+            </style>
+            <div className="bg-white text-black rounded-2xl w-[500px] pt-[16px] pb-[18px] px-[18px] relative shadow-lg  max-h-[610px] overflow-y-scroll scrol">
                 <button className="absolute top-3 right-3 text-black">
                     <RxCross2 size={20} onClick={onClose} className="cursor-pointer hover:text-[#eb5757] active:text-[#bf4b4b] transition-all duration-[400ms]" />
                 </button>
@@ -135,7 +160,7 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
 
                 >
                     {({ values, isSubmitting, setFieldValue, touched, errors }) => (
-                        <Form>
+                        <Form className=" ">
                             {/* Title */}
                             <div className="mb-6 relative">
                                 <div className="flex flex-row justify-between">
