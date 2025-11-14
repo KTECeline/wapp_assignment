@@ -704,7 +704,7 @@ const RgUserHome = () => {
                 </div>
 
                 <button
-                    onClick={() => navigate('/RgUserCol')}
+                    onClick={() => navigate('/RgUserLearn')}
                     className="font-inter mt-[48px] cursor-pointer mx-auto bg-white px-[22px] py-[2px] border-[1px] border-black rounded-full font-light hover:scale-105 transition-all duration-[600ms]">
                     View More
                 </button>
