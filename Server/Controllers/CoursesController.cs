@@ -13,13 +13,19 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Course>>> GetCourses()
+    public async Task<ActionResult<IEnumerable<Course>>> GetCourses([FromQuery] int? categoryId = null)
     {
-        return await _context.Courses
+        var query = _context.Courses
             .Include(c => c.Level)
             .Include(c => c.Category)
-            .Where(c => !c.Deleted)
-            .ToListAsync();
+            .Where(c => !c.Deleted);
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(c => c.CategoryId == categoryId.Value);
+        }
+
+        return await query.ToListAsync();
     }
 
     // GET: /api/Courses/withstats
