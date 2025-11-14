@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { IoIosArrowBack, IoIosArrowForward, IoIosSearch } from "react-icons/io";
+import { IoIosArrowBack, IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import { FaStar } from "react-icons/fa";
 import { IoAdd } from "react-icons/io5";
@@ -245,37 +245,7 @@ const RgUserCourseReview = () => {
             </div>
 
             <div className="max-w-screen overflow-x-hidden">
-                {/* Banner */}
-                <div
-                    className="w-full h-[200px] relative bg-fixed bg-center bg-cover"
-                    style={{ backgroundImage: `url('${course?.courseImg || '/images/Recipe.jpeg'}')` }}
-                >
-                    {/* Overlay */}
-                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[#000000]/40 to-[#000000]/0 z-10" />
-
-                    {/* Content */}
-                    <div className="absolute top-0 left-0 w-full h-full z-20">
-                        <div className="relative w-[1090px] h-full mx-auto flex items-center">
-                            <div className="font-ibarra text-[48px] max-w-[500px] leading-tight font-bold text-white">
-                                {course?.title || 'Loading...'}
-                            </div>
-
-                            <div className="font-inter absolute bottom-[54px] left-[4px] text-[10px] max-w-[500px] leading-tight font-[200] text-white flex items-center gap-[2px]">
-                                <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                    Learn
-                                </button>
-                                <IoIosArrowForward className="text-[#DA1A32] h-[18px]" />
-                                <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                    {course?.categoryName || 'Category'}
-                                </button>
-                                <IoIosArrowForward className="text-[#DA1A32] h-[18px]" />
-                                <button className="cursor-pointer uppercase hover:text-[#DA1A32] transition-all duration-[600ms]">
-                                    {course?.title || 'Course'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
 
                 <style>
                     {`
