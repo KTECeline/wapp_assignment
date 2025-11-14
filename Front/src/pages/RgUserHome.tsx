@@ -649,7 +649,7 @@ const RgUserHome = () => {
                 </div>
 
                 {/* Top Picks Container */}
-                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen overflow-x-auto scrollbar-hide">
+                <div className="mt-[32px] flex flex-row gap-[14px] max-w-screen overflow-hidden">
                     {topPicksLoading ? (
                         <div className="text-center py-8">Loading top picks...</div>
                     ) : topPicks.length === 0 ? (
