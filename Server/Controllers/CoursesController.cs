@@ -12,6 +12,9 @@ public class CoursesController : ControllerBase
         _context = context;
     }
 
+    // ========================
+    // GET: /api/Courses
+    // ========================
     [HttpGet]
     public async Task<ActionResult<IEnumerable<object>>> GetCourses([FromQuery] int? categoryId = null)
     {
@@ -27,11 +30,12 @@ public class CoursesController : ControllerBase
 
         var courses = await query.ToListAsync();
 
-        // Calculate average ratings and review counts for each course
         var courseIds = courses.Select(c => c.CourseId).ToList();
-        
+
         var reviewStats = await _context.UserFeedbacks
-            .Where(f => courseIds.Contains(f.CourseId) && f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .Where(f => courseIds.Contains(f.CourseId)
+                        && f.Type.ToLower() == "review"
+                        && f.DeletedAt == null)
             .GroupBy(f => f.CourseId)
             .Select(g => new
             {
@@ -44,6 +48,7 @@ public class CoursesController : ControllerBase
         var result = courses.Select(c =>
         {
             var stats = reviewStats.FirstOrDefault(r => r.CourseId == c.CourseId);
+
             return new
             {
                 courseId = c.CourseId,
@@ -69,8 +74,9 @@ public class CoursesController : ControllerBase
         return Ok(result);
     }
 
+    // ========================
     // GET: /api/Courses/withstats
-    // Returns courses with an added totalEnrollments property (0 when missing)
+    // ========================
     [HttpGet("withstats")]
     public async Task<ActionResult<IEnumerable<object>>> GetCoursesWithStats()
     {
@@ -80,7 +86,6 @@ public class CoursesController : ControllerBase
             .Where(c => !c.Deleted)
             .ToListAsync();
 
-        // Calculate total enrollments from CourseUserActivities
         var enrollmentCounts = await _context.CourseUserActivities
             .Where(a => a.Registered)
             .GroupBy(a => a.CourseId)
@@ -91,7 +96,6 @@ public class CoursesController : ControllerBase
             })
             .ToListAsync();
 
-        // Calculate average ratings from UserFeedbacks for each course
         var courseRatings = await _context.UserFeedbacks
             .Where(f => f.Type.ToLower() == "review" && f.DeletedAt == null)
             .GroupBy(f => f.CourseId)
@@ -102,24 +106,38 @@ public class CoursesController : ControllerBase
             })
             .ToListAsync();
 
+        var reviewCounts = await _context.UserFeedbacks
+            .Where(f => f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .GroupBy(f => f.CourseId)
+            .Select(g => new
+            {
+                CourseId = g.Key,
+                ReviewCount = g.Count()
+            })
+            .ToListAsync();
+
         var result = courses.Select(c =>
         {
             var enrollment = enrollmentCounts.FirstOrDefault(e => e.CourseId == c.CourseId);
             var rating = courseRatings.FirstOrDefault(r => r.CourseId == c.CourseId);
-            
-            // Update the course rating property with calculated average
+            var reviewCount = reviewCounts.FirstOrDefault(r => r.CourseId == c.CourseId);
+
             c.Rating = rating != null ? (float)rating.AverageRating : 0;
-            
+
             return new
             {
                 course = c,
-                totalEnrollments = enrollment?.TotalEnrollments ?? 0
+                totalEnrollments = enrollment?.TotalEnrollments ?? 0,
+                totalReviews = reviewCount?.ReviewCount ?? 0
             };
         });
 
         return Ok(result);
     }
 
+    // ========================
+    // GET: /api/Courses/{id}
+    // ========================
     [HttpGet("{id}")]
     public async Task<ActionResult<object>> GetCourse(int id, [FromQuery] int? userId = null)
     {
@@ -129,6 +147,12 @@ public class CoursesController : ControllerBase
             .FirstOrDefaultAsync(c => c.CourseId == id && !c.Deleted);
 
         if (course == null) return NotFound();
+
+        var courseRating = await _context.UserFeedbacks
+            .Where(f => f.CourseId == id && f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .AverageAsync(f => (double?)f.Rating) ?? 0;
+
+        course.Rating = (float)courseRating;
 
         if (userId.HasValue)
         {
@@ -141,6 +165,9 @@ public class CoursesController : ControllerBase
         return Ok(new { course, registered = false });
     }
 
+    // ========================
+    // GET: /api/Courses/{id}/full
+    // ========================
     [HttpGet("{id}/full")]
     public async Task<ActionResult<object>> GetCourseWithDetails(int id, [FromQuery] int? userId = null)
     {
@@ -150,6 +177,12 @@ public class CoursesController : ControllerBase
             .FirstOrDefaultAsync(c => c.CourseId == id && !c.Deleted);
 
         if (course == null) return NotFound();
+
+        var courseRating = await _context.UserFeedbacks
+            .Where(f => f.CourseId == id && f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .AverageAsync(f => (double?)f.Rating) ?? 0;
+
+        course.Rating = (float)courseRating;
 
         var tips = await _context.CourseTips
             .Where(t => t.CourseId == id && !t.Deleted)
@@ -168,20 +201,21 @@ public class CoursesController : ControllerBase
             .Where(q => q.CourseId == id && !q.Deleted)
             .ToListAsync();
 
-        // Load MCQ and DragDrop details for each question
         var questionsWithDetails = new List<object>();
+
         foreach (var q in questions)
         {
             var questionType = (q.QuestionType ?? "").ToLowerInvariant();
-            
+
+            bool IsImageUrl(string val) =>
+                !string.IsNullOrEmpty(val) &&
+                (val.StartsWith("http://") || val.StartsWith("https://") || val.StartsWith("/uploads/"));
+
             if (questionType == "mcq")
             {
                 var mcq = await _context.McqQuestions.FindAsync(q.QuestionId);
                 if (mcq != null)
                 {
-                    // Helper to determine if a value is an image URL or text
-                    var isImageUrl = (string val) => !string.IsNullOrEmpty(val) && (val.StartsWith("http://") || val.StartsWith("https://") || val.StartsWith("/uploads/"));
-                    
                     questionsWithDetails.Add(new
                     {
                         questionId = q.QuestionId,
@@ -191,22 +225,10 @@ public class CoursesController : ControllerBase
                         correctAnswer = int.TryParse(mcq.QuestionAnswer, out var answer) ? answer : 0,
                         options = new[]
                         {
-                            new { 
-                                optionText = isImageUrl(mcq.Option1) ? string.Empty : mcq.Option1, 
-                                optionImg = isImageUrl(mcq.Option1) ? mcq.Option1 : string.Empty 
-                            },
-                            new { 
-                                optionText = isImageUrl(mcq.Option2) ? string.Empty : mcq.Option2, 
-                                optionImg = isImageUrl(mcq.Option2) ? mcq.Option2 : string.Empty 
-                            },
-                            new { 
-                                optionText = isImageUrl(mcq.Option3) ? string.Empty : mcq.Option3, 
-                                optionImg = isImageUrl(mcq.Option3) ? mcq.Option3 : string.Empty 
-                            },
-                            new { 
-                                optionText = isImageUrl(mcq.Option4) ? string.Empty : mcq.Option4, 
-                                optionImg = isImageUrl(mcq.Option4) ? mcq.Option4 : string.Empty 
-                            }
+                            new { optionText = IsImageUrl(mcq.Option1) ? "" : mcq.Option1, optionImg = IsImageUrl(mcq.Option1) ? mcq.Option1 : "" },
+                            new { optionText = IsImageUrl(mcq.Option2) ? "" : mcq.Option2, optionImg = IsImageUrl(mcq.Option2) ? mcq.Option2 : "" },
+                            new { optionText = IsImageUrl(mcq.Option3) ? "" : mcq.Option3, optionImg = IsImageUrl(mcq.Option3) ? mcq.Option3 : "" },
+                            new { optionText = IsImageUrl(mcq.Option4) ? "" : mcq.Option4, optionImg = IsImageUrl(mcq.Option4) ? mcq.Option4 : "" }
                         }
                     });
                 }
@@ -216,9 +238,6 @@ public class CoursesController : ControllerBase
                 var dd = await _context.DragDropQuestions.FindAsync(q.QuestionId);
                 if (dd != null)
                 {
-                    // Helper to determine if a value is an image URL or text
-                    var isImageUrl = (string val) => !string.IsNullOrEmpty(val) && (val.StartsWith("http://") || val.StartsWith("https://") || val.StartsWith("/uploads/"));
-                    
                     questionsWithDetails.Add(new
                     {
                         questionId = q.QuestionId,
@@ -226,48 +245,23 @@ public class CoursesController : ControllerBase
                         questionType = q.QuestionType,
                         items = new[]
                         {
-                            new { 
-                                itemText = isImageUrl(dd.Item1) ? string.Empty : dd.Item1, 
-                                itemImg = isImageUrl(dd.Item1) ? dd.Item1 : string.Empty 
-                            },
-                            new { 
-                                itemText = isImageUrl(dd.Item2) ? string.Empty : dd.Item2, 
-                                itemImg = isImageUrl(dd.Item2) ? dd.Item2 : string.Empty 
-                            },
-                            new { 
-                                itemText = isImageUrl(dd.Item3) ? string.Empty : dd.Item3, 
-                                itemImg = isImageUrl(dd.Item3) ? dd.Item3 : string.Empty 
-                            },
-                            new { 
-                                itemText = isImageUrl(dd.Item4) ? string.Empty : dd.Item4, 
-                                itemImg = isImageUrl(dd.Item4) ? dd.Item4 : string.Empty 
-                            }
+                            new { itemText = IsImageUrl(dd.Item1) ? "" : dd.Item1, itemImg = IsImageUrl(dd.Item1) ? dd.Item1 : "" },
+                            new { itemText = IsImageUrl(dd.Item2) ? "" : dd.Item2, itemImg = IsImageUrl(dd.Item2) ? dd.Item2 : "" },
+                            new { itemText = IsImageUrl(dd.Item3) ? "" : dd.Item3, itemImg = IsImageUrl(dd.Item3) ? dd.Item3 : "" },
+                            new { itemText = IsImageUrl(dd.Item4) ? "" : dd.Item4, itemImg = IsImageUrl(dd.Item4) ? dd.Item4 : "" }
                         },
                         options = new[]
                         {
-                            new { 
-                                optionText = isImageUrl(dd.Option1) ? string.Empty : dd.Option1, 
-                                optionImg = isImageUrl(dd.Option1) ? dd.Option1 : string.Empty 
-                            },
-                            new { 
-                                optionText = isImageUrl(dd.Option2) ? string.Empty : dd.Option2, 
-                                optionImg = isImageUrl(dd.Option2) ? dd.Option2 : string.Empty 
-                            },
-                            new { 
-                                optionText = isImageUrl(dd.Option3) ? string.Empty : dd.Option3, 
-                                optionImg = isImageUrl(dd.Option3) ? dd.Option3 : string.Empty 
-                            },
-                            new { 
-                                optionText = isImageUrl(dd.Option4) ? string.Empty : dd.Option4, 
-                                optionImg = isImageUrl(dd.Option4) ? dd.Option4 : string.Empty 
-                            }
+                            new { optionText = IsImageUrl(dd.Option1) ? "" : dd.Option1, optionImg = IsImageUrl(dd.Option1) ? dd.Option1 : "" },
+                            new { optionText = IsImageUrl(dd.Option2) ? "" : dd.Option2, optionImg = IsImageUrl(dd.Option2) ? dd.Option2 : "" },
+                            new { optionText = IsImageUrl(dd.Option3) ? "" : dd.Option3, optionImg = IsImageUrl(dd.Option3) ? dd.Option3 : "" },
+                            new { optionText = IsImageUrl(dd.Option4) ? "" : dd.Option4, optionImg = IsImageUrl(dd.Option4) ? dd.Option4 : "" }
                         }
                     });
                 }
             }
             else
             {
-                // Unknown type or no details, just return basic question
                 questionsWithDetails.Add(new
                 {
                     questionId = q.QuestionId,
@@ -297,10 +291,12 @@ public class CoursesController : ControllerBase
         });
     }
 
+    // ========================
+    // POST: /api/Courses
+    // ========================
     [HttpPost]
     public async Task<ActionResult<Course>> CreateCourse(Course course)
     {
-        // Validate that LevelId and CategoryId exist
         var levelExists = await _context.Levels.AnyAsync(l => l.LevelId == course.LevelId && !l.Deleted);
         var categoryExists = await _context.Categories.AnyAsync(c => c.CategoryId == course.CategoryId && !c.Deleted);
 
@@ -316,14 +312,12 @@ public class CoursesController : ControllerBase
 
         course.Deleted = false;
 
-        // Clear navigation properties to avoid validation issues
         course.Level = null!;
         course.Category = null!;
 
         _context.Courses.Add(course);
         await _context.SaveChangesAsync();
 
-        // Reload with navigation properties
         var createdCourse = await _context.Courses
             .Include(c => c.Level)
             .Include(c => c.Category)
@@ -332,6 +326,9 @@ public class CoursesController : ControllerBase
         return CreatedAtAction(nameof(GetCourse), new { id = course.CourseId }, createdCourse);
     }
 
+    // ========================
+    // PUT: /api/Courses/{id}
+    // ========================
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCourse(int id, Course update)
     {
@@ -353,6 +350,9 @@ public class CoursesController : ControllerBase
         return Ok(course);
     }
 
+    // ========================
+    // DELETE: /api/Courses/{id}
+    // ========================
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCourse(int id)
     {
@@ -363,5 +363,4 @@ public class CoursesController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
-
 }

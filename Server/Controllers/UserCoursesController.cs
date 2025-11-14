@@ -51,30 +51,54 @@ public class UserCoursesController : ControllerBase
             }
         }
 
-        var userCourses = await query
-            .Select(a => new
+        var userCourses = await query.ToListAsync();
+
+        // Calculate average ratings from UserFeedbacks for each course
+        var courseRatings = await _context.UserFeedbacks
+            .Where(f => f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .GroupBy(f => f.CourseId)
+            .Select(g => new
             {
-                courseId = a.Course!.CourseId,
-                title = a.Course.Title,
-                description = a.Course.Description,
-                rating = a.Course.Rating,
-                courseImg = a.Course.CourseImg,
-                cookingTimeMin = a.Course.CookingTimeMin,
-                servings = a.Course.Servings,
-                video = a.Course.Video,
-                levelId = a.Course.LevelId,
-                levelName = a.Course.Level != null ? a.Course.Level.Title : "",
-                bookmark = a.Bookmark,
-                quizStatus = a.QuizStatus,
-                quizProgress = a.QuizProgress,
-                badgeImg = a.Course.BadgeImg,
-                quizBadgeImg = a.Course.QuizBadgeImg,
-                completed = a.Completed,
-                quizTotalTime = a.QuizTotalTime
+                CourseId = g.Key,
+                AverageRating = g.Average(f => f.Rating)
             })
             .ToListAsync();
 
-        return Ok(userCourses);
+        // Also get review counts for each course
+        var reviewCounts = await _context.UserFeedbacks
+            .Where(f => f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .GroupBy(f => f.CourseId)
+            .Select(g => new
+            {
+                CourseId = g.Key,
+                ReviewCount = g.Count()
+            })
+            .ToListAsync();
+
+        var result = userCourses.Select(a => new
+        {
+            courseId = a.Course!.CourseId,
+            title = a.Course.Title,
+            description = a.Course.Description,
+            rating = courseRatings.FirstOrDefault(r => r.CourseId == a.Course.CourseId)?.AverageRating ?? 0,
+            totalReviews = reviewCounts.FirstOrDefault(r => r.CourseId == a.Course.CourseId)?.ReviewCount ?? 0,
+            courseImg = a.Course.CourseImg,
+            cookingTimeMin = a.Course.CookingTimeMin,
+            servings = a.Course.Servings,
+            video = a.Course.Video,
+            levelId = a.Course.LevelId,
+            levelName = a.Course.Level != null ? a.Course.Level.Title : "",
+            bookmark = a.Bookmark,
+            quizStatus = a.QuizStatus,
+            quizProgress = a.QuizProgress,
+            badgeImg = a.Course.BadgeImg,
+            quizBadgeImg = a.Course.QuizBadgeImg,
+            completed = a.Completed,
+            quizTotalTime = a.QuizTotalTime
+        })
+        .ToList();
+
+        return Ok(result);
     }
 
     /// <summary>
@@ -92,12 +116,17 @@ public class UserCoursesController : ControllerBase
         if (activity == null)
             return NotFound(new { message = "User course activity not found" });
 
+        // Calculate average rating for this course
+        var courseRating = await _context.UserFeedbacks
+            .Where(f => f.CourseId == courseId && f.Type.ToLower() == "review" && f.DeletedAt == null)
+            .AverageAsync(f => (double?)f.Rating) ?? 0;
+
         var result = new
         {
             courseId = activity.Course?.CourseId ?? 0,
             title = activity.Course?.Title ?? "",
             description = activity.Course?.Description ?? "",
-            rating = activity.Course?.Rating ?? 0,
+            rating = courseRating,
             courseImg = activity.Course?.CourseImg ?? "",
             cookingTimeMin = activity.Course?.CookingTimeMin,
             servings = activity.Course?.Servings,

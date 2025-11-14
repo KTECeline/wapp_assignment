@@ -1,4 +1,3 @@
-import { IoIosSearch } from "react-icons/io";
 import RgUserLayout from "../components/RgUserLayout.tsx";
 import VisitorLayout from "../components/VisitorLayout.tsx";
 import { useNavigate } from "react-router-dom";
@@ -27,17 +26,6 @@ const RgUserLearn = () => {
                 <p className="font-ibarra font-bold text-black text-[36px] pt-[50px]">
                     What do you want to <span className="text-[#DA1A32]">learn</span>?
                 </p>
-
-                <div className="flex items-center justify-between w-[666px] h-[48px] bg-white border border-black rounded-full pr-[4px] pl-[22px] mt-[28px]">
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="font-inter flex-1 bg-transparent outline-none text-black text-[16px] font-light"
-                    />
-                    <div className="w-[38px] h-[38px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] cursor-pointer ml-[20px]">
-                        <IoIosSearch className="text-white w-[24px] h-[24px] " />
-                    </div>
-                </div>
 
                 {/* Category container */}
                 <div className="grid grid-cols-3 gap-x-[20px] gap-y-[44px] mt-[88px]">
