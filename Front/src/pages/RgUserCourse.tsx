@@ -12,6 +12,7 @@ import { startQuiz } from "../components/QuizManager.tsx";
 import jsPDF from "jspdf";
 import PostForm from "../components/PostForm.tsx";
 import DisplayPost from "../components/DisplayPost.tsx";
+import DisplayReview from "../components/DisplayReview.tsx";
 
 interface Course {
     courseId: number;
@@ -66,10 +67,14 @@ interface CourseStep {
 }
 
 interface Review {
+    id: number;
     feedbackId: number;
     userId: number;
     userName: string;
     userInitial: string;
+    type: string;
+    courseId: number;
+    courseTitle: string;
     rating: number;
     title: string;
     description: string;
@@ -220,6 +225,8 @@ const RgUserCourse = () => {
     const [showPostForm, setShowPostForm] = useState(false);
     const [showPostView, setShowPostView] = useState(false);
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+    const [showReviewView, setShowReviewView] = useState(false);
+    const [selectedReview, setSelectedReview] = useState<Review | null>(null);
 
     // Review form states
     const [showReviewModal, setShowReviewModal] = useState(false);
@@ -1288,7 +1295,13 @@ const RgUserCourse = () => {
                             </div>
                         ) : (
                             reviews.slice(0, 3).map((review) => (
-                                <div key={review.feedbackId} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0">
+                                <button
+                                    key={review.feedbackId}
+                                    onClick={() => {
+                                        setSelectedReview(review);
+                                        setShowReviewView(true);
+                                    }}
+                                    className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] flex-shrink-0 cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left">
                                     <div className="flex flex-row justify-between items-center">
                                         {/* Profile and time */}
                                         <div className="flex flex-row gap-[6px]">
@@ -1345,7 +1358,7 @@ const RgUserCourse = () => {
                                             );
                                         })}
                                     </div>
-                                </div>
+                                </button>
                             ))
                         )}
                     </div>
@@ -1443,6 +1456,14 @@ const RgUserCourse = () => {
                     onClose={() => setShowPostView(false)}
                     post={selectedPost}
                     onLikeUpdate={handlePostLikeUpdate}
+                />
+            )}
+
+            {/* Review View Modal */}
+            {showReviewView && selectedReview && (
+                <DisplayReview
+                    onClose={() => setShowReviewView(false)}
+                    review={selectedReview}
                 />
             )}
 

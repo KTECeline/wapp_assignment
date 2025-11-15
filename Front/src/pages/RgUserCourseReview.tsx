@@ -5,13 +5,18 @@ import RgUserLayout from "../components/RgUserLayout.tsx";
 import { FaStar } from "react-icons/fa";
 import { IoAdd } from "react-icons/io5";
 import ReviewForm from "../components/ReviewForm.tsx";
+import DisplayReview from "../components/DisplayReview.tsx";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface Review {
+    id: number;
     feedbackId: number;
     userId: number;
     userName: string;
     userInitial: string;
+    type: string;
+    courseId: number;
+    courseTitle: string;
     rating: number;
     title: string;
     description: string;
@@ -37,6 +42,8 @@ const RgUserCourseReview = () => {
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [isReviewEdit, setIsReviewEdit] = useState(false);
     const [reviewId, setReviewId] = useState<number | null>(null);
+    const [showReviewView, setShowReviewView] = useState(false);
+    const [selectedReview, setSelectedReview] = useState<Review | null>(null);
     const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
 
     const addToast = (message: string, variant: "success" | "error" = "success") => {
@@ -84,15 +91,19 @@ const RgUserCourseReview = () => {
                 console.log("Received reviews data:", data);
 
                 const reviewsData = data.map((review: any) => ({
+                    id: review.id || review.feedbackId,
                     feedbackId: review.feedbackId,
                     userId: review.userId,
                     userName: review.userName || "Anonymous",
-                    userInitial: (review.userName || "A").charAt(0).toUpperCase(),
+                    userInitial: review.userInitial || (review.userName || "A").charAt(0).toUpperCase(),
+                    type: review.type || "review",
+                    courseId: review.courseId,
+                    courseTitle: review.courseTitle || "Unknown Course",
                     rating: review.rating,
                     title: review.title,
                     description: review.description,
                     createdAt: review.createdAt,
-                    timeAgo: getTimeAgo(review.createdAt)
+                    timeAgo: review.timeAgo || getTimeAgo(review.createdAt)
                 }));
 
                 console.log("Mapped reviews data:", reviewsData);
@@ -365,7 +376,13 @@ const RgUserCourseReview = () => {
                                     </div>
                                 ) : (
                                     filteredReviews.map((review) => (
-                                        <div key={review.feedbackId} className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px]">
+                                        <button
+                                            key={review.feedbackId}
+                                            onClick={() => {
+                                                setSelectedReview(review);
+                                                setShowReviewView(true);
+                                            }}
+                                            className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left">
                                             <div className="flex flex-row justify-between items-center">
                                                 <div className="flex flex-row gap-[6px]">
                                                     <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
@@ -419,13 +436,21 @@ const RgUserCourseReview = () => {
                                                     );
                                                 })}
                                             </div>
-                                        </div>
+                                        </button>
                                     ))
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Review View Modal */}
+                {showReviewView && selectedReview && (
+                    <DisplayReview
+                        onClose={() => setShowReviewView(false)}
+                        review={selectedReview}
+                    />
+                )}
 
                 <button
                     onClick={() => {

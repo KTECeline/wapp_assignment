@@ -193,18 +193,23 @@ public class UserFeedbacksController : ControllerBase
     {
         var reviews = await _context.UserFeedbacks
             .Include(f => f.User)
+            .Include(f => f.Course)
             .Where(f => f.CourseId == courseId && f.DeletedAt == null && f.Type.ToLower() == "review")
             .OrderByDescending(f => f.CreatedAt)
             .ToListAsync();
 
         var result = reviews.Select(f => new
         {
+            id = f.FeedbackId,
             feedbackId = f.FeedbackId,
             userId = f.UserId,
             userName = f.User != null ? $"{f.User.FirstName} {f.User.LastName}".Trim() : "Anonymous",
             userInitial = f.User != null && !string.IsNullOrEmpty(f.User.FirstName) 
                 ? f.User.FirstName[0].ToString().ToUpper() 
                 : "A",
+            type = f.Type,
+            courseId = f.CourseId,
+            courseTitle = f.Course?.Title ?? "Unknown Course",
             rating = f.Rating,
             title = f.Title,
             description = f.Description,
