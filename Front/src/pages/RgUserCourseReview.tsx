@@ -14,6 +14,7 @@ interface Review {
     userId: number;
     userName: string;
     userInitial: string;
+    userProfileImg: string;
     type: string;
     courseId: number;
     courseTitle: string;
@@ -96,6 +97,7 @@ const RgUserCourseReview = () => {
                     userId: review.userId,
                     userName: review.userName || "Anonymous",
                     userInitial: review.userInitial || (review.userName || "A").charAt(0).toUpperCase(),
+                    userProfileImg: review.userProfileImg || '',
                     type: review.type || "review",
                     courseId: review.courseId,
                     courseTitle: review.courseTitle || "Unknown Course",
@@ -198,6 +200,7 @@ const RgUserCourseReview = () => {
                 userId: review.userId,
                 userName: review.userName || "Anonymous",
                 userInitial: (review.userName || "A").charAt(0).toUpperCase(),
+                userProfileImg: review.userProfileImg || '',
                 rating: review.rating,
                 title: review.title,
                 description: review.description,
@@ -385,8 +388,12 @@ const RgUserCourseReview = () => {
                                             className="w-[350px] h-[153px] bg-white flex flex-col p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] cursor-pointer hover:scale-[105%] transition-all duration-[600ms] text-left">
                                             <div className="flex flex-row justify-between items-center">
                                                 <div className="flex flex-row gap-[6px]">
-                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                        {review.userInitial}
+                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] overflow-hidden">
+                                                        {review.userProfileImg ? (
+                                                            <img src={review.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                                        ) : (
+                                                            <span>{review.userInitial}</span>
+                                                        )}
                                                     </div>
 
                                                     <div className="flex flex-col">

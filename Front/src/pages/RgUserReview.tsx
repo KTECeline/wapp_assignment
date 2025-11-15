@@ -13,6 +13,7 @@ interface Review {
     userId: number;
     userName: string;
     userInitial: string;
+    userProfileImg: string;
     type: string;
     courseId: number;
     courseTitle: string;
@@ -94,6 +95,7 @@ const RgUserReview = () => {
                             userId: item.userId,
                             userName: item.userName || 'Anonymous',
                             userInitial,
+                            userProfileImg: item.userProfileImg || '',
                             type: item.type,
                             courseId: item.courseId,
                             courseTitle: item.courseTitle || 'Website Review',
@@ -342,6 +344,7 @@ const RgUserReview = () => {
                             userId: item.userId,
                             userName: item.userName || 'Anonymous',
                             userInitial,
+                            userProfileImg: item.userProfileImg || '',
                             type: item.type,
                             courseId: item.courseId,
                             courseTitle: item.courseTitle || 'Website Review',
@@ -619,8 +622,12 @@ const RgUserReview = () => {
                                         >
                                             <div className="flex flex-row justify-between items-center">
                                                 <div className="flex flex-row gap-[6px]">
-                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                        {review.userInitial}
+                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] overflow-hidden">
+                                                        {review.userProfileImg ? (
+                                                            <img src={review.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                                        ) : (
+                                                            <span>{review.userInitial}</span>
+                                                        )}
                                                     </div>
 
                                                     <div className="flex flex-col">

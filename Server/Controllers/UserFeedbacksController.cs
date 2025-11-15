@@ -28,6 +28,7 @@ public class UserFeedbacksController : ControllerBase
             userId = f.UserId,
             userName = f.User != null ? $"{f.User.FirstName} {f.User.LastName}".Trim() : null,
             userEmail = f.User?.Email,
+            userProfileImg = f.User?.ProfileImg ?? "",
             type = f.Type,
             courseId = f.CourseId,
             courseTitle = f.Course?.Title,
@@ -98,6 +99,7 @@ public class UserFeedbacksController : ControllerBase
             userId = f.UserId,
             userName = f.User != null ? $"{f.User.FirstName} {f.User.LastName}".Trim() : null,
             userEmail = f.User?.Email,
+            userProfileImg = f.User?.ProfileImg ?? "",
             type = f.Type,
             courseId = f.CourseId,
             courseTitle = f.Course?.Title,
@@ -207,6 +209,7 @@ public class UserFeedbacksController : ControllerBase
             userInitial = f.User != null && !string.IsNullOrEmpty(f.User.FirstName) 
                 ? f.User.FirstName[0].ToString().ToUpper() 
                 : "A",
+            userProfileImg = f.User?.ProfileImg ?? "",
             type = f.Type,
             courseId = f.CourseId,
             courseTitle = f.Course?.Title ?? "Unknown Course",

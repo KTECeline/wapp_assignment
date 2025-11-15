@@ -16,7 +16,8 @@ interface Post {
     userName: string;
     userFirstName: string;
     userLastName: string;
-    type: string;
+    userProfileImg: string;
+    title: string;
     courseId: number;
     courseName: string;
     categoryName: string;
@@ -363,8 +364,12 @@ const RgUserPost = () => {
                                         <div className="flex flex-col w-full px-[6px]">
                                             <div className="flex flex-row justify-between items-center">
                                                 <div className="flex flex-row gap-[6px]">
-                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                        {getUserInitial(post.userFirstName, post.userLastName)}
+                                                    <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] overflow-hidden">
+                                                        {post.userProfileImg ? (
+                                                            <img src={post.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                                        ) : (
+                                                            <span>{getUserInitial(post.userFirstName, post.userLastName)}</span>
+                                                        )}
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
@@ -705,8 +710,12 @@ const RgUserPost = () => {
                             <div className="flex flex-col justify-between w-[460px] ml-[25px]">
                                 {/* Author Info */}
                                 <div className="flex items-center mt-[10px] mb-[20px]">
-                                    <div className="w-[40px] h-[40px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[18px] mr-[12px]">
-                                        {getUserInitial(selectedPost.userFirstName, selectedPost.userLastName)}
+                                    <div className="w-[40px] h-[40px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[18px] mr-[12px] overflow-hidden">
+                                        {selectedPost.userProfileImg ? (
+                                            <img src={selectedPost.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                        ) : (
+                                            <span>{getUserInitial(selectedPost.userFirstName, selectedPost.userLastName)}</span>
+                                        )}
                                     </div>
                                     <div>
                                         <p className="text-[14.5px] font-semibold">

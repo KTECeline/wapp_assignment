@@ -16,6 +16,7 @@ interface Post {
     userFirstName: string;
     userLastName: string;
     userInitial: string;
+    userProfileImg: string;
     type: string;
     title: string;
     description: string;
@@ -335,8 +336,12 @@ const RgUserCoursePost = () => {
                                             <div className="flex flex-col w-full px-[6px]">
                                                 <div className="flex flex-row justify-between items-center">
                                                     <div className="flex flex-row gap-[6px]">
-                                                        <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                            {post.userFirstName?.charAt(0) || 'U'}
+                                                        <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] overflow-hidden">
+                                                            {post.userProfileImg ? (
+                                                                <img src={post.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                                            ) : (
+                                                                <span>{post.userFirstName?.charAt(0) || 'U'}</span>
+                                                            )}
                                                         </div>
                                                         <div className="flex flex-col">
                                                             <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
