@@ -4,7 +4,7 @@ import * as Yup from "yup";
 import { RxCross2 } from "react-icons/rx";
 import IconLoading from "./IconLoading.tsx";
 import DropUpload from "./DropUpload.tsx";
-import { getCourses } from "../api/client.js";
+import { getUserCourses } from "../api/client.js";
 
 type Post = {
     id: string;
@@ -54,19 +54,20 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
             }),
     });
 
-    // 🧠 Fetch courses from backend
+    // 🧠 Fetch only enrolled courses from backend
     useEffect(() => {
-        if (from === "home") {
-            const fetchCoursesFromBackend = async () => {
+        if (from === "home" && userId) {
+            const fetchEnrolledCourses = async () => {
                 try {
-                    const data = await getCourses();
+                    // Fetch only courses where user is registered (enrolled)
+                    const data = await getUserCourses(userId);
                     setCourses(data || []);
                 } catch (err) {
-                    console.error("Error fetching courses:", err);
+                    console.error("Error fetching enrolled courses:", err);
                     setCourses([]);
                 }
             };
-            fetchCoursesFromBackend();
+            fetchEnrolledCourses();
         }
     }, [from, userId]);
 

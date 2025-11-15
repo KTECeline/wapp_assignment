@@ -236,6 +236,18 @@ public class UserPostsController : ControllerBase
             return BadRequest(new { message = "CourseId is required when post type is 'course'" });
         }
 
+        // Validate that user is enrolled in the course before allowing them to post about it
+        if (request.Type.ToLower() == "course" && request.CourseId.HasValue)
+        {
+            var isEnrolled = await _context.CourseUserActivities
+                .AnyAsync(a => a.UserId == request.UserId && a.CourseId == request.CourseId.Value && a.Registered == true);
+            
+            if (!isEnrolled)
+            {
+                return BadRequest(new { message = "You must be enrolled in this course to post about it" });
+            }
+        }
+
         var userPost = new UserPost
         {
             UserId = request.UserId,
@@ -263,13 +275,14 @@ public class UserPostsController : ControllerBase
 
         post.ApproveStatus = "Approved";
         
-        // If this is a course-related post, mark the course as completed for this user
+        // If this is a course-related post, check if user completed quiz, then mark course as completed
         if (post.CourseId.HasValue && post.CourseId > 0)
         {
             var activity = await _context.CourseUserActivities
                 .FirstOrDefaultAsync(a => a.UserId == post.UserId && a.CourseId == post.CourseId.Value);
             
-            if (activity != null)
+            // Only mark as completed if quiz is completed AND post is approved
+            if (activity != null && !string.IsNullOrEmpty(activity.QuizStatus) && activity.QuizStatus.ToLower() == "completed")
             {
                 activity.Completed = true;
             }
