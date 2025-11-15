@@ -230,6 +230,12 @@ public class UserPostsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<UserPost>> CreateUserPost([FromBody] CreateUserPostRequest request)
     {
+        // Validate that if Type is "course", CourseId must be provided
+        if (request.Type.ToLower() == "course" && (!request.CourseId.HasValue || request.CourseId.Value <= 0))
+        {
+            return BadRequest(new { message = "CourseId is required when post type is 'course'" });
+        }
+
         var userPost = new UserPost
         {
             UserId = request.UserId,

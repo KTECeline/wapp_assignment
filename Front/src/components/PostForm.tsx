@@ -36,6 +36,13 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
         title: Yup.string().required("Required"),
         description: Yup.string().required("Required"),
         posttype: Yup.string().required("Required"),
+        course_id: Yup.number()
+            .nullable()
+            .when("posttype", {
+                is: "course",
+                then: (schema) => schema.required("Please select a course").typeError("Please select a course"),
+                otherwise: (schema) => schema.notRequired()
+            }),
         postimage: Yup.mixed()
             .required("Required")
             .test("fileSize", "Image size is too large! (Max 32MB)", (value) => {
@@ -253,10 +260,14 @@ const PostForm: FC<PostFormProps> = ({ onClose, onSave, isEdit = false, postId, 
 
                                 {postType === "course" && from !== "course" && (
                                     <div className="mb-6 relative">
+                                        <label htmlFor="course_id" className="block text-sm font-medium mb-[5px] ml-[2px] text-black mt-3">
+                                            Select Course
+                                        </label>
                                         <Field
                                             as="select"
+                                            id="course_id"
                                             name="course_id"
-                                            className="mt-3 border border-black bg-white rounded-[8px] px-[10px] py-[8px] text-black cursor-pointer w-full sm:text-sm focus:outline-none focus:ring-0"
+                                            className={`border bg-white rounded-[8px] px-[10px] py-[8px] text-black cursor-pointer w-full sm:text-sm focus:outline-none focus:ring-0 ${errors.course_id && touched.course_id ? "border-red-300" : "border-black"}`}
                                         >
                                             <option value="">Select Course</option>
                                             {courses.map((c) => (
