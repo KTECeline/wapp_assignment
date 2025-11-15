@@ -7,12 +7,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import PostForm from "../components/PostForm.tsx";
+import DisplayPost from "../components/DisplayPost.tsx";
 
 interface Post {
     postId: number;
     userId: number;
     userName: string;
+    userFirstName: string;
+    userLastName: string;
     userInitial: string;
+    type: string;
     title: string;
     description: string;
     postImg: string;
@@ -75,6 +79,8 @@ const RgUserCoursePost = () => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [showPostForm, setShowPostForm] = useState(false);
+    const [showPostView, setShowPostView] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
     useEffect(() => {
         if (!id) return;
@@ -98,6 +104,35 @@ const RgUserCoursePost = () => {
                 setLoading(false);
             });
     }, [id]);
+
+    const formatTimeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (seconds < 60) return `${seconds}s ago`;
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        const months = Math.floor(days / 30);
+        if (months < 12) return `${months}mo ago`;
+        const years = Math.floor(months / 12);
+        return `${years}y ago`;
+    };
+
+    const handlePostLikeUpdate = (postId: number, likeCount: number, isLiked: boolean) => {
+        setPosts(prevPosts =>
+            prevPosts.map(post =>
+                post.postId === postId ? { ...post, likeCount, isLiked } : post
+            )
+        );
+        if (selectedPost && selectedPost.postId === postId) {
+            setSelectedPost({ ...selectedPost, likeCount, isLiked });
+        }
+    };
 
     const handlePostLike = async (postId: number) => {
         if (!user?.userId) {
@@ -281,64 +316,59 @@ const RgUserCoursePost = () => {
                                     </div>
                                 ) : (
                                     posts.map((post) => (
-                                        <div key={post.postId} className="cursor-pointer hover:scale-[102%] transition-all duration-[600ms] w-full h-auto bg-white flex flex-col gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] mb-4 break-inside-avoid">
-                                            <div className="relative w-full h-auto rounded-[16px] overflow-hidden">
-                                                <img src={post.postImg || "/images/Post.webp"} alt="post" className="w-full h-auto max-h-[377px] object-cover z-0" />
-                                                <div className="absolute top-0 left-0 w-full h-full bg-[#fefefe]/20 backdrop-blur-[12px] z-10" />
-                                                <div className="absolute top-0 left-0 w-full h-full flex items-center z-20">
-                                                    <img src={post.postImg || "/images/Post.webp"} alt="post" className="w-full object-cover" />
-                                                </div>
+                                        <button
+                                            key={post.postId}
+                                            onClick={() => {
+                                                setSelectedPost(post);
+                                                setShowPostView(true);
+                                            }}
+                                            className="text-left cursor-pointer hover:scale-[102%] transition-all duration-[600ms] w-full h-auto bg-white flex flex-col gap-[16px] p-[10px] shadow-[0px_0px_20px_rgba(0,0,0,0.1)] rounded-[20px] mb-4 break-inside-avoid">
+                                            <div className="relative w-full h-auto rounded-[16px] overflow-hidden bg-gray-200">
+                                                <img
+                                                    src={post.postImg || "/images/Post.webp"}
+                                                    alt={post.title}
+                                                    className="w-full h-auto max-h-[377px] object-cover"
+                                                    onError={(e) => { e.currentTarget.src = "/images/Post.webp"; }}
+                                                />
                                             </div>
 
                                             <div className="flex flex-col w-full px-[6px]">
                                                 <div className="flex flex-row justify-between items-center">
-                                                    {/* Profile and time */}
                                                     <div className="flex flex-row gap-[6px]">
                                                         <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px]">
-                                                            {post.userInitial}
+                                                            {post.userFirstName?.charAt(0) || 'U'}
                                                         </div>
-
                                                         <div className="flex flex-col">
                                                             <div className="font-inter text-[10px] line-clamp-1 max-w-[64px]">
                                                                 {post.userName}
                                                             </div>
-
                                                             <div className="font-inter font-light text-[7px] line-clamp-1 max-w-[64px]">
-                                                                {post.timeAgo}
+                                                                {formatTimeAgo(post.createdAt)}
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div className="flex flex-row items-center gap-2">
-                                                        {/* Share button */}
                                                         <button className="cursor-pointer flex flex-row justify-center items-center -translate-y-[2px] w-[20px] h-[20px] rounded-full bg-[#D9D9D9]">
                                                             <IoShareSocialSharp className="w-[14px] h-[14px] text-[#4f4f4f]" />
                                                         </button>
-
-                                                        {/* Like button */}
-                                                        <button className="cursor-pointer flex flex-row justify-center -translate-y-[2px]" onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handlePostLike(post.postId);
-                                                        }}>
+                                                        <button className="cursor-pointer flex flex-row justify-center -translate-y-[2px]">
                                                             <IoMdHeart className={`w-[25px] h-[25px] ${post.isLiked ? 'text-[#FF5454]' : 'text-[#D9D9D9]'}`} />
                                                         </button>
                                                     </div>
                                                 </div>
 
-                                                {/* Post title */}
                                                 <div className="font-ibarra mt-[16px] line-clamp-3 text-[16px] font-bold leading-tight">
                                                     {post.title}
                                                 </div>
 
-                                                {/* Post Description */}
                                                 <div className="font-inter mt-[12px] line-clamp-5 text-[10px] font-light text-justify">
                                                     {post.description}
                                                 </div>
 
-                                                {/* Hashtags, Course Name and Category */}
                                                 <div className="font-inter mt-[16px] line-clamp-4 text-[10px] font-light underline cursor-pointer">
-                                                    {post.courseName && <span>#{post.courseName}</span>}
-                                                    {post.categoryName && <span>#{post.categoryName}</span>}
+                                                    <span className="hover:text-[#DA1A32] transition-all duration-300">#{post.courseName}</span>
+                                                    <span className="hover:text-[#DA1A32] transition-all duration-300">#{post.categoryName}</span>
                                                 </div>
 
                                                 <div className="flex flex-col mt-[18px]">
@@ -351,7 +381,7 @@ const RgUserCoursePost = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </button>
                                     ))
                                 )}
                             </div>
@@ -388,6 +418,15 @@ const RgUserCoursePost = () => {
                             from="course"
                         />
                     </div>
+                )}
+
+                {/* Post View Modal */}
+                {showPostView && selectedPost && (
+                    <DisplayPost
+                        onClose={() => setShowPostView(false)}
+                        post={selectedPost}
+                        onLikeUpdate={handlePostLikeUpdate}
+                    />
                 )}
 
                 {ToastContainer}
