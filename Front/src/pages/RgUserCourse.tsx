@@ -151,6 +151,21 @@ const RgUserCourse = () => {
             .catch(err => console.error("Error fetching course:", err));
     }, [id]);
 
+    // Mark course as completed when user accesses it
+    useEffect(() => {
+        if (!user?.userId || !id) return;
+
+        fetch(`/api/CourseUserActivities/mark-completed?userId=${user.userId}&courseId=${id}`, {
+            method: 'PUT'
+        })
+            .then(res => {
+                if (res.ok) {
+                    console.log("Course marked as completed");
+                }
+            })
+            .catch(err => console.error("Error marking course as completed:", err));
+    }, [user?.userId, id]);
+
 
     const [coursePrepItems, setCoursePrepItems] = useState<CoursePrepItem[]>([]);
     const [ingredients, setIngredients] = useState<CoursePrepItem[]>([]);

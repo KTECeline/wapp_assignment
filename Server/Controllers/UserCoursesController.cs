@@ -39,11 +39,11 @@ public class UserCoursesController : ControllerBase
             switch (status.ToLower())
             {
                 case "completed":
-                    query = query.Where(a => a.QuizStatus != null && a.QuizStatus.ToLower() == "completed");
+                    query = query.Where(a => a.Completed == true);
                     break;
                 case "progressing":
-                    // Progressing means either not started (null/empty) or started but not completed
-                    query = query.Where(a => string.IsNullOrEmpty(a.QuizStatus) || a.QuizStatus.ToLower() != "completed");
+                    // Progressing means registered but not completed
+                    query = query.Where(a => a.Completed == false);
                     break;
                 case "bookmarked":
                     query = query.Where(a => a.Bookmark);

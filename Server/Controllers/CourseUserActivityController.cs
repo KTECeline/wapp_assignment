@@ -81,6 +81,7 @@ public class CourseUserActivitiesController : ControllerBase
         activity.QuizTotalTime = update.QuizTotalTime;
         activity.QuizMistake = update.QuizMistake;
         activity.QuizProgress = update.QuizProgress;
+        activity.Completed = update.Completed;
 
         await _context.SaveChangesAsync();
         return Ok(activity);
@@ -128,5 +129,33 @@ public class CourseUserActivitiesController : ControllerBase
         return Ok(rankedLeaderboard);
     }
 
+    // PUT: Mark course as completed when user accesses it
+    [HttpPut("mark-completed")]
+    public async Task<IActionResult> MarkCourseCompleted([FromQuery] int userId, [FromQuery] int courseId)
+    {
+        var activity = await _context.CourseUserActivities
+            .FirstOrDefaultAsync(a => a.UserId == userId && a.CourseId == courseId);
+
+        if (activity == null)
+        {
+            // Create new activity if it doesn't exist
+            activity = new CourseUserActivity
+            {
+                UserId = userId,
+                CourseId = courseId,
+                Registered = true,
+                Completed = true,
+                Bookmark = false
+            };
+            _context.CourseUserActivities.Add(activity);
+        }
+        else
+        {
+            activity.Completed = true;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Course marked as completed", completed = true });
+    }
 
 }
