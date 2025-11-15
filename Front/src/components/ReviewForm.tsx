@@ -38,6 +38,13 @@ const ReviewForm: FC<ReviewFormProps> = ({ onClose, onSave, isEdit = false, revi
         description: Yup.string().required("Required"),
         reviewtype: Yup.string().required("Required"),
         rating: Yup.number().required("Please give a rating").min(1).max(5),
+        course_id: Yup.number()
+            .nullable()
+            .when("reviewtype", {
+                is: "course",
+                then: (schema) => schema.required("Please select a course").typeError("Please select a course"),
+                otherwise: (schema) => schema.notRequired()
+            }),
     });
 
     // Fetch user's enrolled courses
@@ -277,10 +284,14 @@ const ReviewForm: FC<ReviewFormProps> = ({ onClose, onSave, isEdit = false, revi
 
                                 {reviewType === "course" && from !== "course" && (
                                     <div className="mb-6 relative">
+                                        <label htmlFor="course_id" className="block text-sm font-medium mb-[5px] ml-[2px] text-black mt-3">
+                                            Select Course
+                                        </label>
                                         <Field
                                             as="select"
+                                            id="course_id"
                                             name="course_id"
-                                            className="mt-3 border border-black bg-white rounded-[8px] px-[10px] py-[8px] text-black cursor-pointer w-full sm:text-sm focus:outline-none focus:ring-0"
+                                            className={`border bg-white rounded-[8px] px-[10px] py-[8px] text-black cursor-pointer w-full sm:text-sm focus:outline-none focus:ring-0 ${errors.course_id && touched.course_id ? "border-red-300" : "border-black"}`}
                                             disabled={coursesLoading}
                                         >
                                             <option value="">
