@@ -847,9 +847,6 @@ const RgUserCourse = () => {
                             <div className="flex flex-col gap-[2px] justify-center translate-y-[-2px]">
                                 {/* Review */}
                                 <div className="font-inter text-[#484848] text-[14px] font-light">
-                                    <span className="font-medium text-[#DA1A32] mr-1">
-                                        {averageRating.toFixed(1)}
-                                    </span>
                                     {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
                                 </div>
 
@@ -1035,20 +1032,24 @@ const RgUserCourse = () => {
                 {user?.userId && (
                     <div className="mb-[-40px]">
                         {/* Decorative Divider */}
-                        < div className="flex items-center justify-center gap-[8px] mb-[12px] mt-[88px]">
+                        <div className="flex items-center justify-center gap-[8px] mb-[12px] mt-[88px]">
                             <div className="w-[30px] h-[2px] bg-[#DA1A32]" />
                             <span className="font-ibarra text-[16px] text-[#DA1A32] uppercase tracking-widest font-bold">
                                 How do I complete this course?
                             </span>
                             <div className="w-[30px] h-[2px] bg-[#DA1A32]" />
                         </div>
+
                         {/* Subtext */}
-                        <p className="font-inter text-[15px] text-gray-600 text-center max-w-[600px] mb-8">
-                            Share your progress by creating a post in this course.
+                        <p className="font-inter text-[15px] text-gray-600 text-center max-w-[680px] mb-8">
+                            1. Complete the quiz to test your understanding of the lesson.
+                            <br />
+                            2. After that, share your progress by creating a post in this course.
                             Or, if posting in the general feed, make sure to select the relevant course to showcase your work!
                         </p>
                     </div>
                 )}
+
 
                 {/* Ingredient and Tools */}
                 <div className="mt-[88px] flex flex-row justify-between w-[1090px]">
