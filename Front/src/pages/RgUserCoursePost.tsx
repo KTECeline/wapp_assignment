@@ -349,9 +349,6 @@ const RgUserCoursePost = () => {
                                                     </div>
 
                                                     <div className="flex flex-row items-center gap-2">
-                                                        <button className="cursor-pointer flex flex-row justify-center items-center -translate-y-[2px] w-[20px] h-[20px] rounded-full bg-[#D9D9D9]">
-                                                            <IoShareSocialSharp className="w-[14px] h-[14px] text-[#4f4f4f]" />
-                                                        </button>
                                                         <button className="cursor-pointer flex flex-row justify-center -translate-y-[2px]">
                                                             <IoMdHeart className={`w-[25px] h-[25px] ${post.isLiked ? 'text-[#FF5454]' : 'text-[#D9D9D9]'}`} />
                                                         </button>
