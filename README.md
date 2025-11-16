@@ -1,6 +1,13 @@
 # Getting Started with Create React App
+To start front end
+1. cd front
+2. npm install
+3. npm start
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+To start backend
+1. cd server
+2. dotnet build
+3. dotnet run
 
 ## Available Scripts
 
