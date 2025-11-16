@@ -14,7 +14,7 @@ obj/
 .DS_Store
 
 # Ignore SQLite database files
-#Server/app.db
-#Server/app.db-shm
-#Server/app.db-wal
+Server/app.db
+Server/app.db-shm
+Server/app.db-wal
 Front/src/api/client_backup.js
