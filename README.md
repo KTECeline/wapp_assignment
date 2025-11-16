@@ -9,6 +9,10 @@ To start backend
 2. dotnet build
 3. dotnet run
 
+The project db is called /Server/app.db
+The json file is also at /Server/app.json
+
+
 ## Available Scripts
 
 In the project directory, you can run:
