@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FolderTree, BarChart3, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Settings, TrendingUp, Star } from 'lucide-react';
+import { BookOpen, FolderTree, BarChart3, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Settings, TrendingUp } from 'lucide-react';
 import { getCourses, getCategories, getLevels } from '../../api/client';
 
 const Card = ({ children, className = '' }) => (
@@ -41,16 +41,11 @@ export default function CourseManagement() {
     }
   };
 
-  // Calculate average rating from courses
-  const avgRating = courses.length > 0 
-    ? (courses.reduce((acc, course) => acc + (course.rating || 0), 0) / courses.length).toFixed(1)
-    : '0.0';
-
   const stats = [
     { label: 'Total Courses', value: courses.length, icon: BookOpen, change: '', color: 'var(--accent)' },
     { label: 'Categories', value: categories.length, icon: FolderTree, change: '', color: 'var(--accent)' },
     { label: 'Levels', value: levels.length, icon: BarChart3, change: '', color: 'var(--accent)' },
-    { label: 'Avg Rating', value: avgRating, icon: Star, change: '', color: 'var(--accent)' }
+   
   ];
 
   const managementCards = [
@@ -168,7 +163,7 @@ export default function CourseManagement() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stats.map((stat, index) => (
                 <Card key={index} className="relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer">
                   <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--surface)' }} />
