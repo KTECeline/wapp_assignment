@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import PostForm from "../components/PostForm.tsx";
 import DisplayPost from "../components/DisplayPost.tsx";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 
 interface Post {
     postId: number;
@@ -56,9 +57,8 @@ function useLocalToast() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className={`px-4 py-2 rounded-lg shadow-lg pointer-events-auto ${
-                            t.variant === "error" ? "bg-red-500" : "bg-green-500"
-                        } text-white`}
+                        className={`px-4 py-2 rounded-lg shadow-lg pointer-events-auto ${t.variant === "error" ? "bg-red-500" : "bg-green-500"
+                            } text-white`}
                     >
                         {t.message}
                     </motion.div>
@@ -82,6 +82,7 @@ const RgUserCoursePost = () => {
     const [showPostForm, setShowPostForm] = useState(false);
     const [showPostView, setShowPostView] = useState(false);
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+    const Layout = user?.userId ? RgUserLayout : VisitorLayout;
 
     useEffect(() => {
         if (!id) return;
@@ -237,7 +238,7 @@ const RgUserCoursePost = () => {
     };
 
     return (
-        <RgUserLayout>
+        <Layout>
             <div className="max-w-screen overflow-x-hidden">
                 {/* Banner */}
                 <div
@@ -301,7 +302,7 @@ const RgUserCoursePost = () => {
                                 <IoIosArrowBack className="text-[#DA1A32] h-[32px] w-[32px]" />
                             </button>
 
-                            
+
                         </div>
 
                         {/* Post Container */}
@@ -338,7 +339,7 @@ const RgUserCoursePost = () => {
                                                     <div className="flex flex-row gap-[6px]">
                                                         <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] overflow-hidden">
                                                             {post.userProfileImg ? (
-                                                                <img src={post.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                                                <img src={post.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                                             ) : (
                                                                 <span>{post.userFirstName?.charAt(0) || 'U'}</span>
                                                             )}
@@ -390,22 +391,23 @@ const RgUserCoursePost = () => {
                         </div>
                     </div>
                 </div>
-
-                <button className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
-                    onClick={() => {
-                        if (!user?.userId) {
-                            add("Please log in to create a post", "error");
-                            return;
-                        }
-                        setShowPostForm(true);
-                    }}>
-                    <div className="font-inter text-[16px] font-light text-black">
-                        Post
-                    </div>
-                    <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                        <IoAdd className="text-white w-[32px] h-[32px]" />
-                    </div>
-                </button>
+                {user?.userId && (
+                    <button className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                        onClick={() => {
+                            if (!user?.userId) {
+                                add("Please log in to create a post", "error");
+                                return;
+                            }
+                            setShowPostForm(true);
+                        }}>
+                        <div className="font-inter text-[16px] font-light text-black">
+                            Post
+                        </div>
+                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                            <IoAdd className="text-white w-[32px] h-[32px]" />
+                        </div>
+                    </button>
+                )}
 
                 {showPostForm && (
                     <div className="fixed z-[100]">
@@ -433,7 +435,7 @@ const RgUserCoursePost = () => {
 
                 {ToastContainer}
             </div>
-        </RgUserLayout>
+        </Layout>
     );
 };
 

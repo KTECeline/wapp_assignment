@@ -7,6 +7,7 @@ import { IoAdd } from "react-icons/io5";
 import ReviewForm from "../components/ReviewForm.tsx";
 import DisplayReview from "../components/DisplayReview.tsx";
 import { AnimatePresence, motion } from "framer-motion";
+import VisitorLayout from "../components/VisitorLayout.tsx";
 
 interface Review {
     id: number;
@@ -46,6 +47,7 @@ const RgUserCourseReview = () => {
     const [showReviewView, setShowReviewView] = useState(false);
     const [selectedReview, setSelectedReview] = useState<Review | null>(null);
     const [toasts, setToasts] = useState<{ id: string; message: string; variant: "success" | "error" }[]>([]);
+    const Layout = user?.userId ? RgUserLayout : VisitorLayout;
 
     const addToast = (message: string, variant: "success" | "error" = "success") => {
         const id = Math.random().toString(36).slice(2);
@@ -224,7 +226,7 @@ const RgUserCourseReview = () => {
     };
 
     return (
-        <RgUserLayout>
+        <Layout>
             {showReviewForm && (
                 <div className="fixed z-[100]">
                     <ReviewForm
@@ -259,7 +261,7 @@ const RgUserCourseReview = () => {
             </div>
 
             <div className="max-w-screen overflow-x-hidden">
-                
+
 
                 <style>
                     {`
@@ -390,7 +392,7 @@ const RgUserCourseReview = () => {
                                                 <div className="flex flex-row gap-[6px]">
                                                     <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] overflow-hidden">
                                                         {review.userProfileImg ? (
-                                                            <img src={review.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                                            <img src={review.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                                         ) : (
                                                             <span>{review.userInitial}</span>
                                                         )}
@@ -459,24 +461,24 @@ const RgUserCourseReview = () => {
                     />
                 )}
 
-                <button
-                    onClick={() => {
-                        if (!user?.userId) {
-                            addToast("Please log in to submit a review", "error");
-                            return;
-                        }
-                        setShowReviewForm(true);
-                    }}
-                    className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]">
-                    <div className="font-inter text-[16px] font-light text-black">
-                        Review
-                    </div>
-                    <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
-                        <IoAdd className="text-white w-[32px] h-[32px]" />
-                    </div>
-                </button>
+                {user?.userId && (
+                    <button
+                        onClick={() => {
+                            setShowReviewForm(true);
+                        }}
+                        className="fixed bottom-[20px] right-[20px] flex items-center justify-between h-[40px] bg-white border border-black rounded-full pr-[4px] pl-[22px] cursor-pointer hover:scale-105 transition-all duration-[600ms]"
+                    >
+                        <div className="font-inter text-[16px] font-light text-black">
+                            Review
+                        </div>
+                        <div className="w-[30px] h-[30px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] ml-[20px]">
+                            <IoAdd className="text-white w-[32px] h-[32px]" />
+                        </div>
+                    </button>
+                )}
+
             </div>
-        </RgUserLayout>
+        </Layout>
     );
 };
 
