@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FolderTree, BarChart3, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Settings, TrendingUp, Star } from 'lucide-react';
+import { BookOpen, FolderTree, BarChart3, Lightbulb, UtensilsCrossed, ListOrdered, HelpCircle, Plus, Settings, TrendingUp } from 'lucide-react';
 import { getCourses, getCategories, getLevels } from '../../api/client';
 
 const Card = ({ children, className = '' }) => (
@@ -41,16 +41,11 @@ export default function CourseManagement() {
     }
   };
 
-  // Calculate average rating from courses
-  const avgRating = courses.length > 0 
-    ? (courses.reduce((acc, course) => acc + (course.rating || 0), 0) / courses.length).toFixed(1)
-    : '0.0';
-
   const stats = [
     { label: 'Total Courses', value: courses.length, icon: BookOpen, change: '', color: 'var(--accent)' },
     { label: 'Categories', value: categories.length, icon: FolderTree, change: '', color: 'var(--accent)' },
     { label: 'Levels', value: levels.length, icon: BarChart3, change: '', color: 'var(--accent)' },
-    { label: 'Avg Rating', value: avgRating, icon: Star, change: '', color: 'var(--accent)' }
+   
   ];
 
   const managementCards = [
@@ -168,21 +163,17 @@ export default function CourseManagement() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {stats.map((stat, index) => (
-                <Card key={index} className="relative overflow-hidden group hover:shadow-md transition-all duration-300 cursor-pointer">
-                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-50 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: 'var(--surface)' }} />
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform" style={{ backgroundColor: stat.color }}>
-                        <stat.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <span className="text-xs font-semibold px-2 py-1 rounded-full border" style={{ color: 'var(--accent-dark)', backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
-                        {stat.change}
-                      </span>
+                <Card key={index} className="group hover:shadow-lg transition-all duration-300 !p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform flex-shrink-0" style={{ backgroundColor: stat.color }}>
+                      <stat.icon className="w-7 h-7 text-white" />
                     </div>
-                    <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.label}</h3>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-500 mb-0.5">{stat.label}</h3>
+                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    </div>
                   </div>
                 </Card>
               ))}
