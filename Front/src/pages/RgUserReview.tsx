@@ -57,7 +57,9 @@ const RgUserReview = () => {
     const [reviewtype] = useState<string>("website");
     const [courses, setCourses] = useState<any[]>([]);
 
-    const tabs = ["All Courses", "Website Reviews", "My Reviews"];
+    const tabs = isLoggedIn
+        ? ["All Courses", "Website Reviews", "My Reviews"]
+        : ["All Courses", "Website Reviews"];
 
     // Helper function to calculate time ago
     const getTimeAgo = (date: Date): string => {
@@ -624,7 +626,7 @@ const RgUserReview = () => {
                                                 <div className="flex flex-row gap-[6px]">
                                                     <div className="w-[25px] h-[25px] bg-[#DA1A32] flex items-center justify-center rounded-full text-white text-[12px] overflow-hidden">
                                                         {review.userProfileImg ? (
-                                                            <img src={review.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => {e.currentTarget.style.display = 'none'}} />
+                                                            <img src={review.userProfileImg} alt="avatar" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                                         ) : (
                                                             <span>{review.userInitial}</span>
                                                         )}

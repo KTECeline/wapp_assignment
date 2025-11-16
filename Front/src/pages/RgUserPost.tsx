@@ -11,6 +11,7 @@ import PostForm from "../components/PostForm.tsx";
 import { FaHeart} from "react-icons/fa";
 
 interface Post {
+    type: any;
     postId: number;
     userId: number;
     userName: string;
@@ -21,7 +22,6 @@ interface Post {
     courseId: number;
     courseName: string;
     categoryName: string;
-    title: string;
     description: string;
     postImg: string;
     createdAt: string;
