@@ -1,0 +1,1830 @@
+{
+    "__EFMigrationsLock": [],
+    "__EFMigrationsHistory": [
+        {
+            "MigrationId": "20250917152230_InitialCreate",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251016083606_AddAllTables",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251016083915_FixForeignKeys",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251106041113_UpdateModels",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251107090824_admintry",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251107093936_AddVideoAndServingsToCourse",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251107100109_adminichangebit",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251109180723_AllowLongerImageStrings",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251111043701_CheckPending",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251111163032_FixPropertyNames",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251112131006_RemoveCourseType",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251112133602_AddCompletedToCourseUserActivity",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251112144413_ChangeMetricToText",
+            "ProductVersion": "9.0.9"
+        },
+        {
+            "MigrationId": "20251112164641_MakeCourseIdNullable",
+            "ProductVersion": "9.0.9"
+        }
+    ],
+    "sqlite_sequence": [
+        {
+            "name": "Users",
+            "seq": 30
+        },
+        {
+            "name": "Categories",
+            "seq": 45
+        },
+        {
+            "name": "Levels",
+            "seq": 39
+        },
+        {
+            "name": "CourseTips",
+            "seq": 18
+        },
+        {
+            "name": "Questions",
+            "seq": 10
+        },
+        {
+            "name": "Announcements",
+            "seq": 5
+        },
+        {
+            "name": "CourseSteps",
+            "seq": 26
+        },
+        {
+            "name": "CourseUserActivities",
+            "seq": 33
+        },
+        {
+            "name": "UserFeedbacks",
+            "seq": 27
+        },
+        {
+            "name": "HelpSessions",
+            "seq": 151
+        },
+        {
+            "name": "Messages",
+            "seq": 263
+        },
+        {
+            "name": "PostLikes",
+            "seq": 43
+        },
+        {
+            "name": "CourseStats",
+            "seq": 12
+        },
+        {
+            "name": "Courses",
+            "seq": 43
+        },
+        {
+            "name": "CoursePrepItems",
+            "seq": 30
+        },
+        {
+            "name": "UserPosts",
+            "seq": 20
+        }
+    ],
+    "Categories": [
+        {
+            "category_id": 1,
+            "title": "Bread",
+            "description": "All types of bread recipes and techniques",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/a28cf568-41ed-4fc5-9d98-9cc30042e827_Bread.webp",
+            "cat_banner": "http://localhost:5170/uploads/c773995d-e5f5-4179-9da1-a406f66e379f_Bread_Banner.webp"
+        },
+        {
+            "category_id": 2,
+            "title": "Pastry",
+            "description": "Delicate pastry creations",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/86b5e9de-711c-42ca-8a8a-8916775ad305_Pastry.jpg",
+            "cat_banner": "http://localhost:5170/uploads/707c601e-5b8b-45d3-9ab2-2b96ebf0db94_Announcement2.jpg"
+        },
+        {
+            "category_id": 3,
+            "title": "Cookies",
+            "description": "Cookie recipes and decorating techniques",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/c3efaa67-7143-445c-89b5-1cf9c3fd57ed_Cookie.webp",
+            "cat_banner": "http://localhost:5170/uploads/e64ab087-af85-4d6d-a50a-c44b38e53d57_Cookie_Banner.webp"
+        },
+        {
+            "category_id": 4,
+            "title": "Cake",
+            "description": "Cake baking and decorating",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/994921ee-fe95-484b-86a0-56e5c1bd58ff_Cake.webp",
+            "cat_banner": "http://localhost:5170/uploads/d4668a88-ebc3-4987-9606-331a9f3d32e7_Cake_Banner.webp"
+        },
+        {
+            "category_id": 5,
+            "title": "Pie & Tarts",
+            "description": "Sweet and savory pies and tarts",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/bea21ef1-072c-47bf-a190-4dc691a091f4_Pie.webp",
+            "cat_banner": "http://localhost:5170/uploads/7a8fa4c6-a134-43aa-95ca-74810222b0af_Pie_Banner.webp"
+        },
+        {
+            "category_id": 6,
+            "title": "Sourdough",
+            "description": "Sourdough bread making",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/ae7a45ba-f140-431e-b4f4-7c2625ba7634_Sourdough.webp",
+            "cat_banner": "http://localhost:5170/uploads/2cf02390-7270-4f71-9391-a40f6940f522_Sourdough_Banner.webp"
+        },
+        {
+            "category_id": 7,
+            "title": "Pizza",
+            "description": "Pizza dough and toppings",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/bd549723-4591-457a-bc29-245e9f9a9b91_Pizza.webp",
+            "cat_banner": "http://localhost:5170/uploads/9af82a51-cfdb-44d0-81e9-52f96775c407_Pizza_Banner.webp"
+        },
+        {
+            "category_id": 8,
+            "title": "Scones & Muffins",
+            "description": "Quick breads and breakfast pastries",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/36b4feba-66b6-43ba-9dad-b8239cdd3201_Scone.webp",
+            "cat_banner": "http://localhost:5170/uploads/9df8c515-b7f3-49bf-8185-36ef2973bd97_Scone_Banner.webp"
+        },
+        {
+            "category_id": 9,
+            "title": "Others",
+            "description": "Other baking specialties",
+            "deleted": 0,
+            "cat_img": "http://localhost:5170/uploads/d061f422-7826-4c49-9c04-d547c9ff5397_Others.webp",
+            "cat_banner": "http://localhost:5170/uploads/09e4b8f4-a2c4-4c92-b5b6-9724857a28e4_Others_Banner.jpg"
+        }
+    ],
+    "Levels": [
+        {
+            "level_id": 1,
+            "title": "Beginner",
+            "description": "First level",
+            "deleted": 0
+        },
+        {
+            "level_id": 2,
+            "title": "Amateur",
+            "description": "Second level",
+            "deleted": 0
+        },
+        {
+            "level_id": 3,
+            "title": "Master",
+            "description": "Third level",
+            "deleted": 0
+        }
+    ],
+    "Users": [
+        {
+            "user_id": 3,
+            "DOB": "2006-01-10 00:00:00",
+            "category_id": 2,
+            "created_AT": "2025-11-10 15:12:31.3833364",
+            "deleted_AT": null,
+            "email": "loyheanwei@gmail.com",
+            "first_name": "Loy",
+            "gender": "Male",
+            "last_name": "Hean Wei",
+            "level_id": 3,
+            "password": "$2a$11$cmo3smqukKFcBdI0MfLWFeNjf20WL3g1/gyNNIbZ79y4hK8uxQNyC",
+            "profile_img": "",
+            "username": "LHW",
+            "usertype": "user"
+        },
+        {
+            "user_id": 4,
+            "DOB": null,
+            "category_id": 1,
+            "created_AT": "2025-11-11 04:37:20.354657",
+            "deleted_AT": null,
+            "email": "celine@gmail.com",
+            "first_name": "celine_khaw",
+            "gender": "Female",
+            "last_name": "khaw",
+            "level_id": 1,
+            "password": "$2a$11$mfgMqH1QG1hc9xc1/GcruecAiyvlTaz1K1DpSmlsqIKoDhC92e7kq",
+            "profile_img": "",
+            "username": "celine_khaw",
+            "usertype": "admin"
+        },
+        {
+            "user_id": 22,
+            "DOB": "2008-02-20 00:00:00",
+            "category_id": 3,
+            "created_AT": "2025-11-13 19:20:55.1949377",
+            "deleted_AT": null,
+            "email": "limqiwen@gmail.com",
+            "first_name": "Qi Wen",
+            "gender": "Female",
+            "last_name": "Lim",
+            "level_id": 3,
+            "password": "$2a$11$t4.LNAz00CGgolw9k3t/YOjzxVeoXF2DatJRH0Jpa/GL/ol10NoF2",
+            "profile_img": "/uploads/90380bdf-de39-493a-be73-c4629b82c11b_profile1.jpg",
+            "username": "QWL",
+            "usertype": "user"
+        },
+        {
+            "user_id": 23,
+            "DOB": "2004-06-17 00:00:00",
+            "category_id": 2,
+            "created_AT": "2025-11-13 19:36:33.3070815",
+            "deleted_AT": null,
+            "email": "jasonwong@gmail.com",
+            "first_name": "Jason",
+            "gender": "Male",
+            "last_name": "Wong",
+            "level_id": 3,
+            "password": "$2a$11$Wq6nJFxTq4leuWMjXEo7SedT5pUq.3jjMmUE0zwtL.9rmDnqWWihG",
+            "profile_img": "/uploads/a3742b04-cb44-410a-ae20-d24cfbb6e30d_profile2.webp",
+            "username": "JasonW",
+            "usertype": "user"
+        },
+        {
+            "user_id": 24,
+            "DOB": "1998-05-15",
+            "category_id": null,
+            "created_AT": "2025-11-14 10:00:00",
+            "deleted_AT": null,
+            "email": "john.doe@example.com",
+            "first_name": "John",
+            "gender": "Male",
+            "last_name": "Doe",
+            "level_id": null,
+            "password": "$2a$11$mfgMqH1QG1hc9xc1/GcruecAiyvlTaz1K1DpSmlsqIKoDhC92e7kq",
+            "profile_img": "/images/default-avatar.png",
+            "username": "john_doe",
+            "usertype": "user"
+        },
+        {
+            "user_id": 25,
+            "DOB": "1995-08-22",
+            "category_id": null,
+            "created_AT": "2025-11-07 14:30:00",
+            "deleted_AT": null,
+            "email": "jane.smith@example.com",
+            "first_name": "Jane",
+            "gender": "Female",
+            "last_name": "Smith",
+            "level_id": null,
+            "password": "$2a$11$mfgMqH1QG1hc9xc1/GcruecAiyvlTaz1K1DpSmlsqIKoDhC92e7kq",
+            "profile_img": "/images/default-avatar.png",
+            "username": "jane_smith",
+            "usertype": "user"
+        },
+        {
+            "user_id": 26,
+            "DOB": "2000-03-10",
+            "category_id": null,
+            "created_AT": "2025-10-31 09:15:00",
+            "deleted_AT": null,
+            "email": "mike.johnson@example.com",
+            "first_name": "Mike",
+            "gender": "Male",
+            "last_name": "Johnson",
+            "level_id": null,
+            "password": "$2a$11$mfgMqH1QG1hc9xc1/GcruecAiyvlTaz1K1DpSmlsqIKoDhC92e7kq",
+            "profile_img": "/images/default-avatar.png",
+            "username": "mike_johnson",
+            "usertype": "user"
+        },
+        {
+            "user_id": 27,
+            "DOB": "1995-05-15 00:00:00",
+            "category_id": null,
+            "created_AT": "2025-11-07 02:21:06.444341",
+            "deleted_AT": null,
+            "email": "emily@example.com",
+            "first_name": "Emily",
+            "gender": "F",
+            "last_name": "Watson",
+            "level_id": null,
+            "password": "$2a$11$hzi9C8j.UEcp/tTbVVRqtuCzkI84i2Ux3gPT3z.JxF5Yzy1y6NMkK",
+            "profile_img": "default.jpg",
+            "username": "emily",
+            "usertype": "user"
+        },
+        {
+            "user_id": 28,
+            "DOB": "1993-08-22 00:00:00",
+            "category_id": null,
+            "created_AT": "2025-11-07 02:21:06.444341",
+            "deleted_AT": null,
+            "email": "frank@example.com",
+            "first_name": "Frank",
+            "gender": "M",
+            "last_name": "Miller",
+            "level_id": null,
+            "password": "$2a$11$2THHMc8qdFTyXIDZa45MJujO1ENo2/FkuoXZadayDdkmtQd3sW/7y",
+            "profile_img": "default.jpg",
+            "username": "frank",
+            "usertype": "user"
+        },
+        {
+            "user_id": 29,
+            "DOB": "1998-12-03 00:00:00",
+            "category_id": null,
+            "created_AT": "2025-10-31 02:21:06.444341",
+            "deleted_AT": null,
+            "email": "grace@example.com",
+            "first_name": "Grace",
+            "gender": "F",
+            "last_name": "Chen",
+            "level_id": null,
+            "password": "$2a$11$Ru6u5wJ8QnJotowDgXWW3uC4qvchSJJEtaGRmjy.OUTqGHCsStqWK",
+            "profile_img": "default.jpg",
+            "username": "grace",
+            "usertype": "user"
+        },
+        {
+            "user_id": 30,
+            "DOB": "2006-06-14 00:00:00",
+            "category_id": 2,
+            "created_AT": "2025-11-14 04:25:18.305108",
+            "deleted_AT": null,
+            "email": "JohnLee@gmail.com",
+            "first_name": "John",
+            "gender": "Male",
+            "last_name": "Lee",
+            "level_id": 3,
+            "password": "$2a$11$JF9WW0C8ooW2JThFJQUetOotLOYMCJmUdANcnHKYQwG5x9H8GyS4O",
+            "profile_img": "/uploads/b279065e-e674-4a46-93f5-b5405896b2f6_cake1.jpg",
+            "username": "JohnL",
+            "usertype": "user"
+        }
+    ],
+    "AdminActivities": [],
+    "Announcements": [
+        {
+            "ann_id": 2,
+            "title": "Crispy Edges, Chewy Centers",
+            "description": "Ready to create cookies everyone loves? Join our beginner-friendly course to learn the techniques and tips behind chewy, gooey, bakery-quality chocolate chip cookies ",
+            "ann_img": "/uploads/335b584c-9edd-45e9-ac00-ed564e5d8ba4_Announcement.png",
+            "visible": 1,
+            "deleted": 0
+        },
+        {
+            "ann_id": 3,
+            "title": "Crackly Tops, Fudgy Centers",
+            "description": "Ready to bake brownies everyone craves? Join our beginner-friendly course to learn the secrets behind rich, gooey, bakery-style brownies that strike the perfect balance of chocolate and chew.",
+            "ann_img": "/uploads/ae3540b1-6a7a-42e3-94b0-48735ca0714b_Screenshot 2025-11-14 021837.png",
+            "visible": 1,
+            "deleted": 0
+        },
+        {
+            "ann_id": 4,
+            "title": "Golden Crust, Soft Center",
+            "description": "Ready to bake bread that everyone adores? Join our beginner-friendly course to master the art of creating warm, fluffy, bakery-style loaves with the perfect balance of crust and chew!",
+            "ann_img": "/uploads/b60b3d56-2aee-4627-b6b8-b50d1c2e28b6_Screenshot 2025-11-14 022912.png",
+            "visible": 1,
+            "deleted": 0
+        }
+    ],
+    "Badges": [],
+    "CourseStats": [],
+    "CourseSteps": [
+        {
+            "course_step_id": 1,
+            "description": "Place butter in the freezer for 10 minutes, then grate it using a box grater.",
+            "step": 1,
+            "deleted": 0,
+            "course_step_img": "http://localhost:5170/uploads/0ee3b2a7-0a68-41b6-bd54-5c64315a31c4_Preppy-Kitchen-Puff-Pastry-Grid-1.jpg",
+            "course_id": 2
+        },
+        {
+            "course_step_id": 2,
+            "description": "To bake the puff pastry, it is recommended to follow the other recipe if you are using it to make something specific. Otherwise, puff pastry typically bakes up best at 220\u00b0C for 10 to 25 minutes. ",
+            "step": 7,
+            "deleted": 0,
+            "course_step_img": "",
+            "course_id": 2
+        },
+        {
+            "course_step_id": 3,
+            "description": "Knead the dough and then shape it into a 1-inch thick square. Wrap in plastic wrap, then chill for an hour.",
+            "step": 4,
+            "deleted": 0,
+            "course_step_img": "http://localhost:5170/uploads/c4e5f1e7-f15e-4f71-940b-93882cc961de_Preppy-Kitchen-Puff-Pastry-Grid-4.jpg",
+            "course_id": 2
+        },
+        {
+            "course_step_id": 4,
+            "description": "Combine the grated butter with whisked flour, sugar, and salt.",
+            "step": 2,
+            "deleted": 0,
+            "course_step_img": "http://localhost:5170/uploads/810b312c-194c-407c-a766-3281b5f59943_Preppy-Kitchen-Puff-Pastry-Grid-2.jpg",
+            "course_id": 2
+        },
+        {
+            "course_step_id": 5,
+            "description": "Turn the dough 90 degrees and repeat rolling, folding, and rotating 3 more times. Fold the puff pastry dough back into thirds, wrap it tightly with plastic wrap, and chill for at least 2 hours or up to 2 days before use.",
+            "step": 6,
+            "deleted": 0,
+            "course_step_img": "http://localhost:5170/uploads/b0b78df2-f675-4d75-bf9c-0b3f932bd6ff_Preppy-Kitchen-Puff-Pastry-Grid-6.jpg",
+            "course_id": 2
+        },
+        {
+            "course_step_id": 6,
+            "description": "On a lightly floured surface, start to laminate the dough by rolling it out into a \u00bd-inch thick rectangle, then fold it into thirds.",
+            "step": 5,
+            "deleted": 0,
+            "course_step_img": "http://localhost:5170/uploads/86dfd248-bc9b-4b0a-b60b-983f513c13f5_Preppy-Kitchen-Puff-Pastry-Grid-5.jpg",
+            "course_id": 2
+        },
+        {
+            "course_step_id": 7,
+            "description": "Add 6 tablespoons of cold water to the mixture and fold the mixture until it clumps together.",
+            "step": 3,
+            "deleted": 0,
+            "course_step_img": "http://localhost:5170/uploads/6c888c55-d952-41f0-a521-18352755e190_Preppy-Kitchen-Puff-Pastry-Grid-3.jpg",
+            "course_id": 2
+        }
+    ],
+    "CourseTips": [
+        {
+            "course_tip_id": 3,
+            "description": "If the dough feels rubbery or starts shrinking during the laminating process, wrap it back up and place it in the fridge to rest for 10 to 20 minutes. The gluten in the flour will start to form as you work the dough, and sometimes, this will cause the dough to spring back and be hard to roll. A short rest period allows the dough to relax so you can easily continue rolling it out.",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_tip_id": 4,
+            "description": "If your kitchen is warm, keep a close eye on the ingredients and dough. You can place your mixing bowl along with the flour in the fridge for 15 to 20 minutes before starting the dough to help keep it cool when you mix it together. When you start to roll and fold the dough, if you feel the dough is getting too warm at any point (it may feel very soft, sticky, or greasy from the butter warming up), put it back into the fridge to chill it for 5 to 10 minutes before continuing.",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_tip_id": 5,
+            "description": "Be sure to grate the frozen butter with a box grater. The butter is grated to make the laminating process faster. If you spend too long trying to roll the dough, you risk the butter getting warm and melting into the dough instead of creating defined layers. Do not cube or roughly chop the butter instead of grating it, or you risk tearing the dough when rolling it out.",
+            "deleted": 0,
+            "course_id": 2
+        }
+    ],
+    "CourseUserActivities": [
+        {
+            "activity_id": 9,
+            "user_id": 3,
+            "course_id": 2,
+            "quiz_status": "Completed",
+            "quiz_start_time": "2025-11-16 13:09:29.53",
+            "quiz_end_time": "2025-11-16 13:12:06.296",
+            "quiz_total_time": "08:02:36",
+            "quiz_mistake": 3,
+            "quiz_progress": 8,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 1
+        },
+        {
+            "activity_id": 16,
+            "user_id": 3,
+            "course_id": 1,
+            "quiz_status": "Completed",
+            "quiz_start_time": "2025-11-13 21:42:33.116",
+            "quiz_end_time": "2025-11-13 21:42:33.137",
+            "quiz_total_time": "08:00:00",
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 17,
+            "user_id": 22,
+            "course_id": 2,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 18,
+            "user_id": 23,
+            "course_id": 26,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 19,
+            "user_id": 23,
+            "course_id": 1,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 20,
+            "user_id": 23,
+            "course_id": 3,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 21,
+            "user_id": 23,
+            "course_id": 2,
+            "quiz_status": "Completed",
+            "quiz_start_time": "2025-11-13 19:57:30.281",
+            "quiz_end_time": "2025-11-13 19:58:07.41",
+            "quiz_total_time": "08:00:37",
+            "quiz_mistake": 0,
+            "quiz_progress": 5,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 22,
+            "user_id": 3,
+            "course_id": 3,
+            "quiz_status": "Completed",
+            "quiz_start_time": "2025-11-14 15:17:16.538",
+            "quiz_end_time": "2025-11-14 15:17:17.127",
+            "quiz_total_time": "08:00:00",
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 23,
+            "user_id": 29,
+            "course_id": 1,
+            "quiz_status": "Completed",
+            "quiz_start_time": "2025-11-14 02:45:17.821",
+            "quiz_end_time": "2025-11-14 02:45:37.734",
+            "quiz_total_time": "08:00:19",
+            "quiz_mistake": 0,
+            "quiz_progress": 2,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 24,
+            "user_id": 24,
+            "course_id": 2,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 25,
+            "user_id": 24,
+            "course_id": 1,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 26,
+            "user_id": 24,
+            "course_id": 3,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 27,
+            "user_id": 30,
+            "course_id": 2,
+            "quiz_status": "Completed",
+            "quiz_start_time": "2025-11-14 04:33:26.138",
+            "quiz_end_time": "2025-11-14 04:34:52.758",
+            "quiz_total_time": "08:01:26",
+            "quiz_mistake": 2,
+            "quiz_progress": 7,
+            "bookmark": 1,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 28,
+            "user_id": 3,
+            "course_id": 25,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 1,
+            "registered": 0,
+            "completed": 0
+        },
+        {
+            "activity_id": 29,
+            "user_id": 3,
+            "course_id": 42,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 30,
+            "user_id": 3,
+            "course_id": 31,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 31,
+            "user_id": 3,
+            "course_id": 23,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 32,
+            "user_id": 3,
+            "course_id": 29,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 0,
+            "registered": 1,
+            "completed": 0
+        },
+        {
+            "activity_id": 33,
+            "user_id": 3,
+            "course_id": 35,
+            "quiz_status": "",
+            "quiz_start_time": null,
+            "quiz_end_time": null,
+            "quiz_total_time": null,
+            "quiz_mistake": 0,
+            "quiz_progress": 0,
+            "bookmark": 1,
+            "registered": 1,
+            "completed": 0
+        }
+    ],
+    "HelpSessions": [
+        {
+            "session_id": 148,
+            "user_id": 3,
+            "start_session": "2025-11-13 18:00:30.1766955",
+            "end_session": "2025-11-13 18:04:54.9085353"
+        },
+        {
+            "session_id": 149,
+            "user_id": 23,
+            "start_session": "2025-11-13 19:42:29.8229072",
+            "end_session": "2025-11-14 04:48:43.837651"
+        },
+        {
+            "session_id": 150,
+            "user_id": 3,
+            "start_session": "2025-11-14 04:42:27.821735",
+            "end_session": null
+        },
+        {
+            "session_id": 151,
+            "user_id": 3,
+            "start_session": "2025-11-16 13:56:49.4092942",
+            "end_session": null
+        }
+    ],
+    "Questions": [
+        {
+            "question_id": 2,
+            "question": "Why should you grate the frozen butter instead of cubing or chopping it roughly?",
+            "question_type": "mcq",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "question_id": 3,
+            "question": "What should you do if the dough becomes warm, sticky, or greasy while rolling it?",
+            "question_type": "mcq",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "question_id": 4,
+            "question": "Match each step to the correct image.",
+            "question_type": "dragdrop",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "question_id": 5,
+            "question": "Match the Prep Items with the images.",
+            "question_type": "dragdrop",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "question_id": 6,
+            "question": "Which image shows the correctly laminated dough after the final fold?",
+            "question_type": "mcq",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "question_id": 7,
+            "question": "mcq",
+            "question_type": "mcq",
+            "deleted": 0,
+            "course_id": 1
+        },
+        {
+            "question_id": 8,
+            "question": "Which Drag and drop it is",
+            "question_type": "dragdrop",
+            "deleted": 0,
+            "course_id": 1
+        },
+        {
+            "question_id": 9,
+            "question": "dd",
+            "question_type": "dragdrop",
+            "deleted": 0,
+            "course_id": 1
+        },
+        {
+            "question_id": 10,
+            "question": "mcq",
+            "question_type": "mcq",
+            "deleted": 0,
+            "course_id": 1
+        }
+    ],
+    "UserFeedbacks": [
+        {
+            "feedback_id": 13,
+            "user_id": 3,
+            "type": "review",
+            "course_id": 2,
+            "rating": 4,
+            "title": "Loved the Puff Pastry Course! \ud83e\udd50",
+            "description": "The lessons were super easy to follow, and I finally understand how to get those perfect flaky layers! The grating butter tip was a game changer. Made some apple turnovers right after \u2014 they turned out amazing! \ud83c\udf4e\ud83d\udc9b",
+            "created_AT": "2025-11-13 19:15:55.7286801",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 14,
+            "user_id": 3,
+            "type": "website",
+            "course_id": 2,
+            "rating": 5,
+            "title": "Great Website for Baking Lovers! \ud83c\udf70",
+            "description": "The layout is clean and easy to navigate, and I love how the recipes are organized by difficulty. A dark mode option would be nice, but overall it\u2019s a wonderful site for anyone who enjoys baking!",
+            "created_AT": "2025-11-13 19:17:03.8768145",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 15,
+            "user_id": 22,
+            "type": "review",
+            "course_id": 2,
+            "rating": 3,
+            "title": "Good Course, But Could Be Better",
+            "description": "The puff pastry course was helpful, but some steps felt a bit rushed. I wish there were more video demos for the folding part",
+            "created_AT": "2025-11-13 19:30:27.3092551",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 16,
+            "user_id": 23,
+            "type": "website",
+            "course_id": 26,
+            "rating": 4,
+            "title": "Fluffy, Buttery, and Totally Worth It!",
+            "description": "Tried the Homemade Crescent Rolls recipe, and they turned out soft, golden, and perfectly buttery! The instructions were super clear, and my kitchen smelled amazing. Definitely adding this to my weekend bake list again! \ud83d\udc9b",
+            "created_AT": "2025-11-13 19:39:41.015785",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 17,
+            "user_id": 23,
+            "type": "review",
+            "course_id": 1,
+            "rating": 4,
+            "title": "Soft and Airy Croissants Success!",
+            "description": "Baked the Soft and Airy Croissant recipe, and they turned out wonderfully light and flaky! The layers were noticeable, and the texture was just right. Took a bit longer than expected, but totally worth it for the buttery goodness. Will bake again!",
+            "created_AT": "2025-11-13 19:40:55.0450985",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 18,
+            "user_id": 23,
+            "type": "review",
+            "course_id": 3,
+            "rating": 5,
+            "title": "Perfect Homemade Eclairs!",
+            "description": "Tried the Homemade Eclairs with Pastry Cream recipe, and they were absolutely amazing! The pastry was light and crisp, and the cream filling was smooth and decadent. Everyone loved them, and they looked bakery-quality too. ",
+            "created_AT": "2025-11-13 19:41:46.7156181",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 19,
+            "user_id": 23,
+            "type": "website",
+            "course_id": 26,
+            "rating": 4,
+            "title": "Website with Great Baking Resource!",
+            "description": "The website is really helpful and has lots of clear recipes and tips. Navigation is smooth, and the tutorials are easy to follow. I just wish there were a few more video demos for tricky techniques.",
+            "created_AT": "2025-11-13 19:55:03.669279",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 20,
+            "user_id": 23,
+            "type": "review",
+            "course_id": 2,
+            "rating": 4,
+            "title": "Very Useful Puff Pastry Course",
+            "description": "The puff pastry lessons were clear and easy to follow. I managed to make flaky, buttery pastries on my first try! Would love a few more tips on advanced techniques, but overall a great course for beginners.",
+            "created_AT": "2025-11-13 19:59:29.7897403",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 21,
+            "user_id": 3,
+            "type": "review",
+            "course_id": 2,
+            "rating": 4,
+            "title": "Useful! My kids love it",
+            "description": "The puff turned out beautifully, my kids couldn't stop eating it!",
+            "created_AT": "2025-11-13 21:53:09.892971",
+            "edited_AT": null,
+            "deleted_AT": null
+        },
+        {
+            "feedback_id": 23,
+            "user_id": 24,
+            "type": "website",
+            "course_id": 1,
+            "rating": 4,
+            "title": "I love it already! ",
+            "description": "By far, the best baking platform to learn. Very simple navigations",
+            "created_AT": "2025-11-14 02:57:32.296222",
+            "edited_AT": null,
+            "deleted_AT": null
+        }
+    ],
+    "UserLoginActivities": [],
+    "UserStatistics": [],
+    "Messages": [
+        {
+            "message_id": 254,
+            "session_id": 148,
+            "content": "Hi, How do I logout from this system?",
+            "sent_date": "2025-11-13 18:00:30.4183039",
+            "sent_by_admin": 0,
+            "view_by_user": 0,
+            "view_by_admin": 1
+        },
+        {
+            "message_id": 255,
+            "session_id": 148,
+            "content": "U can logout of the system by navigating to the setting page using the profile icon on the top right corner. Then in the settings page a \"logout\" button is present on the right side of the page. Simply click the button and you will be logged out safely.",
+            "sent_date": "2025-11-13 18:03:11.6840321",
+            "sent_by_admin": 1,
+            "view_by_user": 1,
+            "view_by_admin": 0
+        },
+        {
+            "message_id": 256,
+            "session_id": 148,
+            "content": "Thank you for your help.",
+            "sent_date": "2025-11-13 18:04:05.0460874",
+            "sent_by_admin": 0,
+            "view_by_user": 0,
+            "view_by_admin": 1
+        },
+        {
+            "message_id": 257,
+            "session_id": 148,
+            "content": "No worries.",
+            "sent_date": "2025-11-13 18:04:47.8990893",
+            "sent_by_admin": 1,
+            "view_by_user": 1,
+            "view_by_admin": 0
+        },
+        {
+            "message_id": 258,
+            "session_id": 149,
+            "content": "Hi, How do I download a course's recipe?",
+            "sent_date": "2025-11-13 19:42:30.0793428",
+            "sent_by_admin": 0,
+            "view_by_user": 0,
+            "view_by_admin": 1
+        },
+        {
+            "message_id": 259,
+            "session_id": 149,
+            "content": "Hi Good day, firstly you need to navigate to the course's respective page. Then after registration, simply click the \"Download Recipe as PDF\" button on the right side. ",
+            "sent_date": "2025-11-13 19:47:54.4617531",
+            "sent_by_admin": 1,
+            "view_by_user": 0,
+            "view_by_admin": 0
+        },
+        {
+            "message_id": 260,
+            "session_id": 150,
+            "content": "Hi, How to view course?",
+            "sent_date": "2025-11-14 04:42:27.84589",
+            "sent_by_admin": 0,
+            "view_by_user": 0,
+            "view_by_admin": 1
+        },
+        {
+            "message_id": 261,
+            "session_id": 150,
+            "content": "Hii, u cant view it",
+            "sent_date": "2025-11-14 04:48:34.912843",
+            "sent_by_admin": 1,
+            "view_by_user": 1,
+            "view_by_admin": 0
+        },
+        {
+            "message_id": 262,
+            "session_id": 151,
+            "content": "Hi, How to solve the course problem?",
+            "sent_date": "2025-11-16 13:56:49.7131824",
+            "sent_by_admin": 0,
+            "view_by_user": 0,
+            "view_by_admin": 1
+        },
+        {
+            "message_id": 263,
+            "session_id": 151,
+            "content": "Hi, you can refresh the page",
+            "sent_date": "2025-11-16 13:59:20.3303048",
+            "sent_by_admin": 1,
+            "view_by_user": 1,
+            "view_by_admin": 0
+        }
+    ],
+    "DragDropQuestions": [
+        {
+            "dragdrop_id": 4,
+            "Item_1": "1",
+            "Item_2": "2",
+            "Item_3": "3",
+            "Item_4": "4",
+            "option_1": "http://localhost:5170/uploads/12fe6ddc-35a4-44ff-b873-8cc4f3366655_Screenshot 2025-11-14 012718.png",
+            "option_2": "http://localhost:5170/uploads/c6027215-3334-4482-a9ee-6abd494c704c_Screenshot 2025-11-14 012726.png",
+            "option_3": "http://localhost:5170/uploads/065ecffb-f563-4436-aeed-4e3eea51a6a1_Screenshot 2025-11-14 012732.png",
+            "option_4": "http://localhost:5170/uploads/85da3c3f-9878-44bd-9122-2409132fb39e_Screenshot 2025-11-14 012741.png"
+        },
+        {
+            "dragdrop_id": 5,
+            "Item_1": "http://localhost:5170/uploads/00eb6012-aaae-42fe-8ab7-5b06299ac4c9_grater.jpg",
+            "Item_2": "http://localhost:5170/uploads/348be1a5-bb0f-4ca5-9980-e8707879a54c_pin.webp",
+            "Item_3": "http://localhost:5170/uploads/b316d0be-8b58-4d22-9f09-e94fff654c5c_sugar.jpg",
+            "Item_4": "http://localhost:5170/uploads/15292b6c-7834-42bf-8d90-d968467f58fe_Unsalted_Butter.jpg",
+            "option_1": "Grater",
+            "option_2": "Rolling Pin",
+            "option_3": "Sugar - 1 tbsp",
+            "option_4": "Unsalted Butter - 227g"
+        }
+    ],
+    "McqQuestions": [
+        {
+            "question_id": 2,
+            "question_media": "http://localhost:5170/uploads/e343a6a2-6042-4208-be83-4440fbdf23e8_Screenshot 2025-11-14 011358.png",
+            "option_1": "It melts faster and makes the dough softer.",
+            "option_2": "It helps the laminating process go faster and keeps butter cold.",
+            "option_3": "It prevents gluten from forming in the dough.",
+            "option_4": "It adds extra flavor to the pastry.",
+            "question_answer": "2"
+        },
+        {
+            "question_id": 3,
+            "question_media": "http://localhost:5170/uploads/cac3d1b5-9937-4329-b6ec-943ac0e57c3d_Screenshot 2025-11-14 011533.png",
+            "option_1": "Add more flour immediately.",
+            "option_2": "Keep rolling until the dough flattens.",
+            "option_3": "Place it in the fridge to chill for 5\u201310 minutes before continuing.",
+            "option_4": "Mix in more cold water to cool it down.",
+            "question_answer": "3"
+        },
+        {
+            "question_id": 6,
+            "question_media": "",
+            "option_1": "http://localhost:5170/uploads/95d82580-eeae-4944-945b-882b6b153f59_Screenshot 2025-11-14 012312.png",
+            "option_2": "http://localhost:5170/uploads/22b5e32e-a771-4812-bfa8-cfcc15c5c9f9_Screenshot 2025-11-14 012113.png",
+            "option_3": "http://localhost:5170/uploads/1091ca8f-be20-4575-83bc-8986f5a17ced_Screenshot 2025-11-14 012210.png",
+            "option_4": "http://localhost:5170/uploads/97f04fb6-8c07-4942-96e2-b31f94bf18a0_Screenshot 2025-11-14 012249.png",
+            "question_answer": "1"
+        },
+        {
+            "question_id": 7,
+            "question_media": "http://localhost:5170/uploads/85634baa-a8dd-4d65-9f28-0b05800b8b69_White-Bread-step-by-step.jpg",
+            "option_1": "step 1",
+            "option_2": "step 2",
+            "option_3": "step 3",
+            "option_4": "step 4",
+            "question_answer": "1"
+        },
+        {
+            "question_id": 10,
+            "question_media": "http://localhost:5170/uploads/d8095889-d229-40fa-864e-8f8451f6aa22_1sourdough.jpg",
+            "option_1": "op1",
+            "option_2": "op2",
+            "option_3": "op3",
+            "option_4": "pop4",
+            "question_answer": "2"
+        }
+    ],
+    "PostLikes": [
+        {
+            "like_id": 12,
+            "user_id": 23,
+            "post_id": 7,
+            "created_at": "2025-11-13 19:53:06.1390795"
+        },
+        {
+            "like_id": 14,
+            "user_id": 23,
+            "post_id": 5,
+            "created_at": "2025-11-13 19:53:22.4730202"
+        },
+        {
+            "like_id": 15,
+            "user_id": 23,
+            "post_id": 6,
+            "created_at": "2025-11-13 19:53:23.8552223"
+        },
+        {
+            "like_id": 16,
+            "user_id": 4,
+            "post_id": 6,
+            "created_at": "2025-11-13 21:34:56.219857"
+        },
+        {
+            "like_id": 17,
+            "user_id": 3,
+            "post_id": 8,
+            "created_at": "2025-11-13 21:54:34.025859"
+        },
+        {
+            "like_id": 24,
+            "user_id": 24,
+            "post_id": 8,
+            "created_at": "2025-11-14 03:13:59.9065"
+        },
+        {
+            "like_id": 25,
+            "user_id": 24,
+            "post_id": 7,
+            "created_at": "2025-11-14 03:14:02.641403"
+        },
+        {
+            "like_id": 26,
+            "user_id": 24,
+            "post_id": 5,
+            "created_at": "2025-11-14 03:14:04.322063"
+        },
+        {
+            "like_id": 28,
+            "user_id": 24,
+            "post_id": 6,
+            "created_at": "2025-11-14 03:14:10.451291"
+        },
+        {
+            "like_id": 29,
+            "user_id": 24,
+            "post_id": 9,
+            "created_at": "2025-11-14 03:14:13.254232"
+        },
+        {
+            "like_id": 30,
+            "user_id": 24,
+            "post_id": 10,
+            "created_at": "2025-11-14 03:14:15.221085"
+        },
+        {
+            "like_id": 33,
+            "user_id": 30,
+            "post_id": 6,
+            "created_at": "2025-11-14 04:28:18.007452"
+        },
+        {
+            "like_id": 36,
+            "user_id": 30,
+            "post_id": 10,
+            "created_at": "2025-11-14 04:36:52.596297"
+        }
+    ],
+    "Courses": [
+        {
+            "course_id": 1,
+            "badge_img": "",
+            "category_id": 2,
+            "cooking_time_min": 1170,
+            "course_img": "http://localhost:5170/uploads/3a10f9b3-4410-4513-b818-400567d1432a_croissant.jpg",
+            "deleted": 0,
+            "description": "Some mornings call for a whole tray of croissants: brunch with friends or a weekend breakfast spread. But when you crave just one or two golden, flaky croissants, this small-batch recipe is the answer. The dough comes together quickly and requires minimal rolling, so there\u2019s less fuss and you don\u2019t need to plan ahead. Best of all, because these buttery small-batch croissants bake individually, you\u2019re guaranteed a crisp, flaky edge and soft, airy center with every piece (croissant-lovers, rejoice!).",
+            "level_id": 3,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 7,
+            "title": "Soft and Airy Croissant",
+            "video": "https://www.youtube.com/watch?v=l-4hEBgfZxs"
+        },
+        {
+            "course_id": 2,
+            "badge_img": "http://localhost:5170/uploads/452c4456-206b-41a1-bb3a-a7c8ad511454_2.png",
+            "category_id": 2,
+            "cooking_time_min": 220,
+            "course_img": "http://localhost:5170/uploads/70d8f046-01be-4736-86b7-33d79303d578_Puff-Pastry-Feature.jpg",
+            "deleted": 0,
+            "description": "Some recipes call for a sheet of puff pastry: tarts for a party or quick savory snacks. But when you want fresh, buttery layers without buying pre-made sheets, this homemade puff pastry recipe is the answer. The dough is simple to prepare and comes together in just a few steps, so there\u2019s minimal fuss and no need to plan ahead. Best of all, because these delicate small-batch puff pastries bake into golden, airy layers, each bite is crisp and flaky.",
+            "level_id": 1,
+            "quiz_badge_img": "http://localhost:5170/uploads/5bbc9812-9728-4d0a-8fbd-b198e1e685d2_1.png",
+            "rating": 0.0,
+            "servings": 6,
+            "title": "Homemade Puff Pastry",
+            "video": "https://www.youtube.com/watch?v=QjsTLypTgjQ"
+        },
+        {
+            "course_id": 3,
+            "badge_img": "",
+            "category_id": 2,
+            "cooking_time_min": 225,
+            "course_img": "http://localhost:5170/uploads/7280d2ed-ce24-4865-9de0-3a7510683a19_32d501b9ba920d5a62a4bfcd66213701.jpg",
+            "deleted": 0,
+            "description": "Some occasions call for a classic French dessert: dinner parties or special celebrations. But when you crave a light, creamy treat, these homemade \u00e9clairs with pastry cream are the answer. The choux pastry is easy to pipe and bakes to golden perfection, while the rich pastry cream fills each \u00e9clair for a decadent bite. Best of all, because these small-batch \u00e9clairs are made fresh, every piece has the perfect balance of crisp shell and smooth cream.",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 6,
+            "title": "Homemade Eclairs with Pastry Cream",
+            "video": "https://www.youtube.com/watch?v=rnFcC6LQJDs"
+        },
+        {
+            "course_id": 22,
+            "badge_img": "",
+            "category_id": 4,
+            "cooking_time_min": 45,
+            "course_img": "http://localhost:5170/uploads/bc512811-4761-47c3-bf71-d3000285280a_Recipe.jpeg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Small-Batch Brownies",
+            "video": ""
+        },
+        {
+            "course_id": 23,
+            "badge_img": "",
+            "category_id": 4,
+            "cooking_time_min": 90,
+            "course_img": "http://localhost:5170/uploads/5379a6c9-2340-496a-b6bf-d164b6b60198_Screenshot 2025-11-14 022500.png",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Sweet Potato Sheet Cake with Marshmallow Frosting",
+            "video": ""
+        },
+        {
+            "course_id": 24,
+            "badge_img": "",
+            "category_id": 4,
+            "cooking_time_min": 120,
+            "course_img": "http://localhost:5170/uploads/921d9ea1-cc2e-4191-931f-be70c75aa89b_Screenshot 2025-11-14 022704.png",
+            "deleted": 0,
+            "description": "",
+            "level_id": 3,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 10,
+            "title": "Lemon Tiramisu",
+            "video": ""
+        },
+        {
+            "course_id": 25,
+            "badge_img": "",
+            "category_id": 1,
+            "cooking_time_min": 1020,
+            "course_img": "http://localhost:5170/uploads/5b7fe281-f910-425d-8580-32c22fa45a99_ciabatta-bread-feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Ciabatta Bread Recipe",
+            "video": ""
+        },
+        {
+            "course_id": 26,
+            "badge_img": "",
+            "category_id": 1,
+            "cooking_time_min": 120,
+            "course_img": "http://localhost:5170/uploads/11bf79b8-4c9e-414e-ac49-9a6e47f41bbc_Crescent-Rolls-Feature-1-330x330.webp",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 12,
+            "title": "Homemade Crescent Rolls",
+            "video": ""
+        },
+        {
+            "course_id": 27,
+            "badge_img": "",
+            "category_id": 1,
+            "cooking_time_min": 80,
+            "course_img": "http://localhost:5170/uploads/9929e94c-12db-47d7-bc60-8e683085e5c2_Banana-Bread-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 10,
+            "title": "Banana Bread Recipe",
+            "video": ""
+        },
+        {
+            "course_id": 28,
+            "badge_img": "",
+            "category_id": 6,
+            "cooking_time_min": 580,
+            "course_img": "http://localhost:5170/uploads/b6223e86-961f-450f-b84a-d4c2f62ae2e4_Sourdough-Bread-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 6,
+            "title": "Sourdough Bread Recipe",
+            "video": ""
+        },
+        {
+            "course_id": 29,
+            "badge_img": "",
+            "category_id": 6,
+            "cooking_time_min": 40,
+            "course_img": "http://localhost:5170/uploads/7e6de2cc-cd4e-43b5-af99-753c396c5f8a_Sourdough-Biscuits-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 6,
+            "title": "Sourdough Biscuits",
+            "video": ""
+        },
+        {
+            "course_id": 30,
+            "badge_img": "",
+            "category_id": 3,
+            "cooking_time_min": 60,
+            "course_img": "http://localhost:5170/uploads/f9e04684-37f7-4d5f-83e7-32c896188634_Chocolate-Chip-Cookies-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 12,
+            "title": "Chocolate Chip Cookies",
+            "video": ""
+        },
+        {
+            "course_id": 31,
+            "badge_img": "",
+            "category_id": 3,
+            "cooking_time_min": 45,
+            "course_img": "http://localhost:5170/uploads/e1247775-4783-4f52-a27b-56302eacb04b_Carrot-Cake-Cookies-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 10,
+            "title": "Carrot Cake Cookies",
+            "video": ""
+        },
+        {
+            "course_id": 32,
+            "badge_img": "",
+            "category_id": 3,
+            "cooking_time_min": 40,
+            "course_img": "http://localhost:5170/uploads/d9bf7db9-80ae-4b14-98cd-ea894137647b_Peanut-butter-cookies-feature-1.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 10,
+            "title": "Peanut Butter Cookies Recipe",
+            "video": ""
+        },
+        {
+            "course_id": 33,
+            "badge_img": "",
+            "category_id": 9,
+            "cooking_time_min": 20,
+            "course_img": "http://localhost:5170/uploads/627dabbc-a0f1-4354-a754-c8c22533b049_Waffle-Recipe-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 10,
+            "title": "Waffle Recipe",
+            "video": ""
+        },
+        {
+            "course_id": 34,
+            "badge_img": "",
+            "category_id": 5,
+            "cooking_time_min": 90,
+            "course_img": "http://localhost:5170/uploads/b635c759-c5a4-4556-8aa6-a5fdee074e78_Pumpkin-pie-feature-new.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Pumpkin Pie",
+            "video": ""
+        },
+        {
+            "course_id": 35,
+            "badge_img": "",
+            "category_id": 5,
+            "cooking_time_min": 180,
+            "course_img": "http://localhost:5170/uploads/ed919b6b-a7a1-4db4-91b0-b3fc7652aaf8_Pumpkin-Meringue-Pie-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 9,
+            "title": "Pumpkin Meringue Pie",
+            "video": ""
+        },
+        {
+            "course_id": 36,
+            "badge_img": "",
+            "category_id": 5,
+            "cooking_time_min": 240,
+            "course_img": "http://localhost:5170/uploads/a51622fc-6634-4f0b-a6ec-a149f2b8358e_Apple-Pie-Recipe-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 12,
+            "title": "Apple Pie Recipe",
+            "video": ""
+        },
+        {
+            "course_id": 37,
+            "badge_img": "",
+            "category_id": 8,
+            "cooking_time_min": 50,
+            "course_img": "http://localhost:5170/uploads/bed356cf-a9a7-4ceb-b215-1838faed55d6_Lemon-Scones-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 10,
+            "title": "Lemon Scones",
+            "video": ""
+        },
+        {
+            "course_id": 38,
+            "badge_img": "",
+            "category_id": 8,
+            "cooking_time_min": 35,
+            "course_img": "http://localhost:5170/uploads/61bb5fc5-1801-4f3a-9631-68e577ccebc3_Scones-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Scones Recipe",
+            "video": ""
+        },
+        {
+            "course_id": 39,
+            "badge_img": "",
+            "category_id": 7,
+            "cooking_time_min": 90,
+            "course_img": "http://localhost:5170/uploads/7179ad1e-9ba2-480c-9c9d-192aaec46c0f_pizza-dough-feature-image.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 6,
+            "title": "Homemade Pizza Dough",
+            "video": ""
+        },
+        {
+            "course_id": 40,
+            "badge_img": "",
+            "category_id": 7,
+            "cooking_time_min": 25,
+            "course_img": "http://localhost:5170/uploads/138bc0ee-7aa9-49fe-9216-d90aca3c281a_Buffalo-Chicken-Pizza-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Buffalo Chicken Pizza",
+            "video": ""
+        },
+        {
+            "course_id": 41,
+            "badge_img": "",
+            "category_id": 7,
+            "cooking_time_min": 75,
+            "course_img": "http://localhost:5170/uploads/d7ddd6e2-75a4-46ee-bb84-e8b00270e4cd_Margherita-Pizza-Feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Margherita Pizza",
+            "video": ""
+        },
+        {
+            "course_id": 42,
+            "badge_img": "",
+            "category_id": 2,
+            "cooking_time_min": 75,
+            "course_img": "http://localhost:5170/uploads/6d4185ac-ddde-41b2-be8c-7b1ef148cb2a_Apple-turnover-feature.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 1,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 8,
+            "title": "Easy Apple Turnovers",
+            "video": ""
+        },
+        {
+            "course_id": 43,
+            "badge_img": "",
+            "category_id": 2,
+            "cooking_time_min": 222,
+            "course_img": "http://localhost:5170/uploads/2bb39fa6-4991-4a3e-8086-41468fb05a14_Cream-puffs-feature-1.jpg",
+            "deleted": 0,
+            "description": "",
+            "level_id": 2,
+            "quiz_badge_img": "",
+            "rating": 0.0,
+            "servings": 12,
+            "title": "Cream Puffs",
+            "video": ""
+        }
+    ],
+    "CoursePrepItems": [
+        {
+            "course_prep_item_id": 2,
+            "title": "Unsalted butter",
+            "description": "Unsalted butter is butter that has no salt added to it. This product is solid at room temperature but melts at higher temperatures.",
+            "item_img": "http://localhost:5170/uploads/8f4f17b7-13ce-427a-bdc7-3cc9cc41eef5_Unsalted_Butter.jpg",
+            "type": "ingredients",
+            "amount": 227.0,
+            "metric": "g",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 3,
+            "title": "Whisk",
+            "description": "A whisk is a cooking utensil which can be used to blend ingredients smooth or to incorporate air into a mixture, in a process known as whisking or whipping.",
+            "item_img": "http://localhost:5170/uploads/68388bde-0a32-4dd4-b8dc-4652c6244789_Whisk.jpg",
+            "type": "tools",
+            "amount": 0.0,
+            "metric": "",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 4,
+            "title": "Sugar",
+            "description": "Sugar is a sweetener used in almost every dessert and drink. It helps baked goods taste sweet, turn golden, and stay moist.",
+            "item_img": "http://localhost:5170/uploads/2bfa4bee-965b-4bf7-908b-abaac2f0e9b6_sugar.jpg",
+            "type": "ingredients",
+            "amount": 1.0,
+            "metric": "tbsp",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 5,
+            "title": "Grater",
+            "description": "A grater is a kitchen utensil with a surface full of holes surrounded by sharp edges, used to shred food into small pieces.",
+            "item_img": "http://localhost:5170/uploads/9392623c-3a35-4c51-8491-beb6184e4388_grater.jpg",
+            "type": "tools",
+            "amount": 0.0,
+            "metric": " ",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 6,
+            "title": "Salt",
+            "description": "Salt brings out the flavor of food and makes everything taste better, even in sweet recipes. Most kitchens use regular table salt or fine sea salt. If you\u2019re not sure which one to buy, get table salt",
+            "item_img": "http://localhost:5170/uploads/c462847d-f132-4f67-984b-8ccd90f4b036_Salt.jpg",
+            "type": "ingredients",
+            "amount": 0.5,
+            "metric": "tsp",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 7,
+            "title": "Plastic Wrap",
+            "description": "Plastic wrap is a thin, flexible plastic film used for wrapping and sealing food to keep it fresh. It is also known by names like cling film, cling wrap, or food wrap.",
+            "item_img": "http://localhost:5170/uploads/46808419-da38-4dce-a40d-b532305f9778_plastic_wrap.jpg",
+            "type": "tools",
+            "amount": 0.0,
+            "metric": " ",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 8,
+            "title": "All-Purpose Flour",
+            "description": "All-purpose flour is a versatile white wheat flour used for a wide range of baked goods like cookies, cakes, and biscuits, as well as for thickening sauces and gravies.",
+            "item_img": "http://localhost:5170/uploads/6398ecd2-8599-4ae8-b0a7-88bbdb2f61de_All_Purpose_Flour.jpg",
+            "type": "ingredients",
+            "amount": 240.0,
+            "metric": "g",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 9,
+            "title": "Oven",
+            "description": "Ovens are kitchen appliances used for baking, roasting, and grilling food.",
+            "item_img": "http://localhost:5170/uploads/7cccc64c-a44f-411b-80b0-b617efc54657_oven.jpg",
+            "type": "tools",
+            "amount": 0.0,
+            "metric": "",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 10,
+            "title": "Cold water",
+            "description": "Water that is cooled.",
+            "item_img": "http://localhost:5170/uploads/6b42855e-4c50-4247-8f8d-38b614ac4ca9_water.jpg",
+            "type": "ingredients",
+            "amount": 9.0,
+            "metric": "tbsp",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 11,
+            "title": "Rolling Pin",
+            "description": "A rolling pin is a cylindrical food preparation utensil used to shape and flatten dough.",
+            "item_img": "http://localhost:5170/uploads/de147eae-ee3d-4490-9e97-ba15430fba42_pin.webp",
+            "type": "tools",
+            "amount": 0.0,
+            "metric": " ",
+            "deleted": 0,
+            "course_id": 2
+        },
+        {
+            "course_prep_item_id": 29,
+            "title": "Bread",
+            "description": "Sifted",
+            "item_img": "http://localhost:5170/uploads/3cc89cba-9453-4527-94d4-6048f2f7561c_bread.jpg",
+            "type": "Dry",
+            "amount": 2.0,
+            "metric": "Cups",
+            "deleted": 0,
+            "course_id": 1
+        }
+    ],
+    "UserPosts": [
+        {
+            "post_id": 5,
+            "approve_status": "Pending",
+            "course_id": 2,
+            "created_AT": "2025-11-13 19:24:05.0958586",
+            "deleted_AT": null,
+            "description": "Used the puff pastry recipe to make some savory spinach and feta puffs, they were a hit! \ud83e\uddc0\ud83c\udf3f The layers came out perfectly crisp, and the filling was so creamy. Next time, I\u2019m trying chocolate croissants! \ud83c\udf6b\u2728",
+            "post_img": "/uploads/183511fb-7b6b-44d5-84c8-2e92fff4a182_feta.jpg",
+            "title": "Weekend Puff Pastry Experiments ",
+            "type": "course",
+            "user_id": 22
+        },
+        {
+            "post_id": 6,
+            "approve_status": "Approved",
+            "course_id": 2,
+            "created_AT": "2025-11-13 19:49:52.9369693",
+            "deleted_AT": null,
+            "description": "Tried using the puff pastry from the course to make mini fruit tarts \u2014 they turned out amazing! \ud83e\udd50\ud83c\udf53 Can\u2019t believe how light and flaky they are. Definitely making these again for brunch! \ud83d\udc95",
+            "post_img": "/uploads/112864c9-80c7-4a23-9bc9-6cbb940c946e_792d33cbd81a839d47ba2cf773969a64.jpg",
+            "title": "My First Puff Pastry Creations",
+            "type": "course",
+            "user_id": 23
+        },
+        {
+            "post_id": 7,
+            "approve_status": "Pending",
+            "course_id": null,
+            "created_AT": "2025-11-13 19:50:31.8418652",
+            "deleted_AT": null,
+            "description": "Spent the whole afternoon testing a new vanilla sponge recipe, and my kitchen smells incredible! Tried adding a bit of lemon zest this time \u2014 total game changer. Can\u2019t wait to frost it tomorrow with some whipped cream and berr",
+            "post_img": "/uploads/95984c39-3c57-4613-a918-a69957268baa_65695c22872c0b66a0684d93698a3a28.jpg",
+            "title": "Weekend Baking Marathon \ud83c\udf70",
+            "type": "normal",
+            "user_id": 23
+        },
+        {
+            "post_id": 8,
+            "approve_status": "Approved",
+            "course_id": 30,
+            "created_AT": "2025-11-13 21:54:26.042899",
+            "deleted_AT": null,
+            "description": "It was definitely the best cookie i ever have!",
+            "post_img": "/uploads/f991bfb7-e44f-4916-b32b-ca8aae8732b3_cookies.jpg",
+            "title": "My first creamy coookie",
+            "type": "course",
+            "user_id": 3
+        },
+        {
+            "post_id": 9,
+            "approve_status": "Approved",
+            "course_id": 31,
+            "created_AT": "2025-11-14 02:54:32.512708",
+            "deleted_AT": null,
+            "description": "Absolutely out of the world! I never thought I could actually baked a cake!",
+            "post_img": "/uploads/ef9ca57c-1585-47fc-99d8-85e9fcb98cde_cake1.jpg",
+            "title": "My Cake taste awesome!",
+            "type": "course",
+            "user_id": 4
+        },
+        {
+            "post_id": 10,
+            "approve_status": "Pending",
+            "course_id": 3,
+            "created_AT": "2025-11-14 02:55:27.027124",
+            "deleted_AT": null,
+            "description": "Could u imagine a pastry done in few hours only! The best part was i could follow the list to buy, very clear information!.",
+            "post_img": "/uploads/56e70010-6b58-49a8-a3f3-c91e1f07d6a7_pastry.jpg",
+            "title": "My pastries!",
+            "type": "course",
+            "user_id": 4
+        },
+        {
+            "post_id": 13,
+            "approve_status": "Rejected",
+            "course_id": 1,
+            "created_AT": "2025-11-14 03:41:25.848753",
+            "deleted_AT": null,
+            "description": "soft and airy",
+            "post_img": "/uploads/a94e36f0-6ba7-4102-b834-6f050112c420_1sourdough.jpg",
+            "title": "soft and airy",
+            "type": "normal",
+            "user_id": 24
+        },
+        {
+            "post_id": 17,
+            "approve_status": "Approved",
+            "course_id": 2,
+            "created_AT": "2025-11-14 15:32:55.0129121",
+            "deleted_AT": null,
+            "description": "Tried making breakfast puffs with eggs, cheese, and herbs using the puff pastry from the course. So flaky and golden\u2014perfect for a weekend brunch!",
+            "post_img": "/uploads/ba937864-b508-44cb-bdc1-3c68ad423890_Discover-the-Best-Breakfast-Pastry-Recipes_-From-Cream-Cheese-Delights-to-Puff-Pastry-Creations.webp",
+            "title": "Savory Egg Puff Pastry Breakfast",
+            "type": "course",
+            "user_id": 3
+        }
+    ]
+}

@@ -84,7 +84,8 @@ public class AnnouncementsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateAnnouncement(int id, [FromForm] string? title, [FromForm] string? body, IFormFile? ann_img, [FromForm] bool? visible)
+    public async Task<IActionResult> UpdateAnnouncement(int id, [FromForm] string? title, [FromForm] string? body,
+     IFormFile? ann_img, [FromForm] bool? visible)
     {
         var ann = await _context.Announcements.FindAsync(id);
         if (ann == null || ann.Deleted) return NotFound();
